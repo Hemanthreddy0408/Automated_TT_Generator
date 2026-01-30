@@ -12,6 +12,7 @@ import RoomsPage from "./pages/admin/RoomsPage";
 import SubjectsPage from "./pages/admin/SubjectsPage";
 import ConstraintsPage from "./pages/admin/ConstraintsPage";
 import FacultyDashboard from "./pages/faculty/FacultyDashboard";
+import HistoryPage from "./pages/admin/HistoryPage";
 
 const queryClient = new QueryClient();
 
@@ -33,7 +34,7 @@ const App = () => (
           <Route path="/admin/sections" element={<AdminDashboard />} />
           <Route path="/admin/constraints" element={<ConstraintsPage />} />
           <Route path="/admin/analytics" element={<AdminDashboard />} />
-          <Route path="/admin/history" element={<AdminDashboard />} />
+          <Route path="/admin/history" element={<HistoryPage />} />
           <Route path="/admin/settings" element={<AdminDashboard />} />
           
           {/* Faculty Routes */}
