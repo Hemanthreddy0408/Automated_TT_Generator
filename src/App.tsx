@@ -16,7 +16,7 @@ import HistoryPage from "./pages/admin/HistoryPage";
 import AddFacultyPage from "@/pages/faculty/add/AddFacultyPage";
 import AddFacultyQualificationsPage from "@/pages/faculty/add/AddFacultyQualificationsPage";
 import AddFacultyReviewPage from "@/pages/faculty/add/AddFacultyReviewPage";
-
+import AddSubjectPage from "@/pages/subjects/AddSubjectPage";
 
 
 const queryClient = new QueryClient();
@@ -49,7 +49,7 @@ const App = () => (
           <Route path="/admin/faculty/add/qualifications" element={<AddFacultyQualificationsPage />} />
           <Route path="/admin/faculty/add/review" element={<AddFacultyReviewPage />}/>
           <Route path="/admin/faculty/add/review"  element={<AddFacultyReviewPage />}/>
-          
+          <Route path="/admin/subjects/add" element={<AddSubjectPage />} />
           {/* Faculty Routes */}
           <Route path="/faculty" element={<FacultyDashboard />} />
           
