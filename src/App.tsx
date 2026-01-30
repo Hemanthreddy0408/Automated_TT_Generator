@@ -18,6 +18,7 @@ import AddFacultyQualificationsPage from "@/pages/faculty/add/AddFacultyQualific
 import AddFacultyReviewPage from "@/pages/faculty/add/AddFacultyReviewPage";
 import AddSubjectPage from "@/pages/subjects/AddSubjectPage";
 import AddRoomPage from "@/pages/rooms/AddRoomPage";
+import AnalyticsPage from "@/pages/admin/AnalyticsPage";
 
 
 const queryClient = new QueryClient();
@@ -39,7 +40,6 @@ const App = () => (
           <Route path="/admin/subjects" element={<SubjectsPage />} />
           <Route path="/admin/sections" element={<AdminDashboard />} />
           <Route path="/admin/constraints" element={<ConstraintsPage />} />
-          <Route path="/admin/analytics" element={<AdminDashboard />} />
           <Route path="/admin/history" element={<HistoryPage />} />
           <Route path="/admin/settings" element={<AdminDashboard />} />
           <Route path="/admin/faculty/add" element={<AddFacultyPage />} />
@@ -52,6 +52,8 @@ const App = () => (
           <Route path="/admin/faculty/add/review"  element={<AddFacultyReviewPage />}/>
           <Route path="/admin/subjects/add" element={<AddSubjectPage />} />
           <Route path="/admin/rooms/add" element={<AddRoomPage />} />
+          <Route path="/admin/analytics" element={<AnalyticsPage />} />
+
           {/* Faculty Routes */}
           <Route path="/faculty" element={<FacultyDashboard />} />
           
