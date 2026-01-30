@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { mockFaculty, mockSessions } from '@/data/mockData';
+import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Filter, Download, Users, CheckCircle, XCircle } from 'lucide-react';
 import {
   Select,
@@ -15,7 +16,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
+
+
 export default function FacultyPage() {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
@@ -42,11 +46,15 @@ export default function FacultyPage() {
       title="Faculty Management"
       subtitle="Manage teaching staff and their assignments"
       actions={
-        <Button className="gap-2">
+        <Button
+          className="gap-2"
+          onClick={() => navigate('/admin/faculty/add')}
+        >
           <Plus className="h-4 w-4" />
           Add Faculty
         </Button>
       }
+
     >
       <div className="space-y-6">
         {/* Quick Stats */}

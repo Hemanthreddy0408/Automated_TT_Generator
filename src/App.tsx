@@ -13,6 +13,11 @@ import SubjectsPage from "./pages/admin/SubjectsPage";
 import ConstraintsPage from "./pages/admin/ConstraintsPage";
 import FacultyDashboard from "./pages/faculty/FacultyDashboard";
 import HistoryPage from "./pages/admin/HistoryPage";
+import AddFacultyPage from "@/pages/faculty/add/AddFacultyPage";
+import AddFacultyQualificationsPage from "@/pages/faculty/add/AddFacultyQualificationsPage";
+import AddFacultyReviewPage from "@/pages/faculty/add/AddFacultyReviewPage";
+
+
 
 const queryClient = new QueryClient();
 
@@ -36,6 +41,14 @@ const App = () => (
           <Route path="/admin/analytics" element={<AdminDashboard />} />
           <Route path="/admin/history" element={<HistoryPage />} />
           <Route path="/admin/settings" element={<AdminDashboard />} />
+          <Route path="/admin/faculty/add" element={<AddFacultyPage />} />
+          <Route path="/admin/faculty/add" element={<AddFacultyPage />} />
+          <Route path="/admin/faculty/add/qualifications" element={<AddFacultyQualificationsPage />} />
+          <Route path="/admin/faculty/add" element={<AddFacultyPage />} />
+          <Route path="/admin/faculty/add" element={<AddFacultyPage />} />
+          <Route path="/admin/faculty/add/qualifications" element={<AddFacultyQualificationsPage />} />
+          <Route path="/admin/faculty/add/review" element={<AddFacultyReviewPage />}/>
+          <Route path="/admin/faculty/add/review"  element={<AddFacultyReviewPage />}/>
           
           {/* Faculty Routes */}
           <Route path="/faculty" element={<FacultyDashboard />} />
