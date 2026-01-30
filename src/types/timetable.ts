@@ -39,6 +39,7 @@ export interface Subject {
 }
 
 export interface Room {
+  wheelchairAccessible: any;
   id: string;
   code: string;
   name: string;

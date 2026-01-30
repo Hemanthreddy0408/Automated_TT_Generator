@@ -7,6 +7,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { mockRooms } from '@/data/mockData';
 import { Plus, Search, Filter, Download, Building2, Users, FlaskConical } from 'lucide-react';
+import { useNavigate } from "react-router-dom";
+
 import {
   Select,
   SelectContent,
@@ -16,6 +18,7 @@ import {
 } from '@/components/ui/select';
 
 export default function RoomsPage() {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -45,10 +48,10 @@ export default function RoomsPage() {
       title="Room Management"
       subtitle="Manage classrooms, labs, and other venues"
       actions={
-        <Button className="gap-2">
-          <Plus className="h-4 w-4" />
-          Add Room
+        <Button onClick={() => navigate("/admin/rooms/add")}>
+          + Add Room
         </Button>
+
       }
     >
       <div className="space-y-6">
