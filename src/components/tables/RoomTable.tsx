@@ -40,19 +40,20 @@ interface RoomTableProps {
 }
 
 const roomTypeConfig = {
-  lecture: {
+  LECTURE: {
     label: 'Lecture Hall',
     class: 'bg-blue-500/10 text-blue-700 border-blue-500/30',
   },
-  lab: {
+  LAB: {
     label: 'Laboratory',
     class: 'bg-violet-500/10 text-violet-700 border-violet-500/30',
   },
-  seminar: {
+  SEMINAR: {
     label: 'Seminar Room',
     class: 'bg-teal-500/10 text-teal-700 border-teal-500/30',
   },
 };
+
 
 export function RoomTable({
   rooms,
@@ -78,7 +79,11 @@ export function RoomTable({
 
         <TableBody>
           {rooms.map((room) => {
-            const typeConfig = roomTypeConfig[room.type];
+            const typeConfig = roomTypeConfig[room.type] ?? {
+              label: room.type,
+              class: '',
+            };
+
 
             return (
               <TableRow key={room.id} className="group">
@@ -123,16 +128,18 @@ export function RoomTable({
                 {/* Equipment */}
                 <TableCell>
                   <div className="flex flex-wrap gap-1">
-                    {room.equipment.slice(0, 2).map((item) => (
+                    {(room.equipment ?? []).slice(0, 2).map((item) => (
                       <Badge key={item} variant="secondary" className="text-xs">
                         {item}
                       </Badge>
                     ))}
-                    {room.equipment.length > 2 && (
+
+                    {(room.equipment?.length ?? 0) > 2 && (
                       <Badge variant="secondary" className="text-xs">
                         +{room.equipment.length - 2}
                       </Badge>
                     )}
+
                   </div>
                 </TableCell>
 
@@ -143,12 +150,12 @@ export function RoomTable({
                       variant="outline"
                       className={cn(
                         'font-medium',
-                        room.isActive
+                        room.active
                           ? 'status-active'
                           : 'status-inactive'
                       )}
                     >
-                      {room.isActive ? 'Available' : 'Unavailable'}
+                      {room.active ? 'Available' : 'Unavailable'}
                     </Badge>
 
                     {room.wheelchairAccessible && (

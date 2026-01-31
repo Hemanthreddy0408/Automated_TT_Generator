@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { getRooms } from "@/lib/api";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { RoomTable } from "@/components/tables/RoomTable";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
-import { api } from "@/lib/api";
 import { Room } from "@/types/timetable";
 
 import {
@@ -29,6 +29,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+console.log("Rooms page loaded");
+
 interface StatCardProps {
   icon: React.ReactNode;
   value: number;
@@ -38,47 +40,62 @@ interface StatCardProps {
 export default function RoomsPage() {
   const navigate = useNavigate();
 
+  // ---------------- STATE ----------------
   const [rooms, setRooms] = useState<Room[]>([]);
+  const [loading, setLoading] = useState(true);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  /* ---------------- FETCH FROM BACKEND ---------------- */
+  // ---------------- FETCH ROOMS ----------------
   useEffect(() => {
-    api.get("/rooms")
-      .then((res) => setRooms(res.data))
-      .catch((err) => console.error("Failed to fetch rooms", err));
+    const fetchRooms = async () => {
+      try {
+        const data = await getRooms();
+        console.log("Rooms from API:", data);
+        setRooms(data);
+      } catch (err) {
+        console.error("Failed to fetch rooms", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRooms();
   }, []);
+  console.log("ROOMS STATE:", rooms);
+  // ---------------- FILTER LOGIC ----------------
+ const filteredRooms = rooms.filter((room) => {
+  const matchesSearch =
+  (room.name ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+  (room.code ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+  (room.building ?? "").toLowerCase().includes(searchQuery.toLowerCase());
 
-  /* ---------------- FILTER LOGIC ---------------- */
-  const filteredRooms = rooms.filter((room) => {
-    const matchesSearch =
-      room.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      room.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      room.building.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesType =
-      typeFilter === "all" || room.type === typeFilter;
+  const matchesType =
+    typeFilter === "all" || room.type === typeFilter;
 
-    const matchesStatus =
-      statusFilter === "all" ||
-      (statusFilter === "active" && room.isActive) ||
-      (statusFilter === "inactive" && !room.isActive);
+  const matchesStatus =
+    statusFilter === "all" ||
+    (statusFilter === "active" && room.active) ||
+    (statusFilter === "inactive" && !room.active);
 
-    return matchesSearch && matchesType && matchesStatus;
-  });
+  return matchesSearch && matchesType && matchesStatus;
+});
 
-  /* ---------------- STATS ---------------- */
+
+  // ---------------- STATS ----------------
   const totalCapacity = rooms
-    .filter((r) => r.isActive)
+    .filter((r) => r.active)
     .reduce((sum, r) => sum + r.capacity, 0);
 
   const lectureRooms = rooms.filter(
-    (r) => r.type === "lecture" && r.isActive
+    (r) => r.type === "LECTURE" && r.active
   ).length;
 
   const labRooms = rooms.filter(
-    (r) => r.type === "lab" && r.isActive
+    (r) => r.type === "LAB" && r.active
   ).length;
 
   return (
@@ -120,9 +137,9 @@ export default function RoomsPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="lecture">Lecture</SelectItem>
-              <SelectItem value="lab">Lab</SelectItem>
-              <SelectItem value="seminar">Seminar</SelectItem>
+              <SelectItem value="LECTURE">Lecture</SelectItem>
+              <SelectItem value="LAB">Lab</SelectItem>
+              <SelectItem value="SEMINAR">Seminar</SelectItem>
             </SelectContent>
           </Select>
 
@@ -176,4 +193,5 @@ function StatCard({ icon, value, label }: StatCardProps) {
       </CardContent>
     </Card>
   );
+
 }

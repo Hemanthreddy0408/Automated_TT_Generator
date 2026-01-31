@@ -2,12 +2,10 @@ package com.acadschedule.scheduler.service;
 
 import com.acadschedule.scheduler.entity.Room;
 import com.acadschedule.scheduler.repository.RoomRepository;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-
 
 @Service
 @RequiredArgsConstructor

@@ -39,17 +39,19 @@ export interface Subject {
 }
 
 export interface Room {
-  wheelchairAccessible: any;
-  id: string;
-  code: string;
+  id: number;
   name: string;
+  code: string;
   building: string;
-  floor: number;
+  floor: string;
+  type: 'LECTURE' | 'LAB' | 'SEMINAR';
   capacity: number;
-  type: 'lecture' | 'lab' | 'seminar';
-  equipment: string[];
-  isActive: boolean;
+  active: boolean;
+  wheelchairAccessible: boolean;
+  equipment: string[];   // ✅ THIS FIXES map()
 }
+
+
 
 export interface Section {
   id: string;
