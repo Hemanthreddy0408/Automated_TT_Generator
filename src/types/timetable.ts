@@ -13,22 +13,17 @@ export interface User {
 
 export interface Faculty {
   id: number;
-
   name: string;
   email: string;
   department: string;
   designation: string;
   employeeId: string;
-
   avatarUrl?: string;
-
   maxHoursPerDay: number;
   maxHoursPerWeek: number;
-
   qualifications: string[];
   specialization: string;
   eligibleSubjects: string[];
-
   isActive: boolean;
 }
 export interface Subject {
