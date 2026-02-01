@@ -1,19 +1,17 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import {
-  BookOpen,
-  Clock,
-  Star,
-  Sparkles,
-  Users,
-  Lightbulb,
+  BookOpen, Clock, Star, Sparkles, Users, Lightbulb, Save
 } from "lucide-react";
-import { createSubject } from "@/lib/api";
-
+import { createSubject, updateSubject } from "@/lib/api";
 export default function AddSubjectPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const editData = location.state;
+  
+  // State
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
   const [department, setDepartment] = useState("");
@@ -24,29 +22,69 @@ export default function AddSubjectPage() {
   const [facultyCount, setFacultyCount] = useState(2);
   const [subjectType, setSubjectType] = useState<"core" | "elective">("core");
 
+  // Load Data (Edit or Draft)
+  useEffect(() => {
+    if (editData) {
+        // Edit Mode
+        loadState(editData);
+    } 
+  }, [editData]);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const loadState = (data: any) => {
+    setCode(data.code || "");
+    setName(data.name || "");
+    setDepartment(data.department || "");
+    setCredits(data.credits || 4);
+    setLectures(data.lectureHoursPerWeek || 3);
+    setTutorials(data.tutorialHoursPerWeek || 0);
+    setPracticals(data.labHoursPerWeek || 0);
+    setSubjectType(data.isElective ? "elective" : "core");
+  };
+
+  const buildPayload = () => ({
+    id: editData?.id, // Important for updates
+    code,
+    name,
+    department,
+    credits,
+    lectureHoursPerWeek: lectures,
+    tutorialHoursPerWeek: tutorials,
+    labHoursPerWeek: practicals,
+    isElective: subjectType === "elective",
+    eligibleFaculty: [], // Keeping this empty per your current UI
+    savedAt: new Date().toLocaleString()
+  });
+
+  const handleSaveDraft = () => {
+    const payload = buildPayload();
+    localStorage.setItem("subject_draft", JSON.stringify(payload));
+    alert("Draft saved!");
+    navigate("/admin/subjects");
+  };
+
   const handleSave = async () => {
+    const payload = buildPayload();
     try {
-      await createSubject({
-        code,
-        name,
-        department,
-        credits,
-        lectureHoursPerWeek: lectures,
-        tutorialHoursPerWeek: tutorials,
-        labHoursPerWeek: practicals,
-        isElective: subjectType === "elective",
-        eligibleFaculty: [],
-      });
+      if (editData?.id) {
+        // Update
+        await updateSubject(editData.id, payload);
+      } else {
+        // Create
+        await createSubject(payload);
+      }
+      
+      // Clear draft if successful
+      localStorage.removeItem("subject_draft");
       navigate("/admin/subjects", { replace: true });
     } catch (error) {
-      console.error("Error creating subject:", error);
-      // TODO: show error message
+      console.error("Error creating/updating subject:", error);
+      alert("Failed to save subject.");
     }
   };
 
-
   return (
-    <AdminLayout title="Subject Management" subtitle="Add New Subject">
+    <AdminLayout title="Subject Management" subtitle={editData?.id ? "Edit Subject" : "Add New Subject"}>
       <div className="max-w-4xl mx-auto space-y-6">
 
         {/* ================= CARD ================= */}
@@ -62,22 +100,17 @@ export default function AddSubjectPage() {
 
               <Select label="Department" value={department} onChange={(e) => setDepartment(e.target.value)}>
                 <option value="">Select Department</option>
-                <option value="Computer Science">Computer Science</option>
-                <option value="Information Technology">Information Technology</option>
-                <option value="Mechanical">Mechanical</option>
+                <option value="CSE">CSE</option>
+                <option value="ECE">ECE</option>
+                <option value="MECH">MECH</option>
+                <option value="CIVIL">CIVIL</option>
               </Select>
 
-              <Input
-                label="Total Credits"
-                type="number"
-                value={credits}
-                onChange={(e) => setCredits(+e.target.value)}
-              />
+              <Input label="Total Credits" type="number" value={credits} onChange={(e) => setCredits(+e.target.value)} />
             </div>
 
             {/* -------- WEEKLY HOURS -------- */}
             <SectionHeader icon={<Clock />} title="Weekly Hours Breakdown" />
-
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <HourCard label="Lectures (L)" value={lectures} onChange={setLectures} />
               <HourCard label="Tutorials (T)" value={tutorials} onChange={setTutorials} />
@@ -89,51 +122,37 @@ export default function AddSubjectPage() {
               <div>
                 <SectionHeader icon={<Star />} title="Subject Type" />
                 <div className="flex gap-4 mt-4">
-                  <TypeCard
-                    active={subjectType === "core"}
-                    icon={<Star />}
-                    label="Core Subject"
-                    onClick={() => setSubjectType("core")}
-                  />
-                  <TypeCard
-                    active={subjectType === "elective"}
-                    icon={<Sparkles />}
-                    label="Elective"
-                    onClick={() => setSubjectType("elective")}
-                  />
+                  <TypeCard active={subjectType === "core"} icon={<Star />} label="Core Subject" onClick={() => setSubjectType("core")} />
+                  <TypeCard active={subjectType === "elective"} icon={<Sparkles />} label="Elective" onClick={() => setSubjectType("elective")} />
                 </div>
               </div>
 
-              {/* -------- FACULTY -------- */}
               <div>
                 <SectionHeader icon={<Users />} title="Faculty Allocation" />
-                <p className="text-sm text-muted-foreground mt-2">
-                  Min. Required Faculty
-                </p>
-
+                <p className="text-sm text-muted-foreground mt-2">Min. Required Faculty</p>
                 <div className="flex items-center gap-4 mt-4">
-                  <CounterButton onClick={() => setFacultyCount(Math.max(1, facultyCount - 1))}>
-                    −
-                  </CounterButton>
+                  <CounterButton onClick={() => setFacultyCount(Math.max(1, facultyCount - 1))}>−</CounterButton>
                   <span className="text-xl font-bold">{facultyCount}</span>
-                  <CounterButton onClick={() => setFacultyCount(facultyCount + 1)}>
-                    +
-                  </CounterButton>
+                  <CounterButton onClick={() => setFacultyCount(facultyCount + 1)}>+</CounterButton>
                 </div>
-
-                <p className="text-xs text-muted-foreground mt-2">
-                  Suggested faculty members for this credit load.
-                </p>
+                <p className="text-xs text-muted-foreground mt-2">Suggested faculty count</p>
               </div>
             </div>
           </div>
 
           {/* -------- FOOTER -------- */}
-          <div className="px-8 py-6 bg-muted/40 border-t flex justify-end gap-4">
-            <Button variant="outline" onClick={() => navigate("/admin/subjects")}>
-              Cancel
-            </Button>
-            <Button className="px-6" onClick={handleSave}>Save Subject</Button>
+          <div className="px-8 py-6 bg-muted/40 border-t flex justify-between items-center">
+            <Button variant="outline" onClick={() => navigate("/admin/subjects")}>Cancel</Button>
+            
+            <div className="flex gap-3">
+                {/* Save Draft Button */}
+                <Button variant="ghost" className="gap-2 text-primary hover:bg-primary/10" onClick={handleSaveDraft}>
+                    <Save className="h-4 w-4" /> Save Draft
+                </Button>
+                <Button className="px-6" onClick={handleSave}>
+                    {editData?.id ? "Update Subject" : "Save Subject"}
+                </Button>
+            </div>
           </div>
         </div>
 
@@ -142,15 +161,13 @@ export default function AddSubjectPage() {
           <Lightbulb className="h-5 w-5 mt-0.5" />
           <div>
             <p className="font-semibold">Quick Tip</p>
-            Core subjects are prioritized in timetable optimization and usually
-            scheduled in morning slots.
+            Core subjects are prioritized in timetable optimization and usually scheduled in morning slots.
           </div>
         </div>
       </div>
     </AdminLayout>
   );
 }
-
 /* ================= COMPONENTS ================= */
 
 function SectionHeader({ icon, title }: { icon: React.ReactNode; title: string }) {

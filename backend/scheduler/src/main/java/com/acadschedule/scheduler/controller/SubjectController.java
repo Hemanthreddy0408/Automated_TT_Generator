@@ -1,12 +1,7 @@
 package com.acadschedule.scheduler.controller;
-import java.util.List;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+import org.springframework.web.bind.annotation.*;
 import com.acadschedule.scheduler.entity.Subject;
 import com.acadschedule.scheduler.service.SubjectService;
 
@@ -29,5 +24,17 @@ public class SubjectController {
     @GetMapping
     public List<Subject> getAllSubjects() {
         return subjectService.getAllSubjects();
+    }
+
+    // ✅ NEW: Update Endpoint
+    @PutMapping("/{id}")
+    public Subject updateSubject(@PathVariable Long id, @RequestBody Subject subject) {
+        return subjectService.updateSubject(id, subject);
+    }
+
+    // ✅ NEW: Delete Endpoint
+    @DeleteMapping("/{id}")
+    public void deleteSubject(@PathVariable Long id) {
+        subjectService.deleteSubject(id);
     }
 }

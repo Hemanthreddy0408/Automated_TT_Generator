@@ -25,7 +25,7 @@ public class Subject {
     private String name;
     private String department;
     private int credits;
-
+    private int facultyCount;
     private int lectureHoursPerWeek;
     private int tutorialHoursPerWeek;
     private int labHoursPerWeek;

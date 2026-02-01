@@ -36,15 +36,16 @@ const App = () => (
           {/* --- PUBLIC --- */}
           <Route path="/" element={<Index />} />
 
-          {/* --- ADMIN: FACULTY ROUTES (Specific Routes MUST be First) --- */}
-          {/* 1. Sub-steps of Add/Edit */}
+          {/* --- ADMIN: FACULTY ROUTES (Order Matters: Specific -> General) --- */}
+          
+          {/* 1. Step 2 & 3 (Deepest paths first) */}
           <Route path="/admin/faculty/add/qualifications" element={<AddFacultyQualificationsPage />} />
           <Route path="/admin/faculty/add/review" element={<AddFacultyReviewPage />} />
           
-          {/* 2. Main Add/Edit Page */}
+          {/* 2. Step 1 (Add/Edit Entry) */}
           <Route path="/admin/faculty/add" element={<AddFacultyPage />} />
 
-          {/* 3. Main List Page (General) */}
+          {/* 3. Main List Page */}
           <Route path="/admin/faculty" element={<FacultyPage />} />
 
 

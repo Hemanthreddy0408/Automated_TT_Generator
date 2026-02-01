@@ -24,6 +24,7 @@ export interface Faculty {
   qualifications: string[];
   specialization: string;
   eligibleSubjects: string[];
+  facultyCount: number;
   isActive: boolean;
 }
 export interface Subject {

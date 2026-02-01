@@ -19,9 +19,12 @@ export default function AddFacultyPage() {
   const [employeeId, setEmployeeId] = useState(editData?.employeeId || "");
 
   // ✅ ADDED INPUT STATE FOR WORKLOAD
-  const [maxHoursPerDay, setMaxHoursPerDay] = useState(editData?.maxHoursPerDay || 6);
-  const [maxHoursPerWeek, setMaxHoursPerWeek] = useState(editData?.maxHoursPerWeek || 30);
-
+  const [maxHoursPerDay, setMaxHoursPerDay] = useState<number>(
+    editData?.maxHoursPerDay ? Number(editData.maxHoursPerDay) : 6
+  );
+  const [maxHoursPerWeek, setMaxHoursPerWeek] = useState<number>(
+    editData?.maxHoursPerWeek ? Number(editData.maxHoursPerWeek) : 30
+  );
   const handleNextStep = (e: React.FormEvent) => {
     e.preventDefault();
 

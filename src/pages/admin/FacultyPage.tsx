@@ -141,7 +141,6 @@ export default function FacultyPage() {
 
 
   // ---------------- HANDLERS ----------------
-  const handleResumeDraft = () => navigate("/admin/faculty/add", { state: draft });
   
   const handleDiscardDraft = () => {
     if(confirm("Are you sure you want to discard this unsaved draft?")) {
@@ -150,8 +149,17 @@ export default function FacultyPage() {
     }
   };
 
-  const handleEdit = (facultyMember: Faculty) => navigate('/admin/faculty/add', { state: facultyMember });
+  const handleResumeDraft = () => {
+    // Navigate to Add Page with draft data
+    // ✅ Must match the Route path defined in App.tsx
+    navigate("/admin/faculty/add", { state: draft });
+  };
 
+  const handleEdit = (facultyMember: Faculty) => {
+    // ✅ Must match the Route path defined in App.tsx
+    navigate('/admin/faculty/add', { state: facultyMember });
+  };
+  
   const handleDelete = async (facultyMember: Faculty) => {
     if (confirm(`Are you sure you want to delete ${facultyMember.name}?`)) {
       try {
