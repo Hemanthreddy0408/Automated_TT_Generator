@@ -8,7 +8,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/faculty")
-@CrossOrigin(origins = "*") // frontend access
+@CrossOrigin(origins = "*") // frontend
 public class FacultyController {
 
     private final FacultyService facultyService;
@@ -17,7 +17,7 @@ public class FacultyController {
         this.facultyService = facultyService;
     }
 
-    // POST → add faculty
+    // POST → create faculty
     @PostMapping
     public Faculty createFaculty(@RequestBody Faculty faculty) {
         return facultyService.createFaculty(faculty);

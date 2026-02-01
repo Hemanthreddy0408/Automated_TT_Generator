@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { createRoom } from "@/lib/api";
 
 import {
   Save,
@@ -30,6 +31,11 @@ const EQUIPMENT_OPTIONS = [
 export default function AddRoomPage() {
   const navigate = useNavigate();
 
+  const [name, setName] = useState("");
+  const [code, setCode] = useState("");
+  const [building, setBuilding] = useState("");
+  const [floor, setFloor] = useState("");
+  const [type, setType] = useState("LECTURE");
   const [capacity, setCapacity] = useState<number>(0);
   const [accessible, setAccessible] = useState<boolean>(true);
   const [equipment, setEquipment] = useState<string[]>([
@@ -57,6 +63,27 @@ export default function AddRoomPage() {
     setCustomEquipment("");
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await createRoom({
+        name,
+        code,
+        building,
+        floor,
+        type,
+        capacity,
+        equipment,
+        wheelchairAccessible: accessible,
+        active: true,
+      });
+      navigate("/admin/rooms");
+    } catch (error) {
+      console.error("Error creating room:", error);
+      // TODO: show error message
+    }
+  };
+
   return (
     <AdminLayout title="Room Management" subtitle="Add New Room">
       <div className="max-w-5xl mx-auto space-y-6">
@@ -76,30 +103,31 @@ export default function AddRoomPage() {
         </div>
 
         {/* FORM */}
-        <form className="bg-card border rounded-2xl shadow-sm overflow-hidden">
+        <form onSubmit={handleSubmit} className="bg-card border rounded-2xl shadow-sm overflow-hidden">
           <div className="p-8 space-y-8">
 
             {/* BASIC INFO */}
             <Section title="Basic Information">
               <div className="grid md:grid-cols-2 gap-8">
-                <Input label="Room Name" placeholder="Physics Lab A" />
-                <Input label="Room Code" placeholder="PH-LAB-A" />
-                <Select label="Building">
+                <Input label="Room Name" placeholder="Physics Lab A" value={name} onChange={(e) => setName(e.target.value)} />
+                <Input label="Room Code" placeholder="PH-LAB-A" value={code} onChange={(e) => setCode(e.target.value)} />
+                <Select label="Building" value={building} onChange={(e) => setBuilding(e.target.value)}>
+                  <option value="">Select Building</option>
                   <option>Main Block</option>
                   <option>Tech Block</option>
                   <option>Science Center</option>
                 </Select>
-                <Input label="Floor" placeholder="Ground Floor" />
+                <Input label="Floor" placeholder="Ground Floor" value={floor} onChange={(e) => setFloor(e.target.value)} />
               </div>
             </Section>
 
             {/* ROOM DETAILS */}
             <Section title="Room Details">
               <div className="grid md:grid-cols-2 gap-8">
-                <Select label="Room Type">
-                  <option value="lecture">Lecture Hall</option>
-                  <option value="lab">Laboratory</option>
-                  <option value="seminar">Seminar Room</option>
+                <Select label="Room Type" value={type} onChange={(e) => setType(e.target.value)}>
+                  <option value="LECTURE">Lecture Hall</option>
+                  <option value="LAB">Laboratory</option>
+                  <option value="SEMINAR">Seminar Room</option>
                 </Select>
 
                 <div>
@@ -184,10 +212,10 @@ export default function AddRoomPage() {
 
           {/* FOOTER */}
           <div className="px-8 py-6 border-t bg-muted/40 flex justify-end gap-4">
-            <Button variant="outline" onClick={() => navigate("/admin/rooms")}>
+            <Button type="button" variant="outline" onClick={() => navigate("/admin/rooms")}>
               Cancel
             </Button>
-            <Button className="gap-2">
+            <Button type="submit" className="gap-2">
               <Save className="h-4 w-4" />
               Save Room
             </Button>
@@ -233,14 +261,15 @@ function Input({
 function Select({
   label,
   children,
+  ...props
 }: {
   label: string;
   children: React.ReactNode;
-}) {
+} & React.SelectHTMLAttributes<HTMLSelectElement>) {
   return (
     <div>
       <label className="text-sm font-medium">{label}</label>
-      <select className="mt-1 w-full px-4 py-2 rounded-lg border">
+      <select {...props} className="mt-1 w-full px-4 py-2 rounded-lg border">
         {children}
       </select>
     </div>

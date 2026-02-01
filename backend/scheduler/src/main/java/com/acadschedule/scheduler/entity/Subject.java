@@ -1,5 +1,9 @@
 package com.acadschedule.scheduler.entity;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -28,4 +32,6 @@ public class Subject {
     private int labHoursPerWeek;
 
     private boolean isElective;
+    @ElementCollection
+    private List<String> eligibleFaculty = new ArrayList<>(); 
 }

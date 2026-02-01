@@ -10,22 +10,24 @@ import org.springframework.web.bind.annotation.RestController;
 import com.acadschedule.scheduler.entity.Subject;
 import com.acadschedule.scheduler.service.SubjectService;
 
-import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/subjects")
-@RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "*")
 public class SubjectController {
 
     private final SubjectService subjectService;
 
+    public SubjectController(SubjectService subjectService) {
+        this.subjectService = subjectService;
+    }
+
     @PostMapping
-    public Subject create(@RequestBody Subject subject) {
+    public Subject createSubject(@RequestBody Subject subject) {
         return subjectService.createSubject(subject);
     }
 
     @GetMapping
-    public List<Subject> getAll() {
+    public List<Subject> getAllSubjects() {
         return subjectService.getAllSubjects();
     }
 }

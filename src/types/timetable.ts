@@ -31,9 +31,8 @@ export interface Faculty {
 
   isActive: boolean;
 }
-
 export interface Subject {
-  id: string;
+  id?: number; // 👈 IMPORTANT
   code: string;
   name: string;
   department: string;
@@ -44,6 +43,7 @@ export interface Subject {
   isElective: boolean;
   eligibleFaculty: string[];
 }
+
 
 export interface Room {
   id: number;

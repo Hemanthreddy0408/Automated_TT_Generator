@@ -10,16 +10,40 @@ import {
   Users,
   Lightbulb,
 } from "lucide-react";
+import { createSubject } from "@/lib/api";
 
 export default function AddSubjectPage() {
   const navigate = useNavigate();
-
+  const [code, setCode] = useState("");
+  const [name, setName] = useState("");
+  const [department, setDepartment] = useState("");
   const [credits, setCredits] = useState(4);
   const [lectures, setLectures] = useState(3);
   const [tutorials, setTutorials] = useState(1);
   const [practicals, setPracticals] = useState(2);
   const [facultyCount, setFacultyCount] = useState(2);
   const [subjectType, setSubjectType] = useState<"core" | "elective">("core");
+
+  const handleSave = async () => {
+    try {
+      await createSubject({
+        code,
+        name,
+        department,
+        credits,
+        lectureHoursPerWeek: lectures,
+        tutorialHoursPerWeek: tutorials,
+        labHoursPerWeek: practicals,
+        isElective: subjectType === "elective",
+        eligibleFaculty: [],
+      });
+      navigate("/admin/subjects", { replace: true });
+    } catch (error) {
+      console.error("Error creating subject:", error);
+      // TODO: show error message
+    }
+  };
+
 
   return (
     <AdminLayout title="Subject Management" subtitle="Add New Subject">
@@ -33,14 +57,14 @@ export default function AddSubjectPage() {
             <SectionHeader icon={<BookOpen />} title="Basic Information" />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Input label="Subject Name" placeholder="e.g. Data Structures & Algorithms" />
-              <Input label="Subject Code" placeholder="e.g. CS301" />
+              <Input label="Subject Name" placeholder="e.g. Data Structures & Algorithms" value={name} onChange={(e) => setName(e.target.value)} />
+              <Input label="Subject Code" placeholder="e.g. CS301" value={code} onChange={(e) => setCode(e.target.value)} />
 
-              <Select label="Department">
+              <Select label="Department" value={department} onChange={(e) => setDepartment(e.target.value)}>
                 <option value="">Select Department</option>
-                <option>Computer Science</option>
-                <option>Information Technology</option>
-                <option>Mechanical</option>
+                <option value="Computer Science">Computer Science</option>
+                <option value="Information Technology">Information Technology</option>
+                <option value="Mechanical">Mechanical</option>
               </Select>
 
               <Input
@@ -109,7 +133,7 @@ export default function AddSubjectPage() {
             <Button variant="outline" onClick={() => navigate("/admin/subjects")}>
               Cancel
             </Button>
-            <Button className="px-6">Save Subject</Button>
+            <Button className="px-6" onClick={handleSave}>Save Subject</Button>
           </div>
         </div>
 

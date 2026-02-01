@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+
 import { useNavigate } from "react-router-dom";
 
 import { AdminLayout } from "@/components/layout/AdminLayout";
@@ -15,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { mockSubjects } from "@/data/mockData";
+
 
 import {
   Plus,
@@ -26,44 +27,76 @@ import {
   GraduationCap,
   Star,
 } from "lucide-react";
+import { getSubjects } from "@/lib/api";
+import { Subject } from "@/types/timetable";
 
 
 export default function SubjectsPage() {
   const navigate = useNavigate();
-
+  
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | "core" | "elective">("all");
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [loading, setLoading] = useState(true);
+
+useEffect(() => {
+  const fetchSubjects = () => {
+    setLoading(true);
+    getSubjects()
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setSubjects(data);
+        } else if (data && typeof data === "object" && "data" in data && Array.isArray((data as Record<string, unknown>).data)) {
+          setSubjects((data as Record<string, unknown>).data as Subject[]);
+        } else {
+          setSubjects([]);
+        }
+      })
+      .finally(() => setLoading(false));
+  };
+
+  fetchSubjects();
+
+  // 👇 refetch when user comes back to page
+  window.addEventListener("focus", fetchSubjects);
+  return () => window.removeEventListener("focus", fetchSubjects);
+}, []);
+
 
   /* ----------------------------------
      Derived Data (clean & efficient)
   ----------------------------------- */
+  
+
+
   const {
-    filteredSubjects,
-    totalCredits,
-    coreSubjects,
-    electiveSubjects,
-  } = useMemo(() => {
-    const filtered = mockSubjects.filter((subject) => {
-      const matchesSearch =
-        subject.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        subject.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        subject.department.toLowerCase().includes(searchQuery.toLowerCase());
+  filteredSubjects,
+  totalCredits,
+  coreSubjects,
+  electiveSubjects,
+} = useMemo(() => {
+  const filtered = subjects.filter((subject) => {
+    const matchesSearch =
+      subject.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      subject.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      subject.department.toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchesType =
-        typeFilter === "all" ||
-        (typeFilter === "core" && !subject.isElective) ||
-        (typeFilter === "elective" && subject.isElective);
+    const matchesType =
+      typeFilter === "all" ||
+      (typeFilter === "core" && !subject.isElective) ||
+      (typeFilter === "elective" && subject.isElective);
 
-      return matchesSearch && matchesType;
-    });
+    return matchesSearch && matchesType;
+  });
 
-    return {
-      filteredSubjects: filtered,
-      totalCredits: mockSubjects.reduce((sum, s) => sum + s.credits, 0),
-      coreSubjects: mockSubjects.filter((s) => !s.isElective).length,
-      electiveSubjects: mockSubjects.filter((s) => s.isElective).length,
-    };
-  }, [searchQuery, typeFilter]);
+  return {
+    filteredSubjects: filtered,
+    totalCredits: subjects.reduce((sum, s) => sum + s.credits, 0),
+    coreSubjects: subjects.filter((s) => !s.isElective).length,
+    electiveSubjects: subjects.filter((s) => s.isElective).length,
+  };
+}, [subjects, searchQuery, typeFilter]);
+
 
   return (
     <AdminLayout
@@ -82,7 +115,7 @@ export default function SubjectsPage() {
         <div className="grid gap-4 md:grid-cols-4">
           <StatCard
             icon={<BookOpen className="h-6 w-6 text-primary" />}
-            value={mockSubjects.length}
+            value={subjects.length}
             label="Total Subjects"
           />
           <StatCard

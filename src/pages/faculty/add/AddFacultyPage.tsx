@@ -2,10 +2,45 @@ import { useState } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { createFaculty } from "@/lib/api";
 
 export default function AddFacultyPage() {
   const navigate = useNavigate(); // ✅ MUST be inside component
   const [isActive, setIsActive] = useState(true);
+
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [department, setDepartment] = useState("");
+  const [designation, setDesignation] = useState("");
+  const [employeeId, setEmployeeId] = useState("");
+  const [qualifications, setQualifications] = useState<string[]>([]);
+  const [specialization, setSpecialization] = useState("");
+  const [eligibleSubjects, setEligibleSubjects] = useState<string[]>([]);
+  const [maxHoursPerDay, setMaxHoursPerDay] = useState(6);
+  const [maxHoursPerWeek, setMaxHoursPerWeek] = useState(30);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await createFaculty({
+        name,
+        email,
+        department,
+        designation,
+        employeeId,
+        isActive,
+        qualifications,
+        specialization,
+        eligibleSubjects,
+        maxHoursPerDay,
+        maxHoursPerWeek,
+      });
+      navigate("/admin/faculty");
+    } catch (error) {
+      console.error("Error creating faculty:", error);
+      // TODO: show error message
+    }
+  };
 
   return (
     <AdminLayout title="Faculty Management" subtitle="Add New Faculty">
@@ -43,23 +78,40 @@ export default function AddFacultyPage() {
         <div className="bg-card border rounded-xl shadow-sm overflow-hidden">
 
           <div className="p-6 border-b bg-muted/40">
-            <h3 className="font-semibold">Step 1: Basic Information</h3>
+            <h3 className="font-semibold">Basic Information</h3>
           </div>
 
-          <form className="p-8 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+          <form onSubmit={handleSubmit} className="p-8 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
             <div>
               <label className="text-sm font-medium">Full Name</label>
-              <input className="mt-1 w-full rounded-lg border px-4 py-2.5 text-sm" />
+              <input
+                className="mt-1 w-full rounded-lg border px-4 py-2.5 text-sm"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
             </div>
 
             <div>
               <label className="text-sm font-medium">Email Address</label>
-              <input type="email" className="mt-1 w-full rounded-lg border px-4 py-2.5 text-sm" />
+              <input
+                type="email"
+                className="mt-1 w-full rounded-lg border px-4 py-2.5 text-sm"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
             </div>
 
             <div>
               <label className="text-sm font-medium">Department</label>
-              <select className="mt-1 w-full rounded-lg border px-4 py-2.5 text-sm">
+              <select
+                className="mt-1 w-full rounded-lg border px-4 py-2.5 text-sm"
+                value={department}
+                onChange={(e) => setDepartment(e.target.value)}
+                required
+              >
+                <option value="">Select Department</option>
                 <option>Computer Science</option>
                 <option>Mathematics</option>
                 <option>Physics</option>
@@ -68,15 +120,28 @@ export default function AddFacultyPage() {
 
             <div>
               <label className="text-sm font-medium">Designation</label>
-              <select className="mt-1 w-full rounded-lg border px-4 py-2.5 text-sm">
+              <select
+                className="mt-1 w-full rounded-lg border px-4 py-2.5 text-sm"
+                value={designation}
+                onChange={(e) => setDesignation(e.target.value)}
+                required
+              >
+                <option value="">Select Designation</option>
                 <option>Professor</option>
                 <option>Associate Professor</option>
+                <option>Assistant Professor</option>
+                <option>Lecturer</option>
               </select>
             </div>
 
             <div>
               <label className="text-sm font-medium">Faculty ID</label>
-              <input className="mt-1 w-full rounded-lg border px-4 py-2.5 text-sm" />
+              <input
+                className="mt-1 w-full rounded-lg border px-4 py-2.5 text-sm"
+                value={employeeId}
+                onChange={(e) => setEmployeeId(e.target.value)}
+                required
+              />
             </div>
 
             <div className="flex items-center justify-between md:pt-6">
@@ -101,9 +166,8 @@ export default function AddFacultyPage() {
               Cancel
             </Button>
 
-            <Button onClick={() => navigate("/admin/faculty/add/qualifications")} className="gap-2">
-              Next
-              <span className="material-symbols-outlined text-sm">arrow_forward</span>
+            <Button onClick={handleSubmit} className="gap-2">
+              Save Faculty
             </Button>
           </div>
         </div>

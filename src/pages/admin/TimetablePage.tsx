@@ -70,7 +70,7 @@ export default function TimetablePage() {
       case 'faculty':
         return mockFaculty.filter(f => f.isActive).map((f) => ({ id: f.id, name: f.name }));
       case 'room':
-        return mockRooms.filter(r => r.isActive).map((r) => ({ id: r.id, name: `${r.code} - ${r.name}` }));
+        return mockRooms.filter(r => r.active).map((r) => ({ id: r.id, name: `${r.code} - ${r.name}` }));
       default:
         return [];
     }
@@ -133,7 +133,7 @@ export default function TimetablePage() {
             <Tabs value={viewMode} onValueChange={(v) => {
               setViewMode(v as ViewMode);
               const options = v === 'section' ? mockSections : v === 'faculty' ? mockFaculty : mockRooms;
-              setSelectedEntity(options[0]?.id || '');
+              setSelectedEntity(String(options[0]?.id || ''));
             }}>
               <TabsList className="bg-muted/50">
                 {Object.entries(viewModeConfig).map(([key, { icon: Icon, label }]) => (
