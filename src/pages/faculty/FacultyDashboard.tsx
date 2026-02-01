@@ -1,4 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import axios from 'axios';
+
+
+
 import { Link } from 'react-router-dom';
 import { TimetableGrid } from '@/components/timetable/TimetableGrid';
 import { Button } from '@/components/ui/button';
@@ -33,21 +37,28 @@ import {
 import { cn } from '@/lib/utils';
 
 export default function FacultyDashboard() {
-  // Simulate logged-in faculty
-  const currentFaculty = mockFaculty[0];
-  const facultySessions = getSessionsForFaculty(currentFaculty.id);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [currentFaculty, setCurrentFaculty] = useState<any>(null);
   const [viewMode, setViewMode] = useState<'week' | 'day'>('week');
   const [currentDay, setCurrentDay] = useState(0);
 
-  const todaySessions = facultySessions.filter((s) => s.dayOfWeek === currentDay);
+  useEffect(() => {
+    axios.get('http://localhost:8080/api/faculty/1')
+      .then(res => setCurrentFaculty(res.data));
+  }, []);
+
+  if (!currentFaculty) {
+    return <div className="p-6">Loading faculty dashboard...</div>;
+  }
+
+  const facultySessions = getSessionsForFaculty(currentFaculty.id.toString());
+  const todaySessions = facultySessions.filter(
+    (s) => s.dayOfWeek === currentDay
+  );
+
   const totalHours = facultySessions.length;
 
-  const getNextSession = () => {
-    // Simulating next session
-    return todaySessions[0];
-  };
-
-  const nextSession = getNextSession();
+  const nextSession = facultySessions.find((s) => s.dayOfWeek === currentDay && s.timeSlotId);
   const nextSubject = nextSession ? getSubjectById(nextSession.subjectId) : null;
   const nextRoom = nextSession ? getRoomById(nextSession.roomId) : null;
   const nextSection = nextSession ? getSectionById(nextSession.sectionId) : null;
