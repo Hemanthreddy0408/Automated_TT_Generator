@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import {
   ScheduleSession,
@@ -190,12 +190,12 @@ export function TimetableGrid({
             }
 
             return (
-              <>
+              <React.Fragment key={slot.id}>
                 {renderTimeCell(slot)}
                 {DAYS_OF_WEEK.map((_, dayIndex) =>
                   renderSessionCell(getSessionForSlot(dayIndex, slot.id), dayIndex, slot.id)
                 )}
-              </>
+              </React.Fragment>
             );
           })}
         </div>

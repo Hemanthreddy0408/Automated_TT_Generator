@@ -1,13 +1,23 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { getRooms } from "@/lib/api";
+import { getRooms, deleteRoom } from "@/lib/api";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { RoomTable } from "@/components/tables/RoomTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 import { Room } from "@/types/timetable";
 
@@ -43,10 +53,13 @@ export default function RoomsPage() {
   // ---------------- STATE ----------------
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
-
+  
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [roomToDelete, setRoomToDelete] = useState<Room | null>(null);
 
   // ---------------- FETCH ROOMS ----------------
   useEffect(() => {
@@ -66,25 +79,55 @@ export default function RoomsPage() {
   }, []);
   console.log("ROOMS STATE:", rooms);
   // ---------------- FILTER LOGIC ----------------
- const filteredRooms = rooms.filter((room) => {
-  const matchesSearch =
-  (room.name ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-  (room.code ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-  (room.building ?? "").toLowerCase().includes(searchQuery.toLowerCase());
+ const filteredRooms = (rooms || []).filter((room) => {
+  if (!room) return false;
+  
+  const name = room.name?.toLowerCase() || "";
+  const code = room.code?.toLowerCase() || "";
+  const building = room.building?.toLowerCase() || "";
+  const search = searchQuery.toLowerCase();
 
-
-  const matchesType =
-    typeFilter === "all" || room.type === typeFilter;
-
-  const matchesStatus =
-    statusFilter === "all" ||
-    (statusFilter === "active" && room.active) ||
-    (statusFilter === "inactive" && !room.active);
+  const matchesSearch = name.includes(search) || code.includes(search) || building.includes(search);
+  const matchesType = typeFilter === "all" || room.type === typeFilter;
+  const matchesStatus = statusFilter === "all" || 
+                       (statusFilter === "active" && room.active) || 
+                       (statusFilter === "inactive" && !room.active);
 
   return matchesSearch && matchesType && matchesStatus;
 });
+const exportToCSV = () => {
+    const headers = "Name,Code,Building,Floor,Type,Capacity,Status\n";
+    const data = filteredRooms.map(r => 
+        `${r.name},${r.code},${r.building},${r.floor},${r.type},${r.capacity},${r.active ? 'Active' : 'Inactive'}`
+    ).join("\n");
 
+    const csvContent = headers + data;
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `rooms-export-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+};
 
+  // ---------------- DELETE HANDLERS ----------------
+  const handleDeleteClick = (room: Room) => {
+    setRoomToDelete(room);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!roomToDelete) return;
+
+    try {
+      await deleteRoom(roomToDelete.id);
+      setRooms(rooms.filter(r => r.id !== roomToDelete.id));
+      setDeleteDialogOpen(false);
+      setRoomToDelete(null);
+    } catch (err) {
+      console.error("Failed to delete room", err);
+    }
+  };
   // ---------------- STATS ----------------
   const totalCapacity = rooms
     .filter((r) => r.active)
@@ -155,7 +198,7 @@ export default function RoomsPage() {
             </SelectContent>
           </Select>
 
-          <Button variant="outline">
+          <Button variant="outline" onClick={exportToCSV}>
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
@@ -170,14 +213,31 @@ export default function RoomsPage() {
         <RoomTable
           rooms={filteredRooms}
           onEdit={(room) => navigate(`/admin/rooms/edit/${room.id}`)}
-          onDelete={(room) => console.log("Delete:", room)}
+          onDelete={handleDeleteClick}
           onViewSchedule={(room) => console.log("Schedule:", room)}
         />
+
+        {/* ---------------- DELETE CONFIRMATION DIALOG ---------------- */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Room</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete "{roomToDelete?.name}"? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AdminLayout>
   );
 }
-
 /* ---------------- SMALL STAT CARD ---------------- */
 function StatCard({ icon, value, label }: StatCardProps) {
   return (

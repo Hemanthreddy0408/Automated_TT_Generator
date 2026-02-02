@@ -11,7 +11,8 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import TimetablePage from "./pages/admin/TimetablePage";
 import FacultyPage from "./pages/admin/FacultyPage";
 import RoomsPage from "./pages/admin/RoomsPage";
-import SubjectsPage from "./pages/admin/SubjectsPage";
+import SubjectsPage from "./pages/admin/SubjectsPage"
+;
 import ConstraintsPage from "./pages/admin/ConstraintsPage";
 import FacultyDashboard from "./pages/faculty/FacultyDashboard";
 import HistoryPage from "./pages/admin/HistoryPage";
@@ -23,6 +24,7 @@ import AddFacultyQualificationsPage from "@/pages/faculty/add/AddFacultyQualific
 import AddFacultyReviewPage from "@/pages/faculty/add/AddFacultyReviewPage";
 import AddSubjectPage from "@/pages/subjects/AddSubjectPage";
 import AddRoomPage from "@/pages/rooms/AddRoomPage";
+import EditRoomPage from "@/pages/rooms/EditRoomPage";
 
 const queryClient = new QueryClient();
 
@@ -55,6 +57,7 @@ const App = () => (
           
           {/* Rooms */}
           <Route path="/admin/rooms/add" element={<AddRoomPage />} />
+          <Route path="/admin/rooms/edit/:id" element={<EditRoomPage />} />
           <Route path="/admin/rooms" element={<RoomsPage />} />
 
           {/* Subjects */}

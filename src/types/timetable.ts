@@ -51,7 +51,8 @@ export interface Room {
   capacity: number;
   active: boolean;
   wheelchairAccessible: boolean;
-  equipment: string[];   // ✅ THIS FIXES map()
+  equipment: string[];
+  status?: 'DRAFT' | 'PUBLISHED';  // Add status field for draft functionality
 }
 
 

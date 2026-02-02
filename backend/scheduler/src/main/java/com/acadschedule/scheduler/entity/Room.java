@@ -2,7 +2,6 @@ package com.acadschedule.scheduler.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,7 +18,6 @@ public class Room {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = true)
     private String name;
 
     @Column(nullable = false, unique = true)
@@ -36,8 +34,14 @@ public class Room {
 
     @Column(nullable = false)
     private int capacity;
+    
+    // New Status Field for Drafts
 
-    // ✅ CRITICAL FIX
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private RoomStatus status = RoomStatus.PUBLISHED;
+
     @Builder.Default
     @ElementCollection
     @CollectionTable(

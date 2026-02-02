@@ -2,16 +2,12 @@ package com.acadschedule.scheduler.controller;
 
 import com.acadschedule.scheduler.entity.Room;
 import com.acadschedule.scheduler.service.RoomService;
-
-import jakarta.annotation.PostConstruct;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/rooms")
 @CrossOrigin(origins = "*")
-
 public class RoomController {
 
     private final RoomService roomService;
@@ -20,20 +16,34 @@ public class RoomController {
         this.roomService = roomService;
     }
 
-    // GET all rooms
     @GetMapping
     public List<Room> getAllRooms() {
-        return roomService.findAll();   // ✅ FIXED
+        return roomService.findAll();
     }
 
-    // CREATE room
     @PostMapping
     public Room createRoom(@RequestBody Room room) {
-        return roomService.save(room);  // ✅ FIXED
+        return roomService.save(room);
     }
 
-    @PostConstruct
-    public void init() {
-        System.out.println("RoomController LOADED");
+    @PutMapping("/{id}")
+    public Room updateRoom(@PathVariable Long id, @RequestBody Room roomDetails) {
+        Room room = roomService.findById(id);
+        room.setName(roomDetails.getName());
+        room.setCode(roomDetails.getCode());
+        room.setBuilding(roomDetails.getBuilding());
+        room.setFloor(roomDetails.getFloor());
+        room.setType(roomDetails.getType());
+        room.setCapacity(roomDetails.getCapacity());
+        room.setEquipment(roomDetails.getEquipment());
+        room.setStatus(roomDetails.getStatus());
+        room.setActive(roomDetails.isActive());
+        room.setWheelchairAccessible(roomDetails.isWheelchairAccessible());
+        return roomService.save(room);
+    }
+
+    @DeleteMapping("/{id}")
+    public void deleteRoom(@PathVariable Long id) {
+        roomService.deleteById(id);
     }
 }
