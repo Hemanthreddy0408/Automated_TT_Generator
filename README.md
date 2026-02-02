@@ -1,61 +1,100 @@
-# Class Timetable Generator
+Automated Timetable Scheduling and Faculty Workload Optimization System
 
-## Project Overview
+This project is a full-stack web application designed to automate academic timetable generation while efficiently managing faculty workloads using configurable scheduling constraints.
 
-The **Class Timetable Generator** is a web-based application designed to simplify and automate the process of generating academic timetables.  
-It helps manage class schedules efficiently while considering constraints such as subjects, faculty availability, rooms, and time slots.
+Project Overview
 
-This project aims to reduce manual effort, avoid scheduling conflicts, and improve overall timetable accuracy.
+Manual timetable creation is time-consuming and prone to conflicts. This system provides a centralized platform where administrators can define scheduling rules, manage resources, and generate optimized timetables while ensuring fairness and constraint compliance.
 
----
+Technologies Used
 
-## Features
+Frontend
+React (Vite)
+JavaScript / JSX
+Tailwind CSS
+React Router
+Axios
+Backend
+Spring Boot
+Java
+REST APIs
+Spring Data JPA
+Database
+PostgreSQL
 
-- User-friendly interface for timetable management  
-- Faculty, subject, and room management  
-- Automatic timetable generation  
-- Responsive UI for different screen sizes  
-- Modular and scalable frontend architecture  
+Features
+Constraint management with priority levels
+Mandatory
+Preferred
+Optional
+Enable / disable constraints dynamically
 
----
+Faculty workload optimization
 
-## Technologies Used
+Resource management (faculty, rooms, subjects, sections)
 
-This project is built using modern web technologies:
+Admin dashboard with statistics
 
-- **Vite** – Fast build tool and development server  
-- **React** – Frontend library for building UI components  
-- **TypeScript** – Type-safe JavaScript  
-- **Tailwind CSS** – Utility-first CSS framework  
-- **shadcn/ui** – Reusable UI components  
+Scalable REST-based architecture
 
----
+Project Structure
+Frontend
+src/
+├── components/
+├── pages/
+│   └── admin/
+│       ├── ConstraintsPage.jsx
+│       ├── AddConstraintPage.jsx
+│       └── EditConstraintPage.jsx
+├── services/
+├── lib/
+└── App.jsx
 
-## Project Setup (Run Locally)
+Backend
+src/main/java/
+├── controller/
+├── service/
+├── repository/
+├── entity/
+└── SchedulerApplication.java
 
-### Prerequisites
+Constraint Logic
 
-Make sure you have the following installed:
+Mandatory constraints must always be satisfied and are never violated.
 
-- **Node.js**
-- **npm**
+Preferred constraints are applied when possible but may be relaxed.
 
----
+Optional constraints are applied only if they do not conflict with higher-priority rules.
 
-### Installation Steps
+How to Run the Application
+Backend
+mvn clean install
+mvn spring-boot:run
 
-```sh
-# Step 1: Clone the repository
-git clone <YOUR_GIT_REPOSITORY_URL>
+Runs on http://localhost:8080
 
-# Step 2: Navigate into the project directory
-cd <PROJECT_FOLDER_NAME>
-
-# Step 3: Install dependencies
+Frontend
 npm install
-
-# Step 4: Start the development server
 npm run dev
 
+Runs on http://localhost:5173
 
----
+Database Configuration
+
+PostgreSQL is used as the primary database. Configuration can be updated in application.properties.
+
+Future Enhancements
+
+Automatic timetable generation algorithm
+
+Conflict visualization
+
+Role-based authentication
+
+Export timetables as PDF/Excel
+
+Analytics and reporting module
+
+Status
+
+The project is currently under development with core frontend and backend modules implemented.
