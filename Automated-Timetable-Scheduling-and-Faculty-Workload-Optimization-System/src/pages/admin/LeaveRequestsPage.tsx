@@ -3,6 +3,9 @@ import { AdminLayout } from '../../components/layout/AdminLayout';
 import axios from 'axios';
 import { toast } from 'sonner';
 
+import { Button } from '@/components/ui/button';
+import { Sparkles } from 'lucide-react';
+
 interface LeaveRequest {
     id: number;
     facultyId: number;
@@ -45,10 +48,27 @@ const LeaveRequestsPage = () => {
         }
     };
 
+    const handleGenerateSchedule = async () => {
+        try {
+            toast.info("Initiating schedule optimization...");
+            await axios.post('http://localhost:8082/api/schedule/generate');
+            toast.success("Schedule optimization started successfully!");
+        } catch (error) {
+            console.error("Error generating schedule:", error);
+            toast.error("Failed to trigger schedule generation. Backend may be offline.");
+        }
+    };
+
     return (
         <AdminLayout
             title="Faculty Leave Management"
             subtitle="Review and approve faculty leave applications"
+            actions={
+                <Button onClick={handleGenerateSchedule} className="gap-2 bg-indigo-600 hover:bg-indigo-700 text-white">
+                    <Sparkles className="h-4 w-4" />
+                    Optimize Timetable
+                </Button>
+            }
         >
             <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
                 <div className="p-6 border-b border-slate-100 flex items-center justify-between">

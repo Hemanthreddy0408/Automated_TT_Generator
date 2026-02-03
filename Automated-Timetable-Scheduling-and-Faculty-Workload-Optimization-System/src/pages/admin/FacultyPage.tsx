@@ -206,10 +206,22 @@ export default function FacultyPage() {
       title="Faculty Management"
       subtitle="Manage teaching staff and their assignments"
       actions={
-        <Button className="gap-2" onClick={() => navigate('/admin/faculty/add')}>
-          <Plus className="h-4 w-4" />
-          Add Faculty
-        </Button>
+        <div className="flex items-center gap-2">
+          {draft && (
+            <Button
+              variant="secondary"
+              className="gap-2 text-blue-700 bg-blue-50 border border-blue-200 hover:bg-blue-100"
+              onClick={handleResumeDraft}
+            >
+              <FileText className="h-4 w-4" />
+              Resume Draft
+            </Button>
+          )}
+          <Button className="gap-2" onClick={() => navigate('/admin/faculty/add')}>
+            <Plus className="h-4 w-4" />
+            Add Faculty
+          </Button>
+        </div>
       }
     >
       <div className="space-y-6">
