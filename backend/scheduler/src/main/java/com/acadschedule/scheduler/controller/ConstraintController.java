@@ -5,10 +5,10 @@ import com.acadschedule.scheduler.repository.ConstraintRepository;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
+@CrossOrigin(origins = "http://localhost:8080")
 @RestController
 @RequestMapping("/api/constraints")
-@CrossOrigin(origins = "*")
-public class ConstraintController {
+public class ConstraintController { 
 
     private final ConstraintRepository repository;
 

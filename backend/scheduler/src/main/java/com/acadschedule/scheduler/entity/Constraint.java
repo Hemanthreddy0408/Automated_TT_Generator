@@ -21,7 +21,9 @@ public class Constraint {
     private String description;
 
     @Column(nullable = false)
+    @Builder.Default
     private boolean isActive = true;
+
 
     @Column(nullable = false)
     private String priority; // mandatory, preferred, optional

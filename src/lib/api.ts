@@ -99,26 +99,36 @@ export const deleteSubject = async (id: number) => {
   await axios.delete(`${API_BASE_URL}/api/subjects/${id}`);
 };
 
-// src/lib/api.ts
-
 export const getConstraints = async () => {
-  const res = await fetch(`${API_BASE_URL}/api/constraints`);
-  return res.json();
+  const response = await fetch(`${API_BASE_URL}/api/constraints`);
+  if (!response.ok) throw new Error("Failed to fetch constraints");
+  return response.json();
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const createConstraint = async (data: any) => {
-  const res = await fetch(`${API_BASE_URL}/api/constraints`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) {
-    throw new Error(`Failed to create constraint: ${res.status} ${res.statusText}`);
+export async function createConstraint(payload) {
+  const response = await fetch(
+    "http://localhost:8082/api/constraints",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to create constraint");
   }
-  return res.json();
-};
+
+  return response.json();
+}
+
 
 export const toggleConstraintStatus = async (id: string) => {
-  await fetch(`${API_BASE_URL}/api/constraints/${id}/toggle`, { method: "PATCH" });
+  const response = await fetch(`${API_BASE_URL}/constraints/${id}/toggle`, {
+    method: "PATCH",
+  });
+  if (!response.ok) throw new Error("Failed to toggle status");
 };
