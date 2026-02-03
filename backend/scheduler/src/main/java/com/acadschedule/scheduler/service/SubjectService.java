@@ -4,13 +4,14 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import com.acadschedule.scheduler.entity.Subject;
 import com.acadschedule.scheduler.repository.SubjectRepository;
-import lombok.RequiredArgsConstructor;
-
 @Service
-@RequiredArgsConstructor
 public class SubjectService {
 
     private final SubjectRepository subjectRepository;
+
+    public SubjectService(SubjectRepository subjectRepository) {
+        this.subjectRepository = subjectRepository;
+    }
 
     public Subject createSubject(Subject subject) {
         return subjectRepository.save(subject);
@@ -20,7 +21,7 @@ public class SubjectService {
         return subjectRepository.findAll();
     }
 
-    // ✅ NEW: Update Subject
+    @org.springframework.transaction.annotation.Transactional
     public Subject updateSubject(Long id, Subject subjectDetails) {
         Subject subject = subjectRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Subject not found with id: " + id));
@@ -33,9 +34,12 @@ public class SubjectService {
         subject.setTutorialHoursPerWeek(subjectDetails.getTutorialHoursPerWeek());
         subject.setLabHoursPerWeek(subjectDetails.getLabHoursPerWeek());
         subject.setElective(subjectDetails.isElective());
+        subject.setFacultyCount(subjectDetails.getFacultyCount());
         
-        // ✅ NEW: Update the count
-        subject.setFacultyCount(subjectDetails.getFacultyCount()); 
+        // Update eligible faculty list
+        if (subjectDetails.getEligibleFaculty() != null) {
+            subject.setEligibleFaculty(subjectDetails.getEligibleFaculty());
+        }
 
         return subjectRepository.save(subject);
     }

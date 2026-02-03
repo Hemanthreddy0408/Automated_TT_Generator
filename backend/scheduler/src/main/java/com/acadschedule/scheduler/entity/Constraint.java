@@ -1,35 +1,44 @@
 package com.acadschedule.scheduler.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
+
 
 @Entity
 @Table(name = "constraints")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Constraint {
+
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID) // Generates unique String IDs
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
-    
-    @Column(nullable = false)
+
     private String name;
-
-    @Column(nullable = false)
-    private String type; // institutional, faculty, room, section
-
-    @Column(columnDefinition = "TEXT")
+    private String type;
     private String description;
+    private boolean active = true;
+    private String priority;
+    private String parameters;
 
-    @Column(nullable = false)
-    @Builder.Default
-    private boolean isActive = true;
-
-
-    @Column(nullable = false)
-    private String priority; // mandatory, preferred, optional
-
-    @Column(columnDefinition = "TEXT")
-    private String parameters; // Stored as JSON string
-
+    public boolean isActive() {
+        return active;
+    }
     
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
+
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+
+    public String getType() { return type; }
+    public void setType(String type) { this.type = type; }
+
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+
+    public void setActive(boolean active) { this.active = active; }
+
+    public String getPriority() { return priority; }
+    public void setPriority(String priority) { this.priority = priority; }
+
+    public String getParameters() { return parameters; }
+    public void setParameters(String parameters) { this.parameters = parameters; }
 }

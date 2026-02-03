@@ -7,7 +7,6 @@ import com.acadschedule.scheduler.service.SubjectService;
 
 @RestController
 @RequestMapping("/api/subjects")
-@CrossOrigin(origins = "*")
 public class SubjectController {
 
     private final SubjectService subjectService;

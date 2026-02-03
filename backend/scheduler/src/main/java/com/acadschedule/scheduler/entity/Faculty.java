@@ -7,18 +7,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Entity
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class Faculty {
 
     @Id
@@ -31,8 +21,6 @@ public class Faculty {
     private String designation;
     private String employeeId;
 
-    private String avatarUrl;
-
     private int maxHoursPerDay;
     private int maxHoursPerWeek;
 
@@ -43,6 +31,46 @@ public class Faculty {
 
     @ElementCollection
     private List<String> eligibleSubjects;
-    @JsonProperty("isActive")
-    private boolean isActive;
+
+    private boolean active;
+
+    // ===== Getters & Setters =====
+
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+
+    public int getMaxHoursPerWeek() { return maxHoursPerWeek; }
+
+    public boolean isActive() { return active; }
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public String getDepartment() { return department; }
+    public void setDepartment(String department) { this.department = department; }
+
+    public String getDesignation() { return designation; }
+    public void setDesignation(String designation) { this.designation = designation; }
+
+    public String getEmployeeId() { return employeeId; }
+    public void setEmployeeId(String employeeId) { this.employeeId = employeeId; }
+
+    public int getMaxHoursPerDay() { return maxHoursPerDay; }
+    public void setMaxHoursPerDay(int maxHoursPerDay) { this.maxHoursPerDay = maxHoursPerDay; }
+
+    public void setMaxHoursPerWeek(int maxHoursPerWeek) { this.maxHoursPerWeek = maxHoursPerWeek; }
+
+    public List<String> getQualifications() { return qualifications; }
+    public void setQualifications(List<String> qualifications) { this.qualifications = qualifications; }
+
+    public String getSpecialization() { return specialization; }
+    public void setSpecialization(String specialization) { this.specialization = specialization; }
+
+    public List<String> getEligibleSubjects() { return eligibleSubjects; }
+    public void setEligibleSubjects(List<String> eligibleSubjects) { this.eligibleSubjects = eligibleSubjects; }
+
+    public void setActive(boolean active) { this.active = active; }
 }
