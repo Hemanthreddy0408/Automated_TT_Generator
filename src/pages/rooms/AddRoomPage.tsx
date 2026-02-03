@@ -1,9 +1,9 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { createRoom } from "@/lib/api";
+import { createRoom, updateRoom } from "@/lib/api";
 
 import {
   Save,
@@ -31,6 +31,8 @@ const EQUIPMENT_OPTIONS = [
 
 export default function AddRoomPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const editData = location.state;
 
   // ---------------- STATE ----------------
   const [name, setName] = useState("");
@@ -43,6 +45,46 @@ export default function AddRoomPage() {
   const [equipment, setEquipment] = useState<string[]>(["Projector", "Whiteboard"]);
   const [customEquipment, setCustomEquipment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Load Data (Edit or Draft)
+  useEffect(() => {
+    if (editData) {
+      loadState(editData);
+    } else {
+      const draft = localStorage.getItem("room_draft");
+      if (draft) {
+        const parsed = JSON.parse(draft);
+        if (confirm(`Unsaved draft for "${parsed.name || "New Room"}" found. Load it?`)) {
+          loadState(parsed);
+        }
+      }
+    }
+  }, [editData]);
+
+  const loadState = (data: any) => {
+    setName(data.name || "");
+    setCode(data.code || "");
+    setBuilding(data.building || "");
+    setFloor(data.floor || "");
+    setType(data.type || "LECTURE");
+    setCapacity(data.capacity || 0);
+    setAccessible(data.wheelchairAccessible ?? true);
+    setEquipment(data.equipment || ["Projector", "Whiteboard"]);
+  };
+
+  const buildPayload = (status: "PUBLISHED" | "DRAFT" = "PUBLISHED") => ({
+    name,
+    code,
+    building,
+    floor,
+    type,
+    capacity,
+    equipment,
+    wheelchairAccessible: accessible,
+    active: true,
+    status: status,
+    savedAt: new Date().toLocaleString(),
+  });
 
   // ---------------- HANDLERS ----------------
   const toggleEquipment = (item: string) => {
@@ -59,25 +101,28 @@ export default function AddRoomPage() {
     setCustomEquipment("");
   };
 
+  const handleSaveDraft = () => {
+    const payload = buildPayload("DRAFT");
+    localStorage.setItem("room_draft", JSON.stringify(payload));
+    alert("Local draft saved!");
+    navigate("/admin/rooms");
+  };
+
   const handleSave = async (e: React.FormEvent, status: "PUBLISHED" | "DRAFT" = "PUBLISHED") => {
     e.preventDefault();
     setIsSubmitting(true);
+    const payload = buildPayload(status);
     try {
-      await createRoom({
-        name,
-        code,
-        building,
-        floor,
-        type,
-        capacity,
-        equipment,
-        wheelchairAccessible: accessible,
-        active: true,
-        status: status,
-      });
+      if (editData?.id) {
+        await updateRoom(editData.id, payload);
+      } else {
+        await createRoom(payload);
+      }
+      localStorage.removeItem("room_draft");
       navigate("/admin/rooms");
     } catch (error) {
-      console.error("Error creating room:", error);
+      console.error("Error saving room:", error);
+      alert("Failed to save room.");
     } finally {
       setIsSubmitting(false);
     }
@@ -238,7 +283,7 @@ export default function AddRoomPage() {
               type="button"
               variant="secondary"
               className="gap-2"
-              onClick={(e) => handleSave(e, "DRAFT")}
+              onClick={handleSaveDraft}
               disabled={isSubmitting}
             >
               <FileText className="h-4 w-4" />
@@ -251,7 +296,7 @@ export default function AddRoomPage() {
               disabled={isSubmitting}
             >
               <Save className="h-4 w-4" />
-              {isSubmitting ? "Saving..." : "Save Room"}
+              {isSubmitting ? "Saving..." : editData?.id ? "Update Room" : "Save Room"}
             </Button>
           </div>
         </form>

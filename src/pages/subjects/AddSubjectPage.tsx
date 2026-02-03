@@ -3,14 +3,14 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import {
-  BookOpen, Clock, Star, Sparkles, Users, Lightbulb, Save
+  BookOpen, Clock, Star, Sparkles, Users, Lightbulb, Save, FileText
 } from "lucide-react";
 import { createSubject, updateSubject } from "@/lib/api";
 export default function AddSubjectPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const editData = location.state;
-  
+
   // State
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
@@ -25,9 +25,18 @@ export default function AddSubjectPage() {
   // Load Data (Edit or Draft)
   useEffect(() => {
     if (editData) {
-        // Edit Mode
-        loadState(editData);
-    } 
+      // Edit Mode
+      loadState(editData);
+    } else {
+      // Check for local draft
+      const draft = localStorage.getItem("subject_draft");
+      if (draft) {
+        const parsed = JSON.parse(draft);
+        if (confirm(`Unsaved draft for "${parsed.name || "New Subject"}" found. Load it?`)) {
+          loadState(parsed);
+        }
+      }
+    }
   }, [editData]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -73,7 +82,7 @@ export default function AddSubjectPage() {
         // Create
         await createSubject(payload);
       }
-      
+
       // Clear draft if successful
       localStorage.removeItem("subject_draft");
       navigate("/admin/subjects", { replace: true });
@@ -143,15 +152,14 @@ export default function AddSubjectPage() {
           {/* -------- FOOTER -------- */}
           <div className="px-8 py-6 bg-muted/40 border-t flex justify-between items-center">
             <Button variant="outline" onClick={() => navigate("/admin/subjects")}>Cancel</Button>
-            
+
             <div className="flex gap-3">
-                {/* Save Draft Button */}
-                <Button variant="ghost" className="gap-2 text-primary hover:bg-primary/10" onClick={handleSaveDraft}>
-                    <Save className="h-4 w-4" /> Save Draft
-                </Button>
-                <Button className="px-6" onClick={handleSave}>
-                    {editData?.id ? "Update Subject" : "Save Subject"}
-                </Button>
+              <Button variant="ghost" className="gap-2 text-primary hover:bg-primary/10" onClick={handleSaveDraft}>
+                <FileText className="h-4 w-4" /> Save as Draft
+              </Button>
+              <Button className="px-6" onClick={handleSave}>
+                {editData?.id ? "Update Subject" : "Save Subject"}
+              </Button>
             </div>
           </div>
         </div>

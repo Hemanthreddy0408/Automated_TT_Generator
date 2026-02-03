@@ -16,6 +16,7 @@ import {
   FlaskConical,
   Plus,
   Info,
+  FileText,
 } from "lucide-react";
 
 /* ----------------------------------
@@ -120,6 +121,25 @@ export default function EditRoomPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleSaveDraft = () => {
+    const payload = {
+      name,
+      code,
+      building,
+      floor,
+      type,
+      capacity,
+      equipment,
+      wheelchairAccessible: accessible,
+      active: true,
+      id: roomId,
+      savedAt: new Date().toLocaleString(),
+    };
+    localStorage.setItem("room_draft", JSON.stringify(payload));
+    alert("Draft saved!");
+    navigate("/admin/rooms");
   };
 
   if (loading) {
@@ -262,6 +282,10 @@ export default function EditRoomPage() {
           <div className="px-8 py-6 border-t bg-muted/40 flex justify-end gap-4">
             <Button type="button" variant="outline" onClick={() => navigate("/admin/rooms")}>
               Cancel
+            </Button>
+            <Button type="button" variant="secondary" onClick={handleSaveDraft} className="gap-2">
+              <FileText className="h-4 w-4" />
+              Save as Draft
             </Button>
             <Button type="submit" disabled={saving} className="gap-2">
               <Save className="h-4 w-4" />

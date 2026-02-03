@@ -1,7 +1,7 @@
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { useNavigate, useLocation } from "react-router-dom";
-import { createFaculty, updateFaculty } from "@/lib/api"; 
+import { createFaculty, updateFaculty } from "@/lib/api";
 
 export default function AddFacultyReviewPage() {
   const navigate = useNavigate();
@@ -23,7 +23,7 @@ export default function AddFacultyReviewPage() {
   const handleConfirmRegistration = async () => {
     try {
       console.log("Submitting Faculty Data:", finalData);
-      
+
       if (finalData.id) {
         // UPDATE
         console.log("Updating Faculty ID:", finalData.id);
@@ -33,7 +33,7 @@ export default function AddFacultyReviewPage() {
         console.log("Creating New Faculty");
         await createFaculty(finalData);
       }
-      
+
       // ✅ NEW: Clear the draft since we successfully saved!
       localStorage.removeItem("faculty_draft");
 
@@ -44,6 +44,16 @@ export default function AddFacultyReviewPage() {
     }
   };
 
+  const handleSaveDraft = () => {
+    const payload = {
+      ...finalData,
+      savedAt: new Date().toLocaleString()
+    };
+    localStorage.setItem("faculty_draft", JSON.stringify(payload));
+    alert("Faculty draft saved!");
+    navigate("/admin/faculty");
+  };
+
   return (
     <AdminLayout title="Faculty Management" subtitle="Review & Registration">
       <div className="max-w-6xl mx-auto space-y-8">
@@ -51,7 +61,7 @@ export default function AddFacultyReviewPage() {
         {/* HEADER */}
         <div>
           <h2 className="text-2xl font-bold">
-             {finalData.id ? "Review Updates" : "Review & Complete Registration"}
+            {finalData.id ? "Review Updates" : "Review & Complete Registration"}
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
             Please verify all details before {finalData.id ? "updating" : "finalizing"} the faculty record.
@@ -89,14 +99,13 @@ export default function AddFacultyReviewPage() {
                   <p><b>Email:</b> {finalData.email}</p>
                   <p><b>Department:</b> {finalData.department}</p>
                   <p><b>Designation:</b> {finalData.designation}</p>
-                  
+
                   <div className="flex items-center gap-2">
                     <b>Status:</b>
-                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                      finalData.isActive 
-                        ? "bg-green-100 text-green-700 border border-green-200" 
-                        : "bg-gray-100 text-gray-600 border border-gray-200"
-                    }`}>
+                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${finalData.isActive
+                      ? "bg-green-100 text-green-700 border border-green-200"
+                      : "bg-gray-100 text-gray-600 border border-gray-200"
+                      }`}>
                       {finalData.isActive ? "Active" : "Inactive"}
                     </span>
                   </div>
@@ -144,7 +153,7 @@ export default function AddFacultyReviewPage() {
             </Button>
 
             <div className="flex gap-3">
-              <Button variant="ghost">Save Draft</Button>
+              <Button variant="ghost" onClick={handleSaveDraft}>Save as Draft</Button>
               <Button className="gap-2" onClick={handleConfirmRegistration}>
                 {finalData.id ? "Update Faculty" : "Complete Registration"}
               </Button>
@@ -155,7 +164,7 @@ export default function AddFacultyReviewPage() {
         {/* INFO */}
         <div className="flex gap-3 p-4 rounded-lg border bg-primary/5 text-sm">
           <span className="font-bold">ℹ</span>
-          {finalData.id 
+          {finalData.id
             ? "Updating this record will immediately affect upcoming schedule generations."
             : "By completing registration, this faculty will be included in the next automated scheduling cycle."
           }

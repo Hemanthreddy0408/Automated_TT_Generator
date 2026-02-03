@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -9,6 +9,19 @@ export default function AddFacultyPage() {
 
   // 1. Check for Edit Data
   const editData = location.state;
+
+  useEffect(() => {
+    if (!editData) {
+      const draft = localStorage.getItem("faculty_draft");
+      if (draft) {
+        const parsed = JSON.parse(draft);
+        if (confirm(`Unsaved draft for "${parsed.name || "New Faculty"}" found. Load it?`)) {
+          // Re-navigate with the draft state to trigger initialization
+          navigate("/admin/faculty/add", { state: parsed, replace: true });
+        }
+      }
+    }
+  }, [editData, navigate]);
 
   // 2. Initialize State (Now including Setters for Workload)
   const [isActive, setIsActive] = useState(editData?.isActive ?? true);
@@ -38,7 +51,7 @@ export default function AddFacultyPage() {
       isActive,
       maxHoursPerDay: Number(maxHoursPerDay), // Ensure number type
       maxHoursPerWeek: Number(maxHoursPerWeek), // Ensure number type
-      
+
       // Preserve other data if editing
       qualifications: editData?.qualifications || [],
       specialization: editData?.specialization || "",
@@ -50,8 +63,8 @@ export default function AddFacultyPage() {
   };
 
   return (
-    <AdminLayout 
-      title="Faculty Management" 
+    <AdminLayout
+      title="Faculty Management"
       subtitle={editData ? "Edit Faculty Details" : "Add New Faculty"}
     >
       <div className="max-w-5xl mx-auto space-y-8">
@@ -87,7 +100,7 @@ export default function AddFacultyPage() {
           </div>
 
           <form id="step1-form" onSubmit={handleNextStep} className="p-8 space-y-8">
-            
+
             {/* SECTION 1: PERSONAL DETAILS */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
               <div>
@@ -143,28 +156,28 @@ export default function AddFacultyPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                 <div>
                   <label className="text-sm font-medium">Max Hours Per Day</label>
-                  <input 
-                    type="number" 
-                    min="1" 
+                  <input
+                    type="number"
+                    min="1"
                     max="10"
-                    className="mt-1 w-full rounded-lg border px-4 py-2.5 text-sm" 
-                    value={maxHoursPerDay} 
-                    onChange={(e) => setMaxHoursPerDay(Number(e.target.value))} 
-                    required 
+                    className="mt-1 w-full rounded-lg border px-4 py-2.5 text-sm"
+                    value={maxHoursPerDay}
+                    onChange={(e) => setMaxHoursPerDay(Number(e.target.value))}
+                    required
                   />
                   <p className="text-[10px] text-muted-foreground mt-1">Recommended: 4-6 hours</p>
                 </div>
 
                 <div>
                   <label className="text-sm font-medium">Max Hours Per Week</label>
-                  <input 
-                    type="number" 
-                    min="1" 
+                  <input
+                    type="number"
+                    min="1"
                     max="50"
-                    className="mt-1 w-full rounded-lg border px-4 py-2.5 text-sm" 
-                    value={maxHoursPerWeek} 
-                    onChange={(e) => setMaxHoursPerWeek(Number(e.target.value))} 
-                    required 
+                    className="mt-1 w-full rounded-lg border px-4 py-2.5 text-sm"
+                    value={maxHoursPerWeek}
+                    onChange={(e) => setMaxHoursPerWeek(Number(e.target.value))}
+                    required
                   />
                   <p className="text-[10px] text-muted-foreground mt-1">Standard: 30-40 hours</p>
                 </div>

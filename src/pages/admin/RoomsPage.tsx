@@ -53,13 +53,17 @@ export default function RoomsPage() {
   // ---------------- STATE ----------------
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [roomToDelete, setRoomToDelete] = useState<Room | null>(null);
+
+  // Draft State
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [draft, setDraft] = useState<any>(null);
 
   // ---------------- FETCH ROOMS ----------------
   useEffect(() => {
@@ -75,30 +79,47 @@ export default function RoomsPage() {
       }
     };
 
+    const savedDraft = localStorage.getItem("room_draft");
+    if (savedDraft) {
+      setDraft(JSON.parse(savedDraft));
+    }
+
     fetchRooms();
   }, []);
+
+  // ---------------- DRAFT HANDLERS ----------------
+  const handleDiscardDraft = () => {
+    if (confirm("Are you sure you want to discard this unsaved draft?")) {
+      localStorage.removeItem("room_draft");
+      setDraft(null);
+    }
+  };
+
+  const handleResumeDraft = () => {
+    navigate("/admin/rooms/add", { state: draft });
+  };
   console.log("ROOMS STATE:", rooms);
   // ---------------- FILTER LOGIC ----------------
- const filteredRooms = (rooms || []).filter((room) => {
-  if (!room) return false;
-  
-  const name = room.name?.toLowerCase() || "";
-  const code = room.code?.toLowerCase() || "";
-  const building = room.building?.toLowerCase() || "";
-  const search = searchQuery.toLowerCase();
+  const filteredRooms = (rooms || []).filter((room) => {
+    if (!room) return false;
 
-  const matchesSearch = name.includes(search) || code.includes(search) || building.includes(search);
-  const matchesType = typeFilter === "all" || room.type === typeFilter;
-  const matchesStatus = statusFilter === "all" || 
-                       (statusFilter === "active" && room.active) || 
-                       (statusFilter === "inactive" && !room.active);
+    const name = room.name?.toLowerCase() || "";
+    const code = room.code?.toLowerCase() || "";
+    const building = room.building?.toLowerCase() || "";
+    const search = searchQuery.toLowerCase();
 
-  return matchesSearch && matchesType && matchesStatus;
-});
-const exportToCSV = () => {
+    const matchesSearch = name.includes(search) || code.includes(search) || building.includes(search);
+    const matchesType = typeFilter === "all" || room.type === typeFilter;
+    const matchesStatus = statusFilter === "all" ||
+      (statusFilter === "active" && room.active) ||
+      (statusFilter === "inactive" && !room.active);
+
+    return matchesSearch && matchesType && matchesStatus;
+  });
+  const exportToCSV = () => {
     const headers = "Name,Code,Building,Floor,Type,Capacity,Status\n";
-    const data = filteredRooms.map(r => 
-        `${r.name},${r.code},${r.building},${r.floor},${r.type},${r.capacity},${r.active ? 'Active' : 'Inactive'}`
+    const data = filteredRooms.map(r =>
+      `${r.name},${r.code},${r.building},${r.floor},${r.type},${r.capacity},${r.active ? 'Active' : 'Inactive'}`
     ).join("\n");
 
     const csvContent = headers + data;
@@ -108,7 +129,7 @@ const exportToCSV = () => {
     a.href = url;
     a.download = `rooms-export-${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
-};
+  };
 
   // ---------------- DELETE HANDLERS ----------------
   const handleDeleteClick = (room: Room) => {
@@ -153,6 +174,32 @@ const exportToCSV = () => {
       }
     >
       <div className="space-y-6">
+
+        {/* ---------------- DRAFT BANNER ---------------- */}
+        {draft && (
+          <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center justify-between shadow-sm gap-4 animate-in fade-in slide-in-from-top-2">
+            <div className="flex items-start gap-4">
+              <div className="bg-white p-2 rounded-full border border-blue-100 text-blue-600 shadow-sm">
+                <Building2 className="h-5 w-5" />
+              </div>
+              <div>
+                <h4 className="font-semibold text-blue-900">Unsaved Room Draft Found</h4>
+                <p className="text-sm text-blue-700 mt-0.5">
+                  You have an unsaved configuration for <span className="font-medium">{draft.name || "New Room"}</span>.
+                  <span className="opacity-70 ml-2 text-xs">Last saved: {draft.savedAt}</span>
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button variant="outline" size="sm" onClick={handleDiscardDraft} className="text-red-600 border-red-200 bg-white">
+                Discard
+              </Button>
+              <Button size="sm" onClick={handleResumeDraft} className="bg-[#0f172a] text-white">
+                Resume Editing
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* ---------------- QUICK STATS ---------------- */}
         <div className="grid gap-4 md:grid-cols-4">
