@@ -81,7 +81,12 @@ export default function RoomsPage() {
 
     const savedDraft = localStorage.getItem("room_draft");
     if (savedDraft) {
-      setDraft(JSON.parse(savedDraft));
+      try {
+        setDraft(JSON.parse(savedDraft));
+      } catch (e) {
+        console.error("Error parsing room draft:", e);
+        localStorage.removeItem("room_draft");
+      }
     }
 
     fetchRooms();

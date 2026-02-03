@@ -39,12 +39,12 @@ import autoTable from 'jspdf-autotable';
 
 export default function SubjectsPage() {
   const navigate = useNavigate();
-  
+
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | "core" | "elective">("all");
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Draft State
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [draft, setDraft] = useState<any>(null);
@@ -62,7 +62,14 @@ export default function SubjectsPage() {
     };
 
     const savedDraft = localStorage.getItem("subject_draft");
-    if (savedDraft) setDraft(JSON.parse(savedDraft));
+    if (savedDraft) {
+      try {
+        setDraft(JSON.parse(savedDraft));
+      } catch (e) {
+        console.error("Error parsing subject draft:", e);
+        localStorage.removeItem("subject_draft");
+      }
+    }
 
     fetchSubjects();
     window.addEventListener("focus", fetchSubjects);
@@ -72,7 +79,7 @@ export default function SubjectsPage() {
   // 2. Draft Handlers
   const handleResumeDraft = () => navigate("/admin/subjects/add", { state: draft });
   const handleDiscardDraft = () => {
-    if(confirm("Discard unsaved draft?")) {
+    if (confirm("Discard unsaved draft?")) {
       localStorage.removeItem("subject_draft");
       setDraft(null);
     }
@@ -84,13 +91,13 @@ export default function SubjectsPage() {
   };
 
   const handleDelete = async (subject: Subject) => {
-    if(confirm(`Are you sure you want to delete ${subject.name}?`)) {
-        try {
-            await deleteSubject(subject.id!);
-            setSubjects(prev => prev.filter(s => s.id !== subject.id));
-        } catch (e) {
-            alert("Failed to delete subject");
-        }
+    if (confirm(`Are you sure you want to delete ${subject.name}?`)) {
+      try {
+        await deleteSubject(subject.id!);
+        setSubjects(prev => prev.filter(s => s.id !== subject.id));
+      } catch (e) {
+        alert("Failed to delete subject");
+      }
     }
   };
 
@@ -130,13 +137,13 @@ export default function SubjectsPage() {
     const doc = new jsPDF();
     doc.text("Subjects List", 14, 15);
     autoTable(doc, {
-        head: [["Code", "Name", "Dept", "Credits", "Type", "L-T-P"]],
-        body: subjects.map(s => [
-            s.code, s.name, s.department, s.credits, 
-            s.isElective ? "Elective" : "Core", 
-            `${s.lectureHoursPerWeek}-${s.tutorialHoursPerWeek}-${s.labHoursPerWeek}`
-        ]),
-        startY: 20,
+      head: [["Code", "Name", "Dept", "Credits", "Type", "L-T-P"]],
+      body: subjects.map(s => [
+        s.code, s.name, s.department, s.credits,
+        s.isElective ? "Elective" : "Core",
+        `${s.lectureHoursPerWeek}-${s.tutorialHoursPerWeek}-${s.labHoursPerWeek}`
+      ]),
+      startY: 20,
     });
     doc.save("Subjects.pdf");
   };
@@ -186,25 +193,25 @@ export default function SubjectsPage() {
 
         {/* ✅ DRAFT BANNER */}
         {draft && (
-            <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 flex justify-between items-center shadow-sm animate-in fade-in slide-in-from-top-2">
-                <div className="flex gap-4 items-center">
-                    <div className="bg-white p-2 rounded-full text-blue-600 border border-blue-100">
-                        <FileText className="h-5 w-5" />
-                    </div>
-                    <div>
-                        <h4 className="font-semibold text-blue-900">Unsaved Draft Found</h4>
-                        <p className="text-sm text-blue-700">for <b>{draft.name || "New Subject"}</b> saved at {draft.savedAt}</p>
-                    </div>
-                </div>
-                <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={handleDiscardDraft} className="bg-white text-red-600 border-red-200">
-                        <Trash2 className="h-4 w-4 mr-2" /> Discard
-                    </Button>
-                    <Button size="sm" onClick={handleResumeDraft} className="bg-[#0f172a] text-white">
-                        Resume Editing
-                    </Button>
-                </div>
+          <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 flex justify-between items-center shadow-sm animate-in fade-in slide-in-from-top-2">
+            <div className="flex gap-4 items-center">
+              <div className="bg-white p-2 rounded-full text-blue-600 border border-blue-100">
+                <FileText className="h-5 w-5" />
+              </div>
+              <div>
+                <h4 className="font-semibold text-blue-900">Unsaved Draft Found</h4>
+                <p className="text-sm text-blue-700">for <b>{draft.name || "New Subject"}</b> saved at {draft.savedAt}</p>
+              </div>
             </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={handleDiscardDraft} className="bg-white text-red-600 border-red-200">
+                <Trash2 className="h-4 w-4 mr-2" /> Discard
+              </Button>
+              <Button size="sm" onClick={handleResumeDraft} className="bg-[#0f172a] text-white">
+                Resume Editing
+              </Button>
+            </div>
+          </div>
         )}
 
         {/* STATS */}
@@ -234,25 +241,25 @@ export default function SubjectsPage() {
           {/* Export Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="gap-2">
-                    <Download className="h-4 w-4" /> Export
-                </Button>
+              <Button variant="outline" className="gap-2">
+                <Download className="h-4 w-4" /> Export
+              </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={exportToExcel}><FileSpreadsheet className="mr-2 h-4 w-4 text-green-600"/> Excel</DropdownMenuItem>
-                <DropdownMenuItem onClick={exportToCSV}><FileText className="mr-2 h-4 w-4 text-blue-600"/> CSV</DropdownMenuItem>
-                <DropdownMenuItem onClick={exportToPDF}><FileJson className="mr-2 h-4 w-4 text-red-600"/> PDF</DropdownMenuItem>
+              <DropdownMenuItem onClick={exportToExcel}><FileSpreadsheet className="mr-2 h-4 w-4 text-green-600" /> Excel</DropdownMenuItem>
+              <DropdownMenuItem onClick={exportToCSV}><FileText className="mr-2 h-4 w-4 text-blue-600" /> CSV</DropdownMenuItem>
+              <DropdownMenuItem onClick={exportToPDF}><FileJson className="mr-2 h-4 w-4 text-red-600" /> PDF</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
 
         {/* TABLE */}
         <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
-            <SubjectTable
+          <SubjectTable
             subjects={filteredSubjects}
             onEdit={handleEdit}
             onDelete={handleDelete}
-            />
+          />
         </div>
       </div>
     </AdminLayout>

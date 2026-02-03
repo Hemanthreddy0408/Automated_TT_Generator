@@ -14,10 +14,15 @@ export default function AddFacultyPage() {
     if (!editData) {
       const draft = localStorage.getItem("faculty_draft");
       if (draft) {
-        const parsed = JSON.parse(draft);
-        if (confirm(`Unsaved draft for "${parsed.name || "New Faculty"}" found. Load it?`)) {
-          // Re-navigate with the draft state to trigger initialization
-          navigate("/admin/faculty/add", { state: parsed, replace: true });
+        try {
+          const parsed = JSON.parse(draft);
+          if (confirm(`Unsaved draft for "${parsed.name || "New Faculty"}" found. Load it?`)) {
+            // Re-navigate with the draft state to trigger initialization
+            navigate("/admin/faculty/add", { state: parsed, replace: true });
+          }
+        } catch (e) {
+          console.error("Error parsing faculty draft:", e);
+          localStorage.removeItem("faculty_draft");
         }
       }
     }

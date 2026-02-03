@@ -93,7 +93,7 @@ export function FacultyTable({
               <TableCell className="text-center">
                 <div className="flex items-center justify-center gap-1 text-sm">
                   <BookOpen className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span>{member.eligibleSubjects.length}</span>
+                  <span>{member.eligibleSubjects?.length || 0}</span>
                 </div>
               </TableCell>
               <TableCell className="text-center">

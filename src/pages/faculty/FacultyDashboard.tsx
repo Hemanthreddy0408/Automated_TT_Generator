@@ -43,15 +43,20 @@ export default function FacultyDashboard() {
   const [currentDay, setCurrentDay] = useState(0);
 
   useEffect(() => {
-    axios.get('http://localhost:8080/api/faculty/1')
-      .then(res => setCurrentFaculty(res.data));
+    axios.get('http://localhost:8082/api/faculty/1')
+      .then(res => setCurrentFaculty(res.data))
+      .catch(err => {
+        console.error("Failed to fetch faculty:", err);
+        // Fallback to mock if API fails for demo purposes
+        setCurrentFaculty(mockFaculty[0]);
+      });
   }, []);
 
   if (!currentFaculty) {
     return <div className="p-6">Loading faculty dashboard...</div>;
   }
 
-  const facultySessions = getSessionsForFaculty(currentFaculty.id.toString());
+  const facultySessions = getSessionsForFaculty(currentFaculty.id?.toString() || "");
   const todaySessions = facultySessions.filter(
     (s) => s.dayOfWeek === currentDay
   );
@@ -63,6 +68,16 @@ export default function FacultyDashboard() {
   const nextRoom = nextSession ? getRoomById(nextSession.roomId) : null;
   const nextSection = nextSession ? getSectionById(nextSession.sectionId) : null;
   const nextTimeSlot = nextSession ? mockTimeSlots.find((t) => t.id === nextSession.timeSlotId) : null;
+
+  const getInitials = (fullName: string) => {
+    if (!fullName) return "?";
+    return fullName.split(' ').map((n) => n[0]).join('');
+  };
+
+  const getFirstName = (fullName: string) => {
+    if (!fullName) return "Faculty";
+    return fullName.split(' ')[0];
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -90,7 +105,7 @@ export default function FacultyDashboard() {
               <Avatar className="h-9 w-9 border-2 border-muted">
                 <AvatarImage src={currentFaculty.avatarUrl} />
                 <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                  {currentFaculty.name.split(' ').map((n) => n[0]).join('')}
+                  {getInitials(currentFaculty.name)}
                 </AvatarFallback>
               </Avatar>
               <div className="hidden sm:block">
@@ -108,7 +123,7 @@ export default function FacultyDashboard() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-foreground">
-              Good Morning, {currentFaculty.name.split(' ')[0]}! 👋
+              Good Morning, {getFirstName(currentFaculty.name)}! 👋
             </h1>
             <p className="text-muted-foreground mt-1">
               Here's your schedule for today, {DAYS_OF_WEEK[currentDay]}
@@ -152,7 +167,7 @@ export default function FacultyDashboard() {
                 <BookOpen className="h-6 w-6 text-success" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{currentFaculty.eligibleSubjects.length}</p>
+                <p className="text-2xl font-bold">{currentFaculty.eligibleSubjects?.length || 0}</p>
                 <p className="text-sm text-muted-foreground">Subjects</p>
               </div>
             </CardContent>

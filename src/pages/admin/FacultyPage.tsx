@@ -24,9 +24,9 @@ import {
 } from '@/components/ui/select';
 
 // Icons
-import { 
-  Plus, Search, Filter, Download, Users, CheckCircle, 
-  FileText, Trash2, FileSpreadsheet, FileJson 
+import {
+  Plus, Search, Filter, Download, Users, CheckCircle,
+  FileText, Trash2, FileSpreadsheet, FileJson
 } from 'lucide-react';
 
 // API & Types
@@ -43,7 +43,7 @@ export default function FacultyPage() {
   // ---------------- STATE ----------------
   const [faculty, setFaculty] = useState<Faculty[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [draft, setDraft] = useState<any>(null);
 
@@ -56,9 +56,10 @@ export default function FacultyPage() {
     const fetchFaculty = async () => {
       try {
         const data = await getFaculty();
-        setFaculty(data);
+        setFaculty(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error('Failed to fetch faculty', err);
+        setFaculty([]);
       } finally {
         setLoading(false);
       }
@@ -66,7 +67,12 @@ export default function FacultyPage() {
 
     const savedDraft = localStorage.getItem("faculty_draft");
     if (savedDraft) {
-      setDraft(JSON.parse(savedDraft));
+      try {
+        setDraft(JSON.parse(savedDraft));
+      } catch (e) {
+        console.error("Error parsing faculty draft:", e);
+        localStorage.removeItem("faculty_draft");
+      }
     }
 
     fetchFaculty();
@@ -128,7 +134,7 @@ export default function FacultyPage() {
 
     // Add Title
     doc.text("Faculty List", 14, 15);
-    
+
     // ✅ FIX: Use autoTable(doc, options) syntax
     autoTable(doc, {
       head: [tableColumn],
@@ -141,9 +147,9 @@ export default function FacultyPage() {
 
 
   // ---------------- HANDLERS ----------------
-  
+
   const handleDiscardDraft = () => {
-    if(confirm("Are you sure you want to discard this unsaved draft?")) {
+    if (confirm("Are you sure you want to discard this unsaved draft?")) {
       localStorage.removeItem("faculty_draft");
       setDraft(null);
     }
@@ -159,7 +165,7 @@ export default function FacultyPage() {
     // ✅ Must match the Route path defined in App.tsx
     navigate('/admin/faculty/add', { state: facultyMember });
   };
-  
+
   const handleDelete = async (facultyMember: Faculty) => {
     if (confirm(`Are you sure you want to delete ${facultyMember.name}?`)) {
       try {
@@ -175,7 +181,7 @@ export default function FacultyPage() {
 
   // ---------------- FILTER ----------------
   const filteredFaculty = faculty.filter((member) => {
-    if (draft && draft.id === member.id) return false; 
+    if (draft && draft.id === member.id) return false;
 
     const matchesSearch =
       member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -289,7 +295,7 @@ export default function FacultyPage() {
               </SelectContent>
             </Select>
           </div>
-          
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="gap-2 bg-white">
@@ -323,7 +329,7 @@ export default function FacultyPage() {
               {filteredFaculty.length} Results
             </Badge>
           </div>
-          
+
           <FacultyTable
             faculty={filteredFaculty}
             onEdit={handleEdit}

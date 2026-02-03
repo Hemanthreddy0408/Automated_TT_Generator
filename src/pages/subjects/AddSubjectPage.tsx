@@ -31,9 +31,14 @@ export default function AddSubjectPage() {
       // Check for local draft
       const draft = localStorage.getItem("subject_draft");
       if (draft) {
-        const parsed = JSON.parse(draft);
-        if (confirm(`Unsaved draft for "${parsed.name || "New Subject"}" found. Load it?`)) {
-          loadState(parsed);
+        try {
+          const parsed = JSON.parse(draft);
+          if (confirm(`Unsaved draft for "${parsed.name || "New Subject"}" found. Load it?`)) {
+            loadState(parsed);
+          }
+        } catch (e) {
+          console.error("Error parsing subject draft:", e);
+          localStorage.removeItem("subject_draft");
         }
       }
     }

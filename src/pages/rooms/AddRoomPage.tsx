@@ -53,9 +53,14 @@ export default function AddRoomPage() {
     } else {
       const draft = localStorage.getItem("room_draft");
       if (draft) {
-        const parsed = JSON.parse(draft);
-        if (confirm(`Unsaved draft for "${parsed.name || "New Room"}" found. Load it?`)) {
-          loadState(parsed);
+        try {
+          const parsed = JSON.parse(draft);
+          if (confirm(`Unsaved draft for "${parsed.name || "New Room"}" found. Load it?`)) {
+            loadState(parsed);
+          }
+        } catch (e) {
+          console.error("Error parsing room draft:", e);
+          localStorage.removeItem("room_draft");
         }
       }
     }
