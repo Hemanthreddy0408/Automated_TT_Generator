@@ -33,6 +33,9 @@ import LeaveStatusFaculty from "./pages/LeaveStatus-Faculty";
 import DepartmentFaculty from "./pages/Department-Faculty";
 import AnnouncementsFaculty from "./pages/Announcements-Faculty";
 import LeaveModal from "./components/leave/LeaveModel";
+import LeaveRequestsPage from "./pages/admin/LeaveRequestsPage";
+
+import { UserProvider } from "./context/UserContext";
 
 const queryClient = new QueryClient();
 
@@ -41,56 +44,59 @@ const App = () => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            {/* --- PUBLIC --- */}
-            <Route path="/" element={<Index />} />
+      <UserProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              {/* --- PUBLIC --- */}
+              <Route path="/" element={<Index />} />
 
-            {/* --- FACULTY PORTAL (NEW DESIGN) --- */}
-            <Route path="/faculty">
-              <Route index element={<Navigate to="/faculty/dashboard" replace />} />
-              <Route path="dashboard" element={<DashboardFaculty onApplyLeave={() => setLeaveModalOpen(true)} />} />
-              <Route path="schedule" element={<FacultySchedule />} />
-              <Route path="leave" element={<LeaveStatusFaculty onApplyLeave={() => setLeaveModalOpen(true)} />} />
-              <Route path="department" element={<DepartmentFaculty />} />
-              <Route path="announcements" element={<AnnouncementsFaculty onApplyLeave={() => setLeaveModalOpen(true)} />} />
-            </Route>
+              {/* --- FACULTY PORTAL (NEW DESIGN) --- */}
+              <Route path="/faculty">
+                <Route index element={<Navigate to="/faculty/dashboard" replace />} />
+                <Route path="dashboard" element={<DashboardFaculty onApplyLeave={() => setLeaveModalOpen(true)} />} />
+                <Route path="schedule" element={<FacultySchedule />} />
+                <Route path="leave" element={<LeaveStatusFaculty onApplyLeave={() => setLeaveModalOpen(true)} />} />
+                <Route path="department" element={<DepartmentFaculty />} />
+                <Route path="announcements" element={<AnnouncementsFaculty onApplyLeave={() => setLeaveModalOpen(true)} />} />
+              </Route>
 
-            {/* --- ADMIN: FACULTY ROUTES --- */}
-            <Route path="/admin/faculty/add/qualifications" element={<AddFacultyQualificationsPage />} />
-            <Route path="/admin/faculty/add/review" element={<AddFacultyReviewPage />} />
-            <Route path="/admin/constraints/add" element={<AddConstraintPage />} />
-            <Route path="/admin/faculty/add" element={<AddFacultyPage />} />
-            <Route path="/admin/faculty" element={<FacultyPage />} />
+              {/* --- ADMIN: FACULTY ROUTES --- */}
+              <Route path="/admin/faculty/add/qualifications" element={<AddFacultyQualificationsPage />} />
+              <Route path="/admin/faculty/add/review" element={<AddFacultyReviewPage />} />
+              <Route path="/admin/constraints/add" element={<AddConstraintPage />} />
+              <Route path="/admin/faculty/add" element={<AddFacultyPage />} />
+              <Route path="/admin/faculty" element={<FacultyPage />} />
 
-            {/* --- ADMIN: OTHER ROUTES --- */}
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/timetable" element={<TimetablePage />} />
-            <Route path="/admin/rooms/add" element={<AddRoomPage />} />
-            <Route path="/admin/rooms/edit/:id" element={<EditRoomPage />} />
-            <Route path="/admin/rooms" element={<RoomsPage />} />
-            <Route path="/admin/subjects/add" element={<AddSubjectPage />} />
-            <Route path="/admin/subjects" element={<SubjectsPage />} />
-            <Route path="/admin/sections" element={<AdminDashboard />} />
-            <Route path="/admin/constraints" element={<ConstraintsPage />} />
-            <Route path="/admin/history" element={<HistoryPage />} />
-            <Route path="/admin/settings" element={<AdminDashboard />} />
-            <Route path="/admin/analytics" element={<AnalyticsPage />} />
+              {/* --- ADMIN: OTHER ROUTES --- */}
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/timetable" element={<TimetablePage />} />
+              <Route path="/admin/rooms/add" element={<AddRoomPage />} />
+              <Route path="/admin/rooms/edit/:id" element={<EditRoomPage />} />
+              <Route path="/admin/rooms" element={<RoomsPage />} />
+              <Route path="/admin/subjects/add" element={<AddSubjectPage />} />
+              <Route path="/admin/subjects" element={<SubjectsPage />} />
+              <Route path="/admin/sections" element={<AdminDashboard />} />
+              <Route path="/admin/constraints" element={<ConstraintsPage />} />
+              <Route path="/admin/history" element={<HistoryPage />} />
+              <Route path="/admin/settings" element={<AdminDashboard />} />
+              <Route path="/admin/analytics" element={<AnalyticsPage />} />
+              <Route path="/admin/leaves" element={<LeaveRequestsPage />} />
 
-            {/* --- 404 CATCH-ALL --- */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+              {/* --- 404 CATCH-ALL --- */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
 
-        {/* Global Leave Modal */}
-        <LeaveModal
-          isOpen={isLeaveModalOpen}
-          onClose={() => setLeaveModalOpen(false)}
-        />
-      </TooltipProvider>
+          {/* Global Leave Modal */}
+          <LeaveModal
+            isOpen={isLeaveModalOpen}
+            onClose={() => setLeaveModalOpen(false)}
+          />
+        </TooltipProvider>
+      </UserProvider>
     </QueryClientProvider>
   );
 };

@@ -1,13 +1,5 @@
 -- Sample data for development
 
--- Clear existing data to avoid constraint violations
-TRUNCATE TABLE faculty_qualifications CASCADE;
-TRUNCATE TABLE faculty_eligible_subjects CASCADE;
-TRUNCATE TABLE faculty CASCADE;
-TRUNCATE TABLE subjects CASCADE;
-TRUNCATE TABLE room_equipment CASCADE;
-TRUNCATE TABLE rooms CASCADE;
-
 -- Insert Rooms
 INSERT INTO rooms (name, code, building, floor, type, capacity, status, active, wheelchair_accessible) VALUES
 ('Lecture Hall 101', 'LH101', 'Main Building', '1st Floor', 'LECTURE', 100, 'PUBLISHED', true, true),

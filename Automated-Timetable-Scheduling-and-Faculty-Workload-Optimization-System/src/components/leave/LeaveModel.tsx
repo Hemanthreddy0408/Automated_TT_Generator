@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { toast } from "sonner";
 import axios from "axios";
+import { useUser } from "../../context/UserContext";
 
 interface LeaveModalProps {
   isOpen: boolean;
@@ -8,6 +9,7 @@ interface LeaveModalProps {
 }
 
 const LeaveModal = ({ isOpen, onClose }: LeaveModalProps) => {
+  const { user } = useUser();
   const [leaveType, setLeaveType] = useState("Casual Leave");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -22,8 +24,8 @@ const LeaveModal = ({ isOpen, onClose }: LeaveModalProps) => {
 
     try {
       const payload = {
-        facultyId: 1, // Hardcoded for now until session management is added
-        facultyName: "Dr. Sarah Mitchell",
+        facultyId: user?.id || 1,
+        facultyName: user?.name || "Faculty Member",
         leaveType,
         startDate,
         endDate,

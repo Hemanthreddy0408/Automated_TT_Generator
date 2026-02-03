@@ -1,7 +1,10 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import { useUser } from '../../context/UserContext';
 
 const Sidebar = () => {
+  const { user, logout } = useUser();
+
   const navItems = [
     { icon: 'dashboard', label: 'My Dashboard', path: '/faculty/dashboard' },
     { icon: 'event_available', label: 'My Schedule', path: '/faculty/schedule' },
@@ -35,12 +38,26 @@ const Sidebar = () => {
           </NavLink>
         ))}
       </nav>
-      <div className="p-4 mt-auto border-t border-slate-800 bg-slate-900/40">
+
+      <div className="px-4 mb-4">
+        <button
+          onClick={logout}
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-red-400 hover:bg-red-400/10 transition-all"
+        >
+          <span className="material-symbols-outlined">logout</span> Logout
+        </button>
+      </div>
+
+      <div className="p-4 border-t border-slate-800 bg-slate-900/40">
         <div className="flex items-center gap-3 p-2 bg-slate-800/30 rounded-xl">
-          <div className="w-10 h-10 rounded-lg bg-[#10b981]/20 flex items-center justify-center text-[#10b981] font-bold">SM</div>
+          <div className="w-10 h-10 rounded-lg bg-[#10b981]/20 flex items-center justify-center text-[#10b981] font-bold">
+            {user?.name?.split(' ').map(n => n[0]).join('') || '??'}
+          </div>
           <div className="overflow-hidden">
-            <p className="text-sm font-semibold truncate">Dr. Sarah Mitchell</p>
-            <p className="text-[10px] text-slate-500 truncate uppercase font-bold tracking-tight">Associate Professor</p>
+            <p className="text-sm font-semibold truncate">{user?.name || 'Loading...'}</p>
+            <p className="text-[10px] text-slate-500 truncate uppercase font-bold tracking-tight">
+              {user?.designation || 'Faculty'}
+            </p>
           </div>
         </div>
       </div>

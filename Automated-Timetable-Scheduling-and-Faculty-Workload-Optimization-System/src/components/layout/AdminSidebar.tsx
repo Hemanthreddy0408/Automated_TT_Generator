@@ -14,6 +14,7 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
+  FileText,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -35,6 +36,7 @@ const navigationItems = [
 
 const managementItems = [
   { name: 'Constraints', href: '/admin/constraints', icon: Shield },
+  { name: 'Leave Requests', href: '/admin/leaves', icon: FileText },
   { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
   { name: 'History', href: '/admin/history', icon: History },
   { name: 'Settings', href: '/admin/settings', icon: Settings },
