@@ -38,6 +38,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  FileSpreadsheet,
+  FileText,
+  FileJson,
+} from "lucide-react";
+
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 console.log("Rooms page loaded");
 
@@ -121,6 +136,54 @@ export default function RoomsPage() {
 
     return matchesSearch && matchesType && matchesStatus;
   });
+  const getExportData = () => {
+    return filteredRooms.map(r => ({
+      Name: r.name,
+      Code: r.code,
+      Building: r.building,
+      Floor: r.floor,
+      Type: r.type,
+      Capacity: r.capacity,
+      Status: r.active ? 'Active' : 'Inactive'
+    }));
+  };
+
+  const exportToExcel = () => {
+    const data = getExportData();
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Rooms");
+    XLSX.writeFile(workbook, "Rooms_List.xlsx");
+  };
+
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    const tableColumn = ["Name", "Code", "Building", "Floor", "Type", "Capacity", "Status"];
+    const tableRows: any[] = [];
+
+    filteredRooms.forEach(r => {
+      const roomData = [
+        r.name,
+        r.code,
+        r.building,
+        r.floor,
+        r.type,
+        r.capacity,
+        r.active ? 'Active' : 'Inactive'
+      ];
+      tableRows.push(roomData);
+    });
+
+    doc.text("Rooms List", 14, 15);
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 20,
+    });
+
+    doc.save("Rooms_List.pdf");
+  };
+
   const exportToCSV = () => {
     const headers = "Name,Code,Building,Floor,Type,Capacity,Status\n";
     const data = filteredRooms.map(r =>
@@ -215,45 +278,65 @@ export default function RoomsPage() {
         </div>
 
         {/* ---------------- FILTERS ---------------- */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search by name, code, or building..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
+        <div className="flex flex-col sm:flex-row gap-4 justify-between items-center w-full">
+          <div className="flex gap-4 w-full sm:w-auto flex-1">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search by name, code, or building..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="LECTURE">Lecture</SelectItem>
+                <SelectItem value="LAB">Lab</SelectItem>
+                <SelectItem value="SEMINAR">Seminar</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[150px]">
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="active">Available</SelectItem>
+                <SelectItem value="inactive">Unavailable</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
-          <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="Type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="LECTURE">Lecture</SelectItem>
-              <SelectItem value="LAB">Lab</SelectItem>
-              <SelectItem value="SEMINAR">Seminar</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[150px]">
-              <Filter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="active">Available</SelectItem>
-              <SelectItem value="inactive">Unavailable</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Button variant="outline" onClick={exportToCSV}>
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Download className="h-4 w-4" />
+                Export Data
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={exportToExcel}>
+                <FileSpreadsheet className="mr-2 h-4 w-4 text-green-600" />
+                Export as Excel
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={exportToCSV}>
+                <FileText className="mr-2 h-4 w-4 text-blue-600" />
+                Export as CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={exportToPDF}>
+                <FileJson className="mr-2 h-4 w-4 text-red-600" />
+                Export as PDF
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* ---------------- RESULT INFO ---------------- */}
