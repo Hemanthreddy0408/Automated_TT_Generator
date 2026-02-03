@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { mockConstraints } from '@/data/mockData';
+import { useNavigate } from "react-router-dom";
+
+import { getConstraints, toggleConstraintStatus } from '@/lib/api';
 import { Constraint } from '@/types/timetable';
 import {
   Plus,
@@ -63,14 +65,33 @@ const priorityConfig = {
 };
 
 export default function ConstraintsPage() {
-  const [constraints, setConstraints] = useState<Constraint[]>(mockConstraints);
+  const navigate = useNavigate();
+  const [constraints, setConstraints] = useState<Constraint[]>([]);
+  const [loading, setLoading] = useState(true);
+  
 
-  const toggleConstraint = (id: string) => {
-    setConstraints((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, isActive: !c.isActive } : c))
-    );
+ useEffect(() => {
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const data = await getConstraints(); //
+      setConstraints(data);
+    } catch (err) {
+      console.error("Connection to backend failed:", err);
+    } finally {
+      setLoading(false);
+    }
   };
+  loadData();
+}, []);
 
+
+
+const toggleConstraint = async (id: string) => {
+    // Optimistic UI update
+    setConstraints(prev => prev.map(c => c.id === id ? { ...c, isActive: !c.isActive } : c));
+    await toggleConstraintStatus(id); //
+  };
   const groupedConstraints = constraints.reduce((acc, constraint) => {
     if (!acc[constraint.type]) {
       acc[constraint.type] = [];
@@ -87,11 +108,12 @@ export default function ConstraintsPage() {
       title="Constraint Configuration"
       subtitle="Define scheduling rules and constraints"
       actions={
-        <Button className="gap-2">
-          <Plus className="h-4 w-4" />
-          Add Constraint
-        </Button>
-      }
+  <Button className="gap-2" onClick={() => navigate("/admin/constraints/add")}>
+    <Plus className="h-4 w-4" />
+    Add Constraint
+  </Button>
+}
+
     >
       <div className="space-y-6">
         {/* Quick Stats */}
@@ -226,3 +248,4 @@ export default function ConstraintsPage() {
     </AdminLayout>
   );
 }
+

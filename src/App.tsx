@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-
+import AddConstraintPage from "@/pages/constraints/AddConstraintPage";
 // Page Imports
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -43,7 +43,7 @@ const App = () => (
           {/* 1. Step 2 & 3 (Deepest paths first) */}
           <Route path="/admin/faculty/add/qualifications" element={<AddFacultyQualificationsPage />} />
           <Route path="/admin/faculty/add/review" element={<AddFacultyReviewPage />} />
-          
+          <Route  path="/admin/constraints/add"  element={<AddConstraintPage />}/>
           {/* 2. Step 1 (Add/Edit Entry) */}
           <Route path="/admin/faculty/add" element={<AddFacultyPage />} />
 
