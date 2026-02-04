@@ -7,72 +7,52 @@ const API_BASE_URL = "http://localhost:8082";
    ROOMS API
    =========================== */
 export const getRooms = async () => {
-  const res = await fetch(`${API_BASE_URL}/api/rooms`);
-  return res.json();
+  const res = await axios.get(`${API_BASE_URL}/api/rooms`);
+  return res.data;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const createRoom = async (room: any) => {
-  const res = await fetch(`${API_BASE_URL}/api/rooms`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(room),
-  });
-  return res.json();
+  const res = await axios.post(`${API_BASE_URL}/api/rooms`, room);
+  return res.data;
 };
 
 // ✅ NEW: Update Room
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const updateRoom = async (id: number, room: any) => {
-  const res = await fetch(`${API_BASE_URL}/api/rooms/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(room),
-  });
-  return res.json();
+  const res = await axios.put(`${API_BASE_URL}/api/rooms/${id}`, room);
+  return res.data;
 };
 
 // ✅ NEW: Delete Room
 export const deleteRoom = async (id: number) => {
-  await fetch(`${API_BASE_URL}/api/rooms/${id}`, {
-    method: "DELETE",
-  });
+  await axios.delete(`${API_BASE_URL}/api/rooms/${id}`);
 };
 
 /* ===========================
    FACULTY API (Fixed for CRUD)
    =========================== */
 export const getFaculty = async () => {
-  const res = await fetch(`${API_BASE_URL}/api/faculty`);
-  return res.json();
+  const res = await axios.get(`${API_BASE_URL}/api/faculty`);
+  return res.data;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const createFaculty = async (faculty: any) => {
-  const res = await fetch(`${API_BASE_URL}/api/faculty`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(faculty),
-  });
-  return res.json();
+  const res = await axios.post(`${API_BASE_URL}/api/faculty`, faculty);
+  return res.data;
 };
 
 // ✅ NEW: Update Faculty
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const updateFaculty = async (id: number, faculty: any) => {
-  const res = await fetch(`${API_BASE_URL}/api/faculty/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(faculty),
-  });
-  return res.json();
+  const res = await axios.put(`${API_BASE_URL}/api/faculty/${id}`, faculty);
+  return res.data;
 };
 
 // ✅ NEW: Delete Faculty
 export const deleteFaculty = async (id: number) => {
-  await fetch(`${API_BASE_URL}/api/faculty/${id}`, {
-    method: "DELETE",
-  });
+  await axios.delete(`${API_BASE_URL}/api/faculty/${id}`);
 };
 
 /* ===========================
@@ -99,36 +79,20 @@ export const deleteSubject = async (id: number) => {
   await axios.delete(`${API_BASE_URL}/api/subjects/${id}`);
 };
 
+/* ===========================
+   CONSTRAINTS API
+   =========================== */
 export const getConstraints = async () => {
-  const response = await fetch(`${API_BASE_URL}/api/constraints`);
-  if (!response.ok) throw new Error("Failed to fetch constraints");
-  return response.json();
+  const res = await axios.get(`${API_BASE_URL}/api/constraints`);
+  return res.data;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function createConstraint(payload) {
-  const response = await fetch(
-    "http://localhost:8082/api/constraints",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error("Failed to create constraint");
-  }
-
-  return response.json();
-}
-
+export const createConstraint = async (data: any) => {
+  const res = await axios.post(`${API_BASE_URL}/api/constraints`, data);
+  return res.data;
+};
 
 export const toggleConstraintStatus = async (id: string) => {
-  const response = await fetch(`${API_BASE_URL}/constraints/${id}/toggle`, {
-    method: "PATCH",
-  });
-  if (!response.ok) throw new Error("Failed to toggle status");
+  await axios.patch(`${API_BASE_URL}/api/constraints/${id}/toggle`);
 };
