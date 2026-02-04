@@ -2,158 +2,168 @@ import axios from "axios";
 import { Subject, Section } from "@/types/timetable";
 
 /* ===========================
-   BASE CONFIG
+   AXIOS INSTANCE
    =========================== */
-const API_BASE_URL = "http://localhost:8083";
+const API = axios.create({
+  baseURL: "http://localhost:8083/api",
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
 
 /* ===========================
    ROOMS API
    =========================== */
 export const getRooms = async () => {
-  const res = await fetch(`${API_BASE_URL}/api/rooms`);
-  return res.json();
+  const res = await API.get("/rooms");
+  return Array.isArray(res.data) ? res.data : [];
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const createRoom = async (room: any) => {
-  const res = await fetch(`${API_BASE_URL}/api/rooms`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(room),
-  });
-  return res.json();
+  const res = await API.post("/rooms", room);
+  return res.data;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const updateRoom = async (id: number, room: any) => {
-  const res = await fetch(`${API_BASE_URL}/api/rooms/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(room),
-  });
-  return res.json();
+  const res = await API.put(`/rooms/${id}`, room);
+  return res.data;
 };
 
 export const deleteRoom = async (id: number) => {
-  await fetch(`${API_BASE_URL}/api/rooms/${id}`, {
-    method: "DELETE",
-  });
+  await API.delete(`/rooms/${id}`);
 };
-
 /* ===========================
-   FACULTY API
+   FACULTY API ✅ FINAL & SAFE
    =========================== */
-export const getFaculty = async () => {
-  const res = await fetch(`${API_BASE_URL}/api/faculty`);
-  return res.json();
+
+export interface FacultyPayload {
+  id?: number;
+  name: string;
+  email: string;
+  department: string;
+  designation: string;
+  employeeId: string;
+  maxHoursPerDay: number;
+  maxHoursPerWeek: number;
+  isActive: boolean;
+  avatarUrl?: string | null;
+}
+
+/* -------- GET ALL FACULTY -------- */
+export const getFaculty = async (): Promise<FacultyPayload[]> => {
+  const res = await API.get("/faculty");
+
+  return Array.isArray(res.data) ? res.data : [];
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const createFaculty = async (faculty: any) => {
-  const res = await fetch(`${API_BASE_URL}/api/faculty`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(faculty),
-  });
-  return res.json();
+/* -------- CREATE FACULTY -------- */
+export const createFaculty = async (faculty: FacultyPayload) => {
+  const payload = {
+    name: faculty.name,
+    email: faculty.email,
+    department: faculty.department,
+    designation: faculty.designation,
+    employeeId: faculty.employeeId,
+    maxHoursPerDay: faculty.maxHoursPerDay,
+    maxHoursPerWeek: faculty.maxHoursPerWeek,
+    active: faculty.isActive,
+    avatarUrl: faculty.avatarUrl ?? null,
+  };
+
+  const res = await API.post("/faculty", payload);
+  return res.data;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const updateFaculty = async (id: number, faculty: any) => {
-  const res = await fetch(`${API_BASE_URL}/api/faculty/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(faculty),
-  });
-  return res.json();
+/* -------- UPDATE FACULTY -------- */
+export const updateFaculty = async (
+  id: number,
+  faculty: FacultyPayload
+) => {
+  const payload = {
+    name: faculty.name,
+    email: faculty.email,
+    department: faculty.department,
+    designation: faculty.designation,
+    employeeId: faculty.employeeId,
+    maxHoursPerDay: faculty.maxHoursPerDay,
+    maxHoursPerWeek: faculty.maxHoursPerWeek,
+    active: faculty.isActive,
+    avatarUrl: faculty.avatarUrl ?? null,
+  };
+
+  const res = await API.put(`/faculty/${id}`, payload);
+  return res.data;
 };
 
+/* -------- DELETE FACULTY -------- */
 export const deleteFaculty = async (id: number) => {
-  await fetch(`${API_BASE_URL}/api/faculty/${id}`, {
-    method: "DELETE",
-  });
+  await API.delete(`/faculty/${id}`);
 };
 
 /* ===========================
    SUBJECTS API
    =========================== */
 export const getSubjects = async (): Promise<Subject[]> => {
-  const res = await axios.get(`${API_BASE_URL}/api/subjects`);
-  return res.data;
+  const res = await API.get("/subjects");
+  return Array.isArray(res.data) ? res.data : [];
 };
 
 export const createSubject = async (subject: Subject) => {
-  const res = await axios.post(`${API_BASE_URL}/api/subjects`, subject);
+  const res = await API.post("/subjects", subject);
   return res.data;
 };
 
 export const updateSubject = async (id: number, subject: Subject) => {
-  const res = await axios.put(
-    `${API_BASE_URL}/api/subjects/${id}`,
-    subject
-  );
+  const res = await API.put(`/subjects/${id}`, subject);
   return res.data;
 };
 
 export const deleteSubject = async (id: number) => {
-  await axios.delete(`${API_BASE_URL}/api/subjects/${id}`);
+  await API.delete(`/subjects/${id}`);
 };
 
-// ===== SECTIONS API =====
-
-export const getSections = async () => {
-  const res = await fetch("http://localhost:8083/api/sections");
-  return res.json();
+/* ===========================
+   SECTIONS API
+   =========================== */
+export const getSections = async (): Promise<Section[]> => {
+  const res = await API.get("/sections");
+  return Array.isArray(res.data) ? res.data : [];
 };
 
-export const createSection = async (section: Omit<any, "id">) => {
-  const res = await fetch("http://localhost:8083/api/sections", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(section),
-  });
-  return res.json();
+export const createSection = async (section: Omit<Section, "id">) => {
+  const res = await API.post("/sections", section);
+  return res.data;
 };
 
 export const deleteSection = async (id: number) => {
-  await fetch(`http://localhost:8083/api/sections/${id}`, {
-    method: "DELETE",
-  });
+  await API.delete(`/sections/${id}`);
 };
 
 /* ===========================
    CONSTRAINTS API
    =========================== */
 export const getConstraints = async () => {
-  const response = await fetch(`${API_BASE_URL}/api/constraints`);
-  if (!response.ok) throw new Error("Failed to fetch constraints");
-  return response.json();
+  const res = await API.get("/constraints");
+  return Array.isArray(res.data) ? res.data : [];
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const createConstraint = async (payload: any) => {
-  const response = await fetch(`${API_BASE_URL}/api/constraints`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to create constraint");
-  }
-
-  return response.json();
+  const res = await API.post("/constraints", payload);
+  return res.data;
 };
 
 export const toggleConstraintStatus = async (id: string) => {
-  const response = await fetch(
-    `${API_BASE_URL}/api/constraints/${id}/toggle`,
-    {
-      method: "PATCH",
-    }
-  );
+  await API.patch(`/constraints/${id}/toggle`);
+};
 
-  if (!response.ok) {
-    throw new Error("Failed to toggle status");
-  }
+/* ===========================
+   TIMETABLE API
+   =========================== */
+export const generateTimetable = async (sectionId: number) => {
+  await API.post(`/timetable/generate/${sectionId}`);
+};
+
+export const getTimetable = async (sectionId: number) => {
+  const res = await API.get(`/timetable/${sectionId}`);
+  return Array.isArray(res.data) ? res.data : [];
 };
