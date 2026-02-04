@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Sidebar from '../components/layout/Sidebar';
 import ScheduleGrid from '../components/dashboard/ScheduleGrid';
 import { useUser } from '../context/UserContext';
+import { generateICS } from '../lib/icsUtils';
 import { toast } from 'sonner';
 
 const FacultySchedule = () => {
@@ -24,28 +25,16 @@ const FacultySchedule = () => {
         toast.success("Opening Outlook Web Calendar...");
     };
 
-    const generateICS = () => {
+    const handleDownloadICS = () => {
         const event = {
-            start: "20241028T090000Z",
-            end: "20241028T103000Z",
-            summary: "Data Structures Lecture (CS301)",
-            description: "Weekly Academic Schedule",
-            location: "Room LH-102"
+            title: "Data Structures Lecture (CS301)",
+            startDate: new Date("2024-10-28T09:00:00Z"),
+            endDate: new Date("2024-10-28T10:30:00Z"),
+            location: "Room LH-102",
+            description: "Weekly Academic Schedule"
         };
 
-        const icsContent = `BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:-//AcadSchedule//Faculty Portal//EN
-BEGIN:VEVENT
-UID:${Date.now()}@acadschedule.com
-DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z
-DTSTART:${event.start}
-DTEND:${event.end}
-SUMMARY:${event.summary}
-DESCRIPTION:${event.description}
-LOCATION:${event.location}
-END:VEVENT
-END:VCALENDAR`;
+        const icsContent = generateICS(event);
 
         const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
         const link = document.createElement('a');
@@ -55,7 +44,7 @@ END:VCALENDAR`;
         link.click();
         document.body.removeChild(link);
 
-        toast.success("Schedule downloaded as ICS!");
+        toast.success("Schedule downloaded as ICS with Reminder!");
     };
 
     return (
@@ -79,7 +68,7 @@ END:VCALENDAR`;
                             <span className="material-symbols-outlined text-lg">calendar_add_on</span> Add to Outlook
                         </button>
                         <button
-                            onClick={generateICS}
+                            onClick={handleDownloadICS}
                             className="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-xl flex items-center gap-2 hover:bg-slate-50 transition-colors shadow-sm"
                         >
                             <span className="material-symbols-outlined text-lg">download</span> ICS
