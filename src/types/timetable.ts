@@ -58,7 +58,7 @@ export interface Room {
 
 
 export interface Section {
-  id: string;
+  id: number;
   name: string;
   department: string;
   semester: number;
@@ -66,6 +66,8 @@ export interface Section {
   strength: number;
   subjects: string[];
 }
+
+
 
 export interface TimeSlot {
   id: string;

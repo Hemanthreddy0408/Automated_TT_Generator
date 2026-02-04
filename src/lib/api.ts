@@ -1,7 +1,10 @@
 import axios from "axios";
-import { Subject } from "@/types/timetable";
+import { Subject, Section } from "@/types/timetable";
 
-const API_BASE_URL = "http://localhost:8082";
+/* ===========================
+   BASE CONFIG
+   =========================== */
+const API_BASE_URL = "http://localhost:8083";
 
 /* ===========================
    ROOMS API
@@ -21,7 +24,6 @@ export const createRoom = async (room: any) => {
   return res.json();
 };
 
-// ✅ NEW: Update Room
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const updateRoom = async (id: number, room: any) => {
   const res = await fetch(`${API_BASE_URL}/api/rooms/${id}`, {
@@ -32,7 +34,6 @@ export const updateRoom = async (id: number, room: any) => {
   return res.json();
 };
 
-// ✅ NEW: Delete Room
 export const deleteRoom = async (id: number) => {
   await fetch(`${API_BASE_URL}/api/rooms/${id}`, {
     method: "DELETE",
@@ -40,7 +41,7 @@ export const deleteRoom = async (id: number) => {
 };
 
 /* ===========================
-   FACULTY API (Fixed for CRUD)
+   FACULTY API
    =========================== */
 export const getFaculty = async () => {
   const res = await fetch(`${API_BASE_URL}/api/faculty`);
@@ -57,7 +58,6 @@ export const createFaculty = async (faculty: any) => {
   return res.json();
 };
 
-// ✅ NEW: Update Faculty
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const updateFaculty = async (id: number, faculty: any) => {
   const res = await fetch(`${API_BASE_URL}/api/faculty/${id}`, {
@@ -68,7 +68,6 @@ export const updateFaculty = async (id: number, faculty: any) => {
   return res.json();
 };
 
-// ✅ NEW: Delete Faculty
 export const deleteFaculty = async (id: number) => {
   await fetch(`${API_BASE_URL}/api/faculty/${id}`, {
     method: "DELETE",
@@ -88,17 +87,43 @@ export const createSubject = async (subject: Subject) => {
   return res.data;
 };
 
-// ✅ NEW: Update Subject
 export const updateSubject = async (id: number, subject: Subject) => {
-  const res = await axios.put(`${API_BASE_URL}/api/subjects/${id}`, subject);
+  const res = await axios.put(
+    `${API_BASE_URL}/api/subjects/${id}`,
+    subject
+  );
   return res.data;
 };
 
-// ✅ NEW: Delete Subject
 export const deleteSubject = async (id: number) => {
   await axios.delete(`${API_BASE_URL}/api/subjects/${id}`);
 };
 
+// ===== SECTIONS API =====
+
+export const getSections = async () => {
+  const res = await fetch("http://localhost:8083/api/sections");
+  return res.json();
+};
+
+export const createSection = async (section: Omit<any, "id">) => {
+  const res = await fetch("http://localhost:8083/api/sections", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(section),
+  });
+  return res.json();
+};
+
+export const deleteSection = async (id: number) => {
+  await fetch(`http://localhost:8083/api/sections/${id}`, {
+    method: "DELETE",
+  });
+};
+
+/* ===========================
+   CONSTRAINTS API
+   =========================== */
 export const getConstraints = async () => {
   const response = await fetch(`${API_BASE_URL}/api/constraints`);
   if (!response.ok) throw new Error("Failed to fetch constraints");
@@ -106,29 +131,29 @@ export const getConstraints = async () => {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function createConstraint(payload) {
-  const response = await fetch(
-    "http://localhost:8082/api/constraints",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    }
-  );
+export const createConstraint = async (payload: any) => {
+  const response = await fetch(`${API_BASE_URL}/api/constraints`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
 
   if (!response.ok) {
     throw new Error("Failed to create constraint");
   }
 
   return response.json();
-}
-
+};
 
 export const toggleConstraintStatus = async (id: string) => {
-  const response = await fetch(`${API_BASE_URL}/constraints/${id}/toggle`, {
-    method: "PATCH",
-  });
-  if (!response.ok) throw new Error("Failed to toggle status");
+  const response = await fetch(
+    `${API_BASE_URL}/api/constraints/${id}/toggle`,
+    {
+      method: "PATCH",
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to toggle status");
+  }
 };

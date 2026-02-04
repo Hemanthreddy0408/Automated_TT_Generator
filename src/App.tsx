@@ -12,10 +12,11 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import TimetablePage from "./pages/admin/TimetablePage";
 import FacultyPage from "./pages/admin/FacultyPage";
 import RoomsPage from "./pages/admin/RoomsPage";
-import SubjectsPage from "./pages/admin/SubjectsPage";
-import ConstraintsPage from "./pages/admin/ConstraintsPage";
+import SectionsPage from "@/pages/admin/SectionsPage";import ConstraintsPage from "./pages/admin/ConstraintsPage";
 import HistoryPage from "./pages/admin/HistoryPage";
 import AnalyticsPage from "@/pages/admin/AnalyticsPage";
+import SubjectsPage from "./pages/admin/SubjectsPage";
+
 import AddConstraintPage from "@/pages/constraints/AddConstraintPage";
 
 // Add/Edit Sub-pages
@@ -25,6 +26,8 @@ import AddFacultyReviewPage from "@/pages/faculty/add/AddFacultyReviewPage";
 import AddSubjectPage from "@/pages/subjects/AddSubjectPage";
 import AddRoomPage from "@/pages/rooms/AddRoomPage";
 import EditRoomPage from "@/pages/rooms/EditRoomPage";
+import AddSectionPage from "@/pages/sections/addSectionPage";
+
 
 // NEW Faculty Portal Pages
 import DashboardFaculty from "./pages/Dashboard-Faculty";
@@ -65,6 +68,11 @@ const App = () => {
             <Route path="/admin/constraints/add" element={<AddConstraintPage />} />
             <Route path="/admin/faculty/add" element={<AddFacultyPage />} />
             <Route path="/admin/faculty" element={<FacultyPage />} />
+            <Route path="/admin/subjects" element={<SubjectsPage />} />
+            <Route path="/admin/sections/add" element={<AddSectionPage />} />
+
+
+
 
             {/* --- ADMIN: OTHER ROUTES --- */}
             <Route path="/admin" element={<AdminDashboard />} />
@@ -73,8 +81,10 @@ const App = () => {
             <Route path="/admin/rooms/edit/:id" element={<EditRoomPage />} />
             <Route path="/admin/rooms" element={<RoomsPage />} />
             <Route path="/admin/subjects/add" element={<AddSubjectPage />} />
-            <Route path="/admin/subjects" element={<SubjectsPage />} />
-            <Route path="/admin/sections" element={<AdminDashboard />} />
+            <Route path="/admin/sections" element={<SectionsPage />} />
+            <Route path="/admin/sections/add" element={<AddSectionPage />} />
+
+          
             <Route path="/admin/constraints" element={<ConstraintsPage />} />
             <Route path="/admin/history" element={<HistoryPage />} />
             <Route path="/admin/settings" element={<AdminDashboard />} />
