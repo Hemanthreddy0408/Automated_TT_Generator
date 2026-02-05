@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
-import { TimetableGrid } from "@/components/timetable/TimetableGrid";
+import { TimetableGrid, TimetableEntry } from "@/components/timetable/TimetableGrid";
 import { generateTimetable, getTimetable } from "@/lib/api";
 
 export default function TimetablePage() {
-  const sectionId = 1; // later make this dynamic
 
-  const [entries, setEntries] = useState<any[]>([]);
+  // ✅ MUST MATCH DB UUID (COPY FROM pgAdmin)
+  const sectionId = "583cb115-a010-4ce9-bb42-83092a820e";
+
+  const [entries, setEntries] = useState<TimetableEntry[]>([]);
   const [loading, setLoading] = useState(false);
 
   const fetchTimetable = async () => {
@@ -16,10 +18,15 @@ export default function TimetablePage() {
   };
 
   const handleGenerate = async () => {
-    setLoading(true);
-    await generateTimetable(sectionId);
-    await fetchTimetable();
-    setLoading(false);
+    try {
+      setLoading(true);
+      await generateTimetable(sectionId);
+      await fetchTimetable();
+    } catch (err) {
+      console.error("Failed to generate timetable", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {

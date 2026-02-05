@@ -159,11 +159,16 @@ export const toggleConstraintStatus = async (id: string) => {
 /* ===========================
    TIMETABLE API
    =========================== */
-export const generateTimetable = async (sectionId: number) => {
+/* ===========================
+   TIMETABLE API ✅ FIXED
+   =========================== */
+
+// SECTION ID IS STRING (UUID)
+export const generateTimetable = async (sectionId: string) => {
   await API.post(`/timetable/generate/${sectionId}`);
 };
 
-export const getTimetable = async (sectionId: number) => {
+export const getTimetable = async (sectionId: string) => {
   const res = await API.get(`/timetable/${sectionId}`);
   return Array.isArray(res.data) ? res.data : [];
 };

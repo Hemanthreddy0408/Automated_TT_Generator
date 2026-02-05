@@ -2,27 +2,31 @@ package com.acadschedule.scheduler.repository;
 
 import com.acadschedule.scheduler.entity.TimetableEntry;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Repository
 public interface TimetableRepository extends JpaRepository<TimetableEntry, Long> {
 
-    // ✅ Used to clear old timetable
-    void deleteBySectionId(Long sectionId);
+    @Modifying
+    @Transactional
+    void deleteBySectionId(String sectionId);
 
-    // ✅ Used for rendering timetable
-    List<TimetableEntry> findAllBySectionId(Long sectionId);
+    List<TimetableEntry> findBySectionId(String sectionId);
 
-    // ✅ Hard constraints
     boolean existsByFacultyNameAndDayAndTimeSlot(
-            String facultyName,
-            String day,
-            String timeSlot
+        String facultyName, String day, String timeSlot
     );
 
     boolean existsByRoomNumberAndDayAndTimeSlot(
-            String roomNumber,
-            String day,
-            String timeSlot
+        String roomNumber, String day, String timeSlot
+    );
+
+    boolean existsBySectionIdAndDayAndTimeSlot(
+        String sectionId, String day, String timeSlot
     );
 }
+

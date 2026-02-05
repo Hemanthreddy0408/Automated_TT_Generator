@@ -10,24 +10,24 @@ public class TimetableEntry {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long sectionId;
+    // ✅ MUST MATCH Section.id (UUID String)
+    @Column(nullable = false)
+    private String sectionId;
 
     private String day;
-
     private String timeSlot;
 
     private String subjectCode;
-
     private String facultyName;
-
     private String roomNumber;
 
-    private String type;
+    private String type; // LECTURE / LAB / BREAK / LUNCH
 
-    // ===== Getters & Setters =====
+    // getters & setters
     public Long getId() { return id; }
-    public Long getSectionId() { return sectionId; }
-    public void setSectionId(Long sectionId) { this.sectionId = sectionId; }
+
+    public String getSectionId() { return sectionId; }
+    public void setSectionId(String sectionId) { this.sectionId = sectionId; }
 
     public String getDay() { return day; }
     public void setDay(String day) { this.day = day; }

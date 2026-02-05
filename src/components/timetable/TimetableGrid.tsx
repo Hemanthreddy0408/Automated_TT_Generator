@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { Card } from "@/components/ui/card";
 
 /* =========================
@@ -14,7 +15,7 @@ export type TimetableEntry = {
 };
 
 type Props = {
-  entries?: TimetableEntry[]; // ✅ OPTIONAL
+  entries?: TimetableEntry[];
 };
 
 /* =========================
@@ -27,16 +28,15 @@ export function TimetableGrid({ entries = [] }: Props) {
     "08:00-08:50",
     "09:00-09:50",
     "10:00-10:50",
-    "10:30-10:45", // BREAK
+    "10:30-10:45",
     "11:00-11:50",
     "12:00-12:50",
-    "01:15-02:05", // LUNCH
+    "01:15-02:05",
     "02:10-03:00",
     "03:10-04:00",
     "04:10-05:00",
   ];
 
-  // ✅ SAFE FIND
   const findEntry = (day: string, slot: string) =>
     entries.find(e => e.day === day && e.timeSlot === slot);
 
@@ -48,7 +48,7 @@ export function TimetableGrid({ entries = [] }: Props) {
         <div className="bg-white" />
         {TIME_SLOTS.map(slot => (
           <div
-            key={slot}
+            key={`header-${slot}`}
             className="bg-white text-xs font-semibold text-center p-2"
           >
             {slot}
@@ -57,8 +57,8 @@ export function TimetableGrid({ entries = [] }: Props) {
 
         {/* GRID */}
         {DAYS.map(day => (
-          <>
-            <div key={day} className="bg-white font-semibold text-sm p-2">
+          <Fragment key={day}>
+            <div className="bg-white font-semibold text-sm p-2">
               {day}
             </div>
 
@@ -89,9 +89,7 @@ export function TimetableGrid({ entries = [] }: Props) {
                           : entry.subjectCode}
                       </div>
 
-                      {entry.facultyName && (
-                        <div>{entry.facultyName}</div>
-                      )}
+                      {entry.facultyName && <div>{entry.facultyName}</div>}
 
                       {entry.roomNumber && (
                         <div className="text-muted-foreground">
@@ -105,7 +103,7 @@ export function TimetableGrid({ entries = [] }: Props) {
                 </Card>
               );
             })}
-          </>
+          </Fragment>
         ))}
       </div>
     </div>
