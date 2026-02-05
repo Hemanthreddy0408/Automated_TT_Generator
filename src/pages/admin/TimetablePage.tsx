@@ -6,7 +6,6 @@ import { generateTimetable, getTimetable } from "@/lib/api";
 
 export default function TimetablePage() {
 
-  // ✅ MUST MATCH DB UUID (COPY FROM pgAdmin)
   const sectionId = "583cb115-a010-4ce9-bb42-83092a820e";
 
   const [entries, setEntries] = useState<TimetableEntry[]>([]);
@@ -14,19 +13,14 @@ export default function TimetablePage() {
 
   const fetchTimetable = async () => {
     const data = await getTimetable(sectionId);
-    setEntries(Array.isArray(data) ? data : []);
+    setEntries(data);
   };
 
   const handleGenerate = async () => {
-    try {
-      setLoading(true);
-      await generateTimetable(sectionId);
-      await fetchTimetable();
-    } catch (err) {
-      console.error("Failed to generate timetable", err);
-    } finally {
-      setLoading(false);
-    }
+    setLoading(true);
+    await generateTimetable(sectionId);
+    await fetchTimetable();
+    setLoading(false);
   };
 
   useEffect(() => {
