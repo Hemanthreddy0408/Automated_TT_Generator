@@ -1,0 +1,43 @@
+# Ignore everything at repo root
+/*
+
+# Allow the real project folder
+!/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/
+
+# Allow everything inside that folder
+!/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/**
+
+
+# ---- IDE / OS junk ----
+.vscode/
+.idea/
+*.iml
+*.ipr
+*.iws
+.DS_Store
+
+# ---- Java / Spring ----
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# ---- STS ----
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+# ---- NetBeans ----
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
