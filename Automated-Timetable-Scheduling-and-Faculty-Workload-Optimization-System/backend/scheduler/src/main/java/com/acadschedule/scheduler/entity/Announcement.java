@@ -10,10 +10,19 @@ public class Announcement {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "title")
     private String title;
+
+    @Column(name = "description")
     private String description;
+
+    @Column(name = "tag")
     private String tag; // Urgent, Holiday, General
+
+    @Column(name = "tag_class")
     private String tagClass; // for frontend styling
+
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     public Announcement() {}

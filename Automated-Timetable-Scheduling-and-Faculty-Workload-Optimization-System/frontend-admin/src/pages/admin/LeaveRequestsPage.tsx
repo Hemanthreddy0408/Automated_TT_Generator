@@ -24,7 +24,7 @@ const LeaveRequestsPage = () => {
 
     const fetchRequests = async () => {
         try {
-            const response = await axios.get('http://localhost:8082/api/leaves', { timeout: 5000 });
+            const response = await axios.get('http://localhost:8083/api/leaves', { timeout: 5000 });
             setRequests(response.data);
         } catch (error) {
             console.error('Error fetching leave requests:', error);
@@ -40,7 +40,7 @@ const LeaveRequestsPage = () => {
 
     const handleUpdateStatus = async (id: number, status: string) => {
         try {
-            await axios.patch(`http://localhost:8082/api/leaves/${id}/status?status=${status}`);
+            await axios.patch(`http://localhost:8083/api/leaves/${id}/status?status=${status}`);
             toast.success(`Leave request ${status.toLowerCase()} successfully`);
             fetchRequests();
         } catch (error) {
@@ -51,7 +51,7 @@ const LeaveRequestsPage = () => {
     const handleGenerateSchedule = async () => {
         try {
             toast.info("Initiating schedule optimization...");
-            await axios.post('http://localhost:8082/api/schedule/generate');
+            await axios.post('http://localhost:8083/api/schedule/generate');
             toast.success("Schedule optimization started successfully!");
         } catch (error) {
             console.error("Error generating schedule:", error);

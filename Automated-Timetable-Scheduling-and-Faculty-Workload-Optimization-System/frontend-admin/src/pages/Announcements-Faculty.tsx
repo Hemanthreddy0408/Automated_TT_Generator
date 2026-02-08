@@ -18,7 +18,7 @@ const Announcements = ({ onApplyLeave }: { onApplyLeave: () => void }) => {
   useEffect(() => {
     const fetchAnnouncements = async () => {
       try {
-        const response = await axios.get('http://localhost:8082/api/announcements', { timeout: 5000 });
+        const response = await axios.get('http://localhost:8083/api/announcements', { timeout: 5000 });
         setAnnouncements(response.data);
       } catch (error) {
         console.error('Error fetching announcements:', error);

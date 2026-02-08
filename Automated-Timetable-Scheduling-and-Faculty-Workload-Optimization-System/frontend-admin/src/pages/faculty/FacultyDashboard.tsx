@@ -4,7 +4,7 @@ import axios from 'axios';
 
 
 import { Link } from 'react-router-dom';
-import { TimetableGrid } from '@/components/timetable/TimetableGrid';
+import { TimetableGrid, TimetableEntry } from '@/components/timetable/TimetableGrid';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -43,7 +43,7 @@ export default function FacultyDashboard() {
   const [currentDay, setCurrentDay] = useState(0);
 
   useEffect(() => {
-    axios.get('http://localhost:8082/api/faculty/1')
+    axios.get('http://localhost:8083/api/faculty/1')
       .then(res => setCurrentFaculty(res.data))
       .catch(err => {
         console.error("Failed to fetch faculty:", err);
@@ -68,6 +68,23 @@ export default function FacultyDashboard() {
   const nextRoom = nextSession ? getRoomById(nextSession.roomId) : null;
   const nextSection = nextSession ? getSectionById(nextSession.sectionId) : null;
   const nextTimeSlot = nextSession ? mockTimeSlots.find((t) => t.id === nextSession.timeSlotId) : null;
+
+  const timetableEntries: TimetableEntry[] = (viewMode === 'week' ? facultySessions : todaySessions).map(session => {
+    const subject = getSubjectById(session.subjectId);
+    const room = getRoomById(session.roomId);
+    const timeSlot = mockTimeSlots.find(t => t.id === session.timeSlotId);
+
+    return {
+      id: parseInt(session.id.replace(/\D/g, '')) || Math.random(),
+      day: DAYS_OF_WEEK[session.dayOfWeek].toUpperCase(),
+      timeSlot: timeSlot ? `${timeSlot.startTime}-${timeSlot.endTime}` : "00:00-00:00",
+      subjectCode: subject?.code,
+      facultyName: currentFaculty.name,
+      roomNumber: room?.code,
+      type: session.sessionType === 'lab' ? 'LAB' : 'LECTURE',
+      hasConflict: session.hasConflict
+    };
+  });
 
   const getInitials = (fullName: string) => {
     if (!fullName) return "?";
@@ -226,9 +243,7 @@ export default function FacultyDashboard() {
             </div>
 
             <TimetableGrid
-              sessions={viewMode === 'week' ? facultySessions : todaySessions}
-              viewMode="faculty"
-              highlightConflicts
+              entries={timetableEntries}
             />
           </div>
 

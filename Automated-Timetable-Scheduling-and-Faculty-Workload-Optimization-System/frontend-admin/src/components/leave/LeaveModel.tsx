@@ -34,7 +34,7 @@ const LeaveModal = ({ isOpen, onClose }: LeaveModalProps) => {
         appliedDate: new Date().toISOString().split('T')[0]
       };
 
-      await axios.post("http://localhost:8082/api/leaves", payload);
+      await axios.post("http://localhost:8083/api/leaves", payload);
 
       toast.success("Leave application submitted successfully!");
       // Reset form

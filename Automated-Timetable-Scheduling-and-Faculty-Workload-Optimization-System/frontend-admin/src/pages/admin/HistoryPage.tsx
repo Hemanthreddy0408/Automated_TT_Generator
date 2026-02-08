@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -30,6 +30,7 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
+import { getAuditLogs, AuditLog } from "@/lib/api";
 
 type HistoryType = 'MANUAL' | 'SYSTEM' | 'EXPORT';
 
@@ -43,47 +44,8 @@ type HistoryEntry = {
   timestamp: string;
   date: string;
   rollback: boolean;
-  avatar?: string; 
+  avatar?: string;
 };
-
-const DATA: HistoryEntry[] = [
-  {
-    id: '1',
-    user: 'Admin User',
-    role: 'Super Admin',
-    action: 'Manually edited CS301 slot',
-    description: 'Moved from Mon 09:00 to Tue 10:00 (LH-101)',
-    type: 'MANUAL',
-    timestamp: 'Today, 2:45 PM',
-    date: 'Aug 27, 2024',
-    rollback: true,
-    avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
-  },
-  {
-    id: '2',
-    user: 'System Engine',
-    role: 'Auto-scheduler v2.4',
-    action: 'Generated Fall 2024 Version 3',
-    description: 'Optimization score: 94.2%',
-    type: 'SYSTEM',
-    timestamp: 'Aug 26, 11:20 AM',
-    date: '24 hours ago',
-    rollback: true,
-    avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
-  },
-  {
-    id: '3',
-    user: 'Admin User',
-    role: 'Super Admin',
-    action: 'Exported Timetable CS-3A',
-    description: 'Format: PDF',
-    type: 'EXPORT',
-    timestamp: 'Aug 25, 09:30 AM',
-    date: '2 days ago',
-    rollback: false,
-    avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
-  },
-];
 
 const badgeStyle: Record<HistoryType, string> = {
   MANUAL: 'bg-amber-100 text-amber-700 border-amber-200',
@@ -97,14 +59,39 @@ export default function HistoryPage() {
   const [pageSize, setPageSize] = useState(5);
   const [page, setPage] = useState(1);
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
-  from: new Date(2024, 7, 1),
-  to: new Date(2024, 7, 30),
-});
+    from: new Date(2024, 0, 1), // Start from Jan 2024
+    to: new Date(2027, 0, 1), // To Jan 2027
+  });
 
+  const [logs, setLogs] = useState<HistoryEntry[]>([]);
+
+  useEffect(() => {
+    getAuditLogs().then(data => {
+      const mapped: HistoryEntry[] = data.map(log => {
+        // FIX: convert postgres timestamp -> ISO format (handle spaces or missing T)
+        const isoTime = log.timestamp.includes('T') ? log.timestamp : log.timestamp.replace(' ', 'T');
+        const dateObj = new Date(isoTime);
+
+        return {
+          id: String(log.id),
+          user: log.userEmail,
+          role: log.userEmail === 'System/Admin' ? 'System Process' : 'Admin',
+          action: `${log.actionType} ${log.entityType}`,
+          description: log.description.length > 50 ? log.description.substring(0, 50) + '...' : log.description,
+          type: log.userEmail === 'System/Admin' ? 'SYSTEM' : 'MANUAL',
+          timestamp: dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          date: dateObj.toLocaleDateString(),
+          rollback: false,
+          avatar: undefined
+        };
+      });
+      setLogs(mapped);
+    });
+  }, []);
 
   /* ---------- FILTER LOGIC ---------- */
   const filtered = useMemo(() => {
-    return DATA.filter((row) => {
+    return logs.filter((row) => {
       const matchesSearch =
         row.action.toLowerCase().includes(search.toLowerCase()) ||
         row.user.toLowerCase().includes(search.toLowerCase());
@@ -114,7 +101,7 @@ export default function HistoryPage() {
 
       return matchesSearch && matchesType;
     });
-  }, [search, typeFilter]);
+  }, [search, typeFilter, logs]);
 
   /* ---------- PAGINATION ---------- */
   const totalPages = Math.ceil(filtered.length / pageSize);
@@ -129,168 +116,168 @@ export default function HistoryPage() {
       subtitle="Track all scheduling actions and system changes"
     >
       <div className="space-y-8 p-6">
-      {/* STATS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {/* Total Actions */}
-        <Card className="rounded-xl shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-8 flex justify-between items-start">
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-muted-foreground">Total Actions</p>
-              <p className="text-3xl font-bold mt-2">1,284</p>
-              <p className="text-xs text-green-600 font-medium">↗ +12% this week</p>
-            </div>
-            <div className="bg-blue-100 text-blue-600 p-4 rounded-xl">
-              <List className="h-6 w-6" />
-            </div>
-          </CardContent>
-        </Card>
+        {/* STATS */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {/* Total Actions */}
+          <Card className="rounded-xl shadow-sm hover:shadow-md transition-shadow">
+            <CardContent className="p-8 flex justify-between items-start">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-muted-foreground">Total Actions</p>
+                <p className="text-3xl font-bold mt-2">1,284</p>
+                <p className="text-xs text-green-600 font-medium">↗ +12% this week</p>
+              </div>
+              <div className="bg-blue-100 text-blue-600 p-4 rounded-xl">
+                <List className="h-6 w-6" />
+              </div>
+            </CardContent>
+          </Card>
 
-        {/* Automated */}
-        <Card className="rounded-xl shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-8 flex justify-between items-start">
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-muted-foreground">Automated</p>
-              <p className="text-3xl font-bold mt-2">452</p>
-              <p className="text-xs text-muted-foreground font-medium">
-                Generated versions
-              </p>
-            </div>
-            <div className="bg-purple-100 text-purple-600 p-4 rounded-xl">
-              <Zap className="h-6 w-6" />
-            </div>
-          </CardContent>
-        </Card>
+          {/* Automated */}
+          <Card className="rounded-xl shadow-sm hover:shadow-md transition-shadow">
+            <CardContent className="p-8 flex justify-between items-start">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-muted-foreground">Automated</p>
+                <p className="text-3xl font-bold mt-2">452</p>
+                <p className="text-xs text-muted-foreground font-medium">
+                  Generated versions
+                </p>
+              </div>
+              <div className="bg-purple-100 text-purple-600 p-4 rounded-xl">
+                <Zap className="h-6 w-6" />
+              </div>
+            </CardContent>
+          </Card>
 
-        {/* Manual Edits */}
-        <Card className="rounded-xl shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-8 flex justify-between items-start">
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-muted-foreground">Manual Edits</p>
-              <p className="text-3xl font-bold mt-2">832</p>
-              <p className="text-xs text-muted-foreground font-medium">
-                Direct adjustments
-              </p>
-            </div>
-            <div className="bg-amber-100 text-amber-600 p-4 rounded-xl">
-              <Edit className="h-6 w-6" />
-            </div>
-          </CardContent>
-        </Card>
+          {/* Manual Edits */}
+          <Card className="rounded-xl shadow-sm hover:shadow-md transition-shadow">
+            <CardContent className="p-8 flex justify-between items-start">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-muted-foreground">Manual Edits</p>
+                <p className="text-3xl font-bold mt-2">832</p>
+                <p className="text-xs text-muted-foreground font-medium">
+                  Direct adjustments
+                </p>
+              </div>
+              <div className="bg-amber-100 text-amber-600 p-4 rounded-xl">
+                <Edit className="h-6 w-6" />
+              </div>
+            </CardContent>
+          </Card>
 
-        {/* Rollbacks */}
-        <Card className="rounded-xl shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-8 flex justify-between items-start">
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-muted-foreground">Rollbacks</p>
-              <p className="text-3xl font-bold mt-2">24</p>
-              <p className="text-xs text-muted-foreground font-medium">
-                Changes reverted
-              </p>
-            </div>
-            <div className="bg-red-100 text-red-600 p-4 rounded-xl">
-              <History className="h-6 w-6" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          {/* Rollbacks */}
+          <Card className="rounded-xl shadow-sm hover:shadow-md transition-shadow">
+            <CardContent className="p-8 flex justify-between items-start">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-muted-foreground">Rollbacks</p>
+                <p className="text-3xl font-bold mt-2">24</p>
+                <p className="text-xs text-muted-foreground font-medium">
+                  Changes reverted
+                </p>
+              </div>
+              <div className="bg-red-100 text-red-600 p-4 rounded-xl">
+                <History className="h-6 w-6" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-      {/* FILTER BAR */}
-      <Card className="rounded-xl shadow-sm mb-8">
-        <CardContent className="px-8 py-6">
-          <div className="flex flex-wrap items-center gap-4">
+        {/* FILTER BAR */}
+        <Card className="rounded-xl shadow-sm mb-8">
+          <CardContent className="px-8 py-6">
+            <div className="flex flex-wrap items-center gap-4">
 
-            {/* Filters label */}
-            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <Filter className="h-4 w-4" />
-              <span>Filters:</span>
-            </div>
+              {/* Filters label */}
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <Filter className="h-4 w-4" />
+                <span>Filters:</span>
+              </div>
 
-            {/* Action Type */}
-            <Select
-              value={typeFilter}
-              onValueChange={(v) => setTypeFilter(v as 'ALL' | HistoryType)}
-            >
-              <SelectTrigger className="w-[190px] rounded-full border bg-background px-5 py-3 text-sm font-medium">
-                <SelectValue placeholder="All Action Types" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">All Action Types</SelectItem>
-                <SelectItem value="MANUAL">Manual</SelectItem>
-                <SelectItem value="SYSTEM">System</SelectItem>
-                <SelectItem value="EXPORT">Export</SelectItem>
-              </SelectContent>
-            </Select>
+              {/* Action Type */}
+              <Select
+                value={typeFilter}
+                onValueChange={(v) => setTypeFilter(v as 'ALL' | HistoryType)}
+              >
+                <SelectTrigger className="w-[190px] rounded-full border bg-background px-5 py-3 text-sm font-medium">
+                  <SelectValue placeholder="All Action Types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All Action Types</SelectItem>
+                  <SelectItem value="MANUAL">Manual</SelectItem>
+                  <SelectItem value="SYSTEM">System</SelectItem>
+                  <SelectItem value="EXPORT">Export</SelectItem>
+                </SelectContent>
+              </Select>
 
-            {/* Users */}
-            <Select disabled>
-              <SelectTrigger className="w-[150px] rounded-full border bg-background px-5 py-3 text-sm font-medium opacity-70">
-                <SelectValue placeholder="All Users" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">All Users</SelectItem>
-              </SelectContent>
-            </Select>
+              {/* Users */}
+              <Select disabled>
+                <SelectTrigger className="w-[150px] rounded-full border bg-background px-5 py-3 text-sm font-medium opacity-70">
+                  <SelectValue placeholder="All Users" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All Users</SelectItem>
+                </SelectContent>
+              </Select>
 
-            {/* Date Range */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <button className="flex items-center gap-3 rounded-full border bg-background px-5 py-3 text-sm font-medium">
-                  <span className="material-icons text-base text-muted-foreground">
-                    calendar_today
-                  </span>
-                  <span>
-                    {dateRange?.from && dateRange?.to
-                      ? `${format(dateRange.from, "MMM d, yyyy")} - ${format(
+              {/* Date Range */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className="flex items-center gap-3 rounded-full border bg-background px-5 py-3 text-sm font-medium">
+                    <span className="material-icons text-base text-muted-foreground">
+                      calendar_today
+                    </span>
+                    <span>
+                      {dateRange?.from && dateRange?.to
+                        ? `${format(dateRange.from, "MMM d, yyyy")} - ${format(
                           dateRange.to,
                           "MMM d, yyyy"
                         )}`
-                      : "Select date range"}
-                  </span>
-                </button>
-              </PopoverTrigger>
+                        : "Select date range"}
+                    </span>
+                  </button>
+                </PopoverTrigger>
 
-              <PopoverContent className="p-2" align="start">
-                <Calendar
-                  mode="range"
-                  selected={dateRange}
-                  onSelect={setDateRange}
-                  numberOfMonths={2}
-                />
-              </PopoverContent>
-            </Popover>
+                <PopoverContent className="p-2" align="start">
+                  <Calendar
+                    mode="range"
+                    selected={dateRange}
+                    onSelect={setDateRange}
+                    numberOfMonths={2}
+                  />
+                </PopoverContent>
+              </Popover>
 
-            {/* Show entries */}
-            <Select
-              value={String(pageSize)}
-              onValueChange={(v) => {
-                setPageSize(Number(v));
-                setPage(1);
-              }}
-            >
-              <SelectTrigger className="w-[130px] rounded-full border bg-background px-5 py-3 text-sm font-medium">
-                <SelectValue placeholder="Show 5" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="3">Show 3</SelectItem>
-                <SelectItem value="5">Show 5</SelectItem>
-                <SelectItem value="10">Show 10</SelectItem>
-                <SelectItem value="25">Show 25</SelectItem>
-              </SelectContent>
-            </Select>
+              {/* Show entries */}
+              <Select
+                value={String(pageSize)}
+                onValueChange={(v) => {
+                  setPageSize(Number(v));
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger className="w-[130px] rounded-full border bg-background px-5 py-3 text-sm font-medium">
+                  <SelectValue placeholder="Show 5" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="3">Show 3</SelectItem>
+                  <SelectItem value="5">Show 5</SelectItem>
+                  <SelectItem value="10">Show 10</SelectItem>
+                  <SelectItem value="25">Show 25</SelectItem>
+                </SelectContent>
+              </Select>
 
-            {/* Export */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="ml-auto gap-2 rounded-full px-4 py-3 text-muted-foreground hover:bg-muted/50"
-            >
-              <Download className="h-4 w-4" />
-              Export CSV
-            </Button>
+              {/* Export */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="ml-auto gap-2 rounded-full px-4 py-3 text-muted-foreground hover:bg-muted/50"
+              >
+                <Download className="h-4 w-4" />
+                Export CSV
+              </Button>
 
-          </div>
-        </CardContent>
-      </Card>
+            </div>
+          </CardContent>
+        </Card>
 
 
         {/* TABLE */}
@@ -406,7 +393,7 @@ export default function HistoryPage() {
         </Card>
 
 
-        </div>
+      </div>
     </AdminLayout>
   );
 }

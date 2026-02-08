@@ -22,19 +22,39 @@ public class Subject {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "code")
     private String code;
+
+    @Column(name = "name")
     private String name;
+
+    @Column(name = "department")
     private String department;
+
+    @Column(name = "credits")
     private int credits;
 
+    @Column(name = "lecture_hours_per_week")
     private int lectureHoursPerWeek;
+
+    @Column(name = "tutorial_hours_per_week")
     private int tutorialHoursPerWeek;
+
+    @Column(name = "lab_hours_per_week")
     private int labHoursPerWeek;
 
+    @Column(name = "year")
+    private int year;
+
+    @Column(name = "elective")
     private boolean elective;
+
+    @Column(name = "faculty_count")
     private int facultyCount;
 
     @ElementCollection
+    @CollectionTable(name = "subject_eligible_faculty", joinColumns = @JoinColumn(name = "subject_id"))
+    @Column(name = "faculty_id")
     private List<String> eligibleFaculty = new ArrayList<>();
 
     public String getCode() { return code; }
@@ -44,12 +64,14 @@ public class Subject {
     public int getLectureHoursPerWeek() { return lectureHoursPerWeek; }
     public int getTutorialHoursPerWeek() { return tutorialHoursPerWeek; }
     public int getLabHoursPerWeek() { return labHoursPerWeek; }
+    public int getYear() { return year; }
     public boolean isElective() { return elective; }
     public int getFacultyCount() { return facultyCount; }
 
     public void setLectureHoursPerWeek(int v) { this.lectureHoursPerWeek = v; }
     public void setTutorialHoursPerWeek(int v) { this.tutorialHoursPerWeek = v; }
     public void setLabHoursPerWeek(int v) { this.labHoursPerWeek = v; }
+    public void setYear(int v) { this.year = v; }
     public void setElective(boolean v) { this.elective = v; }
     public void setFacultyCount(int v) { this.facultyCount = v; }
 

@@ -17,7 +17,7 @@ const Department = () => {
   useEffect(() => {
     const fetchFaculty = async () => {
       try {
-        const response = await axios.get('http://localhost:8082/api/faculty', { timeout: 3000 });
+        const response = await axios.get('http://localhost:8083/api/faculty', { timeout: 3000 });
         setFacultyMembers(response.data);
       } catch (error) {
         console.error("Error fetching faculty directory", error);

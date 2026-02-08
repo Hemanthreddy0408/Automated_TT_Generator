@@ -5,18 +5,19 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
+
 // Page Imports
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import TimetablePage from "./pages/admin/TimetablePage";
+
 import FacultyPage from "./pages/admin/FacultyPage";
 import RoomsPage from "./pages/admin/RoomsPage";
 import SubjectsPage from "./pages/admin/SubjectsPage";
 import ConstraintsPage from "./pages/admin/ConstraintsPage";
 import HistoryPage from "./pages/admin/HistoryPage";
 import AnalyticsPage from "@/pages/admin/AnalyticsPage";
-import AddConstraintPage from "@/pages/constraints/AddConstraintPage";
 
 // Add/Edit Sub-pages
 import AddFacultyPage from "@/pages/faculty/add/AddFacultyPage";
@@ -25,6 +26,8 @@ import AddFacultyReviewPage from "@/pages/faculty/add/AddFacultyReviewPage";
 import AddSubjectPage from "@/pages/subjects/AddSubjectPage";
 import AddRoomPage from "@/pages/rooms/AddRoomPage";
 import EditRoomPage from "@/pages/rooms/EditRoomPage";
+import AddConstraintPage from "@/pages/constraints/AddConstraintPage";
+import AddSectionPage from "@/pages/section/AddSectionPage";
 
 // NEW Faculty Portal Pages
 import DashboardFaculty from "./pages/Dashboard-Faculty";
@@ -34,6 +37,7 @@ import DepartmentFaculty from "./pages/Department-Faculty";
 import AnnouncementsFaculty from "./pages/Announcements-Faculty";
 import LeaveModal from "./components/leave/LeaveModel";
 import LeaveRequestsPage from "./pages/admin/LeaveRequestsPage";
+import SectionManagement from "./pages/admin/SectionsPage";
 
 import { UserProvider } from "./context/UserContext";
 
@@ -72,13 +76,15 @@ const App = () => {
 
               {/* --- ADMIN: OTHER ROUTES --- */}
               <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/sections/add" element={<AddSectionPage />} />
+              <Route path="/admin/sections/edit/:id" element={<AddSectionPage />} />
               <Route path="/admin/timetable" element={<TimetablePage />} />
               <Route path="/admin/rooms/add" element={<AddRoomPage />} />
               <Route path="/admin/rooms/edit/:id" element={<EditRoomPage />} />
               <Route path="/admin/rooms" element={<RoomsPage />} />
               <Route path="/admin/subjects/add" element={<AddSubjectPage />} />
               <Route path="/admin/subjects" element={<SubjectsPage />} />
-              <Route path="/admin/sections" element={<AdminDashboard />} />
+              <Route path="/admin/sections" element={<SectionManagement />} />
               <Route path="/admin/constraints" element={<ConstraintsPage />} />
               <Route path="/admin/history" element={<HistoryPage />} />
               <Route path="/admin/settings" element={<AdminDashboard />} />

@@ -1,4 +1,5 @@
 package com.acadschedule.scheduler;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
 
 import com.acadschedule.scheduler.entity.Announcement;
 import com.acadschedule.scheduler.repository.AnnouncementRepository;

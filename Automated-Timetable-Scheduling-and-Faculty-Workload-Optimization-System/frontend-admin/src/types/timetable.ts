@@ -28,7 +28,7 @@ export interface Faculty {
   isActive: boolean;
 }
 export interface Subject {
-  id?: number; // 👈 IMPORTANT
+  id?: number;
   code: string;
   name: string;
   department: string;
@@ -36,7 +36,9 @@ export interface Subject {
   lectureHoursPerWeek: number;
   tutorialHoursPerWeek: number;
   labHoursPerWeek: number;
-  isElective: boolean;
+  elective: boolean; // 👈 MATCH BACKEND
+  facultyCount: number; // 👈 ADDED
+  year: number;
   eligibleFaculty: string[];
 }
 
@@ -58,13 +60,13 @@ export interface Room {
 
 
 export interface Section {
-  id: string;
+  id: number;
   name: string;
   department: string;
-  semester: number;
   year: number;
-  strength: number;
-  subjects: string[];
+  capacity: number;
+  status?: 'ACTIVE' | 'DRAFT';
+  mentorId?: number;
 }
 
 export interface TimeSlot {

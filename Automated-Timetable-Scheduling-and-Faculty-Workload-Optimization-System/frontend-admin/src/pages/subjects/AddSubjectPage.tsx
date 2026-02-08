@@ -16,6 +16,7 @@ export default function AddSubjectPage() {
   const [name, setName] = useState("");
   const [department, setDepartment] = useState("");
   const [credits, setCredits] = useState(4);
+  const [year, setYear] = useState(1);
   const [lectures, setLectures] = useState(3);
   const [tutorials, setTutorials] = useState(1);
   const [practicals, setPracticals] = useState(2);
@@ -50,24 +51,27 @@ export default function AddSubjectPage() {
     setName(data.name || "");
     setDepartment(data.department || "");
     setCredits(data.credits || 4);
+    setYear(data.year || 1);
     setLectures(data.lectureHoursPerWeek || 3);
     setTutorials(data.tutorialHoursPerWeek || 0);
     setPracticals(data.labHoursPerWeek || 0);
-    setSubjectType(data.isElective ? "elective" : "core");
+    setFacultyCount(data.facultyCount || 1);
+    setSubjectType(data.elective ? "elective" : "core");
   };
 
   const buildPayload = () => ({
-    id: editData?.id, // Important for updates
+    id: editData?.id,
     code,
     name,
     department,
     credits,
+    year,
     lectureHoursPerWeek: lectures,
     tutorialHoursPerWeek: tutorials,
     labHoursPerWeek: practicals,
-    isElective: subjectType === "elective",
-    eligibleFaculty: [], // Keeping this empty per your current UI
-    savedAt: new Date().toLocaleString()
+    elective: subjectType === "elective",
+    facultyCount: facultyCount,
+    eligibleFaculty: [],
   });
 
   const handleSaveDraft = () => {
@@ -121,6 +125,7 @@ export default function AddSubjectPage() {
               </Select>
 
               <Input label="Total Credits" type="number" value={credits} onChange={(e) => setCredits(+e.target.value)} />
+              <Input label="Student Year" type="number" value={year} onChange={(e) => setYear(+e.target.value)} />
             </div>
 
             {/* -------- WEEKLY HOURS -------- */}

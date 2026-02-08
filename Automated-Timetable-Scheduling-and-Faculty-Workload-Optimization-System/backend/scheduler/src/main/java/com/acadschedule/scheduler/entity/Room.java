@@ -21,15 +21,22 @@ public class Room {
     @Enumerated(EnumType.STRING)
     private RoomType type;
 
+    @Column(name = "capacity")
     private int capacity;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "status")
     private RoomStatus status = RoomStatus.PUBLISHED;
 
     @ElementCollection
+    @CollectionTable(name = "room_equipment", joinColumns = @JoinColumn(name = "room_id"))
+    @Column(name = "equipment")
     private List<String> equipment = new ArrayList<>();
 
+    @Column(name = "active")
     private boolean active = true;
+
+    @Column(name = "wheelchair_accessible")
     private boolean wheelchairAccessible = false;
 
     public String getName() { return name; }

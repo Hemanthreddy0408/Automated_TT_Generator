@@ -18,7 +18,7 @@ const LeaveStatus = ({ onApplyLeave }: { onApplyLeave: () => void }) => {
 
   const fetchLeaves = async () => {
     try {
-      const response = await axios.get('http://localhost:8082/api/leaves/faculty/1', { timeout: 5000 });
+      const response = await axios.get('http://localhost:8083/api/leaves/faculty/1', { timeout: 5000 });
       setLeaves(response.data);
     } catch (error) {
       console.error('Error fetching leaves:', error);
@@ -35,7 +35,7 @@ const LeaveStatus = ({ onApplyLeave }: { onApplyLeave: () => void }) => {
   const handleDelete = async (id: number) => {
     if (!confirm('Are you sure you want to cancel this leave request?')) return;
     try {
-      await axios.delete(`http://localhost:8082/api/leaves/${id}`);
+      await axios.delete(`http://localhost:8083/api/leaves/${id}`);
       toast.success('Leave request cancelled');
       fetchLeaves();
     } catch (error) {

@@ -40,6 +40,7 @@ export function SubjectTable({
             <TableHead className="w-[300px]">Subject</TableHead>
             <TableHead>Department</TableHead>
             <TableHead className="text-center">Credits</TableHead>
+            <TableHead className="text-center">Year</TableHead>
             <TableHead className="text-center">Weekly Hours</TableHead>
             <TableHead className="text-center">Type</TableHead>
             <TableHead className="text-center">Faculty</TableHead>
@@ -68,6 +69,9 @@ export function SubjectTable({
                   {subject.credits}
                 </Badge>
               </TableCell>
+              <TableCell className="text-center">
+                <span className="font-semibold">{subject.year}</span>
+              </TableCell>
               <TableCell>
                 <div className="flex items-center justify-center gap-3 text-xs">
                   <div className="flex items-center gap-1 text-blue-600">
@@ -89,18 +93,18 @@ export function SubjectTable({
                   variant="outline"
                   className={cn(
                     'font-medium',
-                    subject.isElective
+                    subject.elective
                       ? 'bg-warning/10 text-warning border-warning/30'
                       : 'bg-primary/10 text-primary border-primary/30'
                   )}
                 >
-                  {subject.isElective ? 'Elective' : 'Core'}
+                  {subject.elective ? 'Elective' : 'Core'}
                 </Badge>
               </TableCell>
               <TableCell className="text-center">
                 <div className="flex items-center justify-center gap-1 text-sm">
                   <GraduationCap className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span>{subject.eligibleFaculty.length}</span>
+                  <span>{subject.eligibleFaculty?.length || 0}</span>
                 </div>
               </TableCell>
               <TableCell>

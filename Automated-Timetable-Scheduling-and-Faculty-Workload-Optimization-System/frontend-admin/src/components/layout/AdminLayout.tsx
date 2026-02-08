@@ -13,14 +13,21 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+interface BreadcrumbItem {
+  label: string;
+  href?: string;
+  active?: boolean;
+}
+
 interface AdminLayoutProps {
   children: ReactNode;
   title: string;
   subtitle?: string;
   actions?: ReactNode;
+  breadcrumbs?: BreadcrumbItem[];
 }
 
-export function AdminLayout({ children, title, subtitle, actions }: AdminLayoutProps) {
+export function AdminLayout({ children, title, subtitle, actions, breadcrumbs }: AdminLayoutProps) {
   return (
     <div className="min-h-screen bg-background">
       <AdminSidebar />
@@ -30,9 +37,27 @@ export function AdminLayout({ children, title, subtitle, actions }: AdminLayoutP
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/95 px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="flex items-center gap-4">
             <div>
-              <h1 className="text-xl font-semibold text-foreground">{title}</h1>
+              {breadcrumbs && (
+                <nav className="flex items-center text-xs text-muted-foreground mb-1">
+                  {breadcrumbs.map((item, index) => (
+                    <div key={index} className="flex items-center">
+                      {index > 0 && <span className="mx-2 text-muted-foreground/50">/</span>}
+                      {item.href ? (
+                        <a href={item.href} className="hover:text-foreground transition-colors">
+                          {item.label}
+                        </a>
+                      ) : (
+                        <span className={item.active ? "text-foreground font-medium" : ""}>
+                          {item.label}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </nav>
+              )}
+              <h1 className="text-xl font-semibold text-foreground leading-none">{title}</h1>
               {subtitle && (
-                <p className="text-sm text-muted-foreground">{subtitle}</p>
+                <p className="text-sm text-muted-foreground mt-1.5">{subtitle}</p>
               )}
             </div>
           </div>

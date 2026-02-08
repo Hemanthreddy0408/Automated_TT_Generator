@@ -10,13 +10,28 @@ public class LeaveRequest {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "faculty_id")
     private Long facultyId;
+
+    @Column(name = "faculty_name")
     private String facultyName;
+
+    @Column(name = "leave_type")
     private String leaveType;
+
+    @Column(name = "start_date")
     private LocalDate startDate;
+
+    @Column(name = "end_date")
     private LocalDate endDate;
+
+    @Column(name = "reason")
     private String reason;
+
+    @Column(name = "status")
     private String status; // Pending, Approved, Rejected
+
+    @Column(name = "applied_date")
     private LocalDate appliedDate;
 
     public LeaveRequest() {}

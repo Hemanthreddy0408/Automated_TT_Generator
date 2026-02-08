@@ -4,18 +4,30 @@ import jakarta.persistence.*;
 
 
 @Entity
-@Table(name = "constraints")
+@Table(name = "\"constraints\"")
 public class Constraint {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "id")
     private String id;
 
+    @Column(name = "name")
     private String name;
+
+    @Column(name = "type")
     private String type;
+
+    @Column(name = "description")
     private String description;
+
+    @Column(name = "active")
     private boolean active = true;
+
+    @Column(name = "priority")
     private String priority;
+
+    @Column(name = "parameters")
     private String parameters;
 
     public boolean isActive() {

@@ -23,13 +23,23 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     useEffect(() => {
         const fetchUser = async () => {
             try {
-                // Fetching the first faculty as the "logged in" user for now
-                const response = await axios.get('http://localhost:8082/api/faculty/1', { timeout: 3000 });
+                // Try fetching specific ID 1
+                const response = await axios.get('http://localhost:8083/api/faculty/1', { timeout: 3000 });
                 if (response.data) {
                     setUser(response.data);
                 }
             } catch (error) {
-                console.error("Failed to fetch user", error);
+                console.warn("Faculty 1 not found, trying to fetch first available faculty...");
+                try {
+                    const allResponse = await axios.get('http://localhost:8083/api/faculty', { timeout: 3000 });
+                    if (allResponse.data && allResponse.data.length > 0) {
+                        setUser(allResponse.data[0]);
+                    } else {
+                        console.error("No faculty members found in database");
+                    }
+                } catch (allError) {
+                    console.error("Failed to fetch any faculty", allError);
+                }
             } finally {
                 setLoading(false);
             }
