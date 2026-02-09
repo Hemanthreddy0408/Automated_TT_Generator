@@ -100,6 +100,11 @@ export function SubjectTable({
                 >
                   {subject.elective ? 'Elective' : 'Core'}
                 </Badge>
+                {subject.commonCourse && (
+                  <Badge variant="outline" className="ml-2 bg-blue-100 text-blue-700 border-blue-200">
+                    Common
+                  </Badge>
+                )}
               </TableCell>
               <TableCell className="text-center">
                 <div className="flex items-center justify-center gap-1 text-sm">

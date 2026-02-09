@@ -37,6 +37,7 @@ export interface Subject {
   tutorialHoursPerWeek: number;
   labHoursPerWeek: number;
   elective: boolean; // 👈 MATCH BACKEND
+  commonCourse: boolean; // 👈 NEW
   facultyCount: number; // 👈 ADDED
   year: number;
   eligibleFaculty: string[];

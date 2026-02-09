@@ -183,6 +183,10 @@ export const generateTimetable = async (sectionId: string) => {
   await API.post(`/timetable/generate/${sectionId}`);
 };
 
+export const generateAllTimetables = async () => {
+  await API.post(`/timetable/generate-all`);
+};
+
 export const getTimetable = async (sectionId: string) => {
   const res = await API.get(`/timetable/${sectionId}`);
   return Array.isArray(res.data) ? res.data : [];

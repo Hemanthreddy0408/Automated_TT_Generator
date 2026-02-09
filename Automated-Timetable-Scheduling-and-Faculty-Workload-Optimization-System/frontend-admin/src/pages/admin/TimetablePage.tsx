@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { TimetableGrid, TimetableEntry } from "@/components/timetable/TimetableGrid";
-import { generateTimetable, getTimetable, getSections } from "@/lib/api";
+import { generateTimetable, generateAllTimetables, getTimetable, getSections } from "@/lib/api";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Loader2, Users, School, Calendar } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -73,6 +73,14 @@ export default function TimetablePage() {
   const handleGenerate = async () => {
     setLoading(true);
     await generateTimetable(sectionId);
+    await fetchTimetable();
+    setLoading(false);
+  };
+
+  const handleGenerateAll = async () => {
+    if (!confirm("This will clear all existing timetables and regenerate for ALL sections. Continue?")) return;
+    setLoading(true);
+    await generateAllTimetables();
     await fetchTimetable();
     setLoading(false);
   };
@@ -152,9 +160,14 @@ export default function TimetablePage() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Button onClick={handleGenerate} disabled={loading || !sectionId}>
+          <Button onClick={handleGenerate} disabled={loading || !sectionId} variant="outline">
             {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Calendar className="mr-2 h-4 w-4" />}
-            Generate
+            Generate Section
+          </Button>
+
+          <Button onClick={handleGenerateAll} disabled={loading} className="bg-purple-600 hover:bg-purple-700">
+            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Calendar className="mr-2 h-4 w-4" />}
+            Generate All
           </Button>
         </div>
       }

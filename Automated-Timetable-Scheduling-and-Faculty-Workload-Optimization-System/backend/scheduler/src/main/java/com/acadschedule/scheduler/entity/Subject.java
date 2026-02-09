@@ -49,6 +49,9 @@ public class Subject {
     @Column(name = "elective")
     private boolean elective;
 
+    @Column(name = "common_course")
+    private boolean commonCourse;
+
     @Column(name = "faculty_count")
     private int facultyCount;
 
@@ -66,6 +69,7 @@ public class Subject {
     public int getLabHoursPerWeek() { return labHoursPerWeek; }
     public int getYear() { return year; }
     public boolean isElective() { return elective; }
+    public boolean isCommonCourse() { return commonCourse; }
     public int getFacultyCount() { return facultyCount; }
 
     public void setLectureHoursPerWeek(int v) { this.lectureHoursPerWeek = v; }
@@ -73,6 +77,7 @@ public class Subject {
     public void setLabHoursPerWeek(int v) { this.labHoursPerWeek = v; }
     public void setYear(int v) { this.year = v; }
     public void setElective(boolean v) { this.elective = v; }
+    public void setCommonCourse(boolean v) { this.commonCourse = v; }
     public void setFacultyCount(int v) { this.facultyCount = v; }
 
     public Long getId() { return id; }

@@ -107,7 +107,7 @@ export default function SubjectsPage() {
     Name: s.name,
     Dept: s.department,
     Credits: s.credits,
-    Type: s.isElective ? "Elective" : "Core",
+    Type: s.elective ? "Elective" : "Core",
     L: s.lectureHoursPerWeek,
     T: s.tutorialHoursPerWeek,
     P: s.labHoursPerWeek
@@ -140,7 +140,7 @@ export default function SubjectsPage() {
       head: [["Code", "Name", "Dept", "Credits", "Type", "L-T-P"]],
       body: subjects.map(s => [
         s.code, s.name, s.department, s.credits,
-        s.isElective ? "Elective" : "Core",
+        s.elective ? "Elective" : "Core",
         `${s.lectureHoursPerWeek}-${s.tutorialHoursPerWeek}-${s.labHoursPerWeek}`
       ]),
       startY: 20,
@@ -161,8 +161,8 @@ export default function SubjectsPage() {
 
       const matchesType =
         typeFilter === "all" ||
-        (typeFilter === "core" && !subject.isElective) ||
-        (typeFilter === "elective" && subject.isElective);
+        (typeFilter === "core" && !subject.elective) ||
+        (typeFilter === "elective" && subject.elective);
 
       return matchesSearch && matchesType;
     });
@@ -172,8 +172,8 @@ export default function SubjectsPage() {
       // ✅ FIX: Use 'displaySubjects' so the stats ignore the hidden draft item
       totalSubjectsCount: displaySubjects.length,
       totalCredits: displaySubjects.reduce((sum, s) => sum + s.credits, 0),
-      coreSubjects: displaySubjects.filter((s) => !s.isElective).length,
-      electiveSubjects: displaySubjects.filter((s) => s.isElective).length,
+      coreSubjects: displaySubjects.filter((s) => !s.elective).length,
+      electiveSubjects: displaySubjects.filter((s) => s.elective).length,
     };
   }, [subjects, searchQuery, typeFilter, draft]);
 

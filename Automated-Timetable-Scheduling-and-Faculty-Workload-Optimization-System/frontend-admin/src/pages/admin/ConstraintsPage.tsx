@@ -68,26 +68,26 @@ export default function ConstraintsPage() {
   const navigate = useNavigate();
   const [constraints, setConstraints] = useState<Constraint[]>([]);
   const [loading, setLoading] = useState(true);
-  
-
- useEffect(() => {
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      const data = await getConstraints(); //
-      setConstraints(data);
-    } catch (err) {
-      console.error("Connection to backend failed:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-  loadData();
-}, []);
 
 
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const data = await getConstraints(); //
+        setConstraints(data);
+      } catch (err) {
+        console.error("Connection to backend failed:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, []);
 
-const toggleConstraint = async (id: string) => {
+
+
+  const toggleConstraint = async (id: string) => {
     // Optimistic UI update
     setConstraints(prev => prev.map(c => c.id === id ? { ...c, isActive: !c.isActive } : c));
     await toggleConstraintStatus(id); //
@@ -108,11 +108,11 @@ const toggleConstraint = async (id: string) => {
       title="Constraint Configuration"
       subtitle="Define scheduling rules and constraints"
       actions={
-  <Button className="gap-2" onClick={() => navigate("/admin/constraints/add")}>
-    <Plus className="h-4 w-4" />
-    Add Constraint
-  </Button>
-}
+        <Button className="gap-2" onClick={() => navigate("/admin/constraints/add")}>
+          <Plus className="h-4 w-4" />
+          Add Constraint
+        </Button>
+      }
 
     >
       <div className="space-y-6">
@@ -167,7 +167,12 @@ const toggleConstraint = async (id: string) => {
         {/* Constraint Groups */}
         <div className="space-y-6">
           {Object.entries(groupedConstraints).map(([type, typeConstraints]) => {
-            const config = constraintTypeConfig[type as keyof typeof constraintTypeConfig];
+            const config = constraintTypeConfig[type as keyof typeof constraintTypeConfig] || {
+              icon: Shield,
+              color: 'text-gray-600',
+              bgColor: 'bg-gray-500/10',
+              label: type.charAt(0).toUpperCase() + type.slice(1),
+            };
             const Icon = config.icon;
 
             return (
@@ -187,7 +192,10 @@ const toggleConstraint = async (id: string) => {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {typeConstraints.map((constraint) => {
-                    const priority = priorityConfig[constraint.priority];
+                    const priority = priorityConfig[constraint.priority as keyof typeof priorityConfig] || {
+                      label: constraint.priority,
+                      class: 'bg-gray-100 text-gray-700 border-gray-300',
+                    };
 
                     return (
                       <div

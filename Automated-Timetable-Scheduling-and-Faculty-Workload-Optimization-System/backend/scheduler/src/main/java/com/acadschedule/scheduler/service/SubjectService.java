@@ -34,6 +34,7 @@ public class SubjectService {
         subject.setTutorialHoursPerWeek(subjectDetails.getTutorialHoursPerWeek());
         subject.setLabHoursPerWeek(subjectDetails.getLabHoursPerWeek());
         subject.setElective(subjectDetails.isElective());
+        subject.setCommonCourse(subjectDetails.isCommonCourse());
         subject.setFacultyCount(subjectDetails.getFacultyCount());
         
         // Update eligible faculty list

@@ -12,6 +12,20 @@ import java.util.List;
 @Repository
 public interface TimetableRepository extends JpaRepository<TimetableEntry, Long> {
 
+        @Query("""
+SELECT COUNT(t) 
+FROM TimetableEntry t 
+WHERE t.sectionId = :sid 
+AND t.day = :day 
+AND t.subjectCode = :sub
+""")
+long countSubjectPerDay(
+        @Param("sid") String sid,
+        @Param("day") String day,
+        @Param("sub") String sub
+);
+
+
     // ✅ Used to clear old timetable
     @Modifying
     @Transactional
@@ -30,4 +44,12 @@ public interface TimetableRepository extends JpaRepository<TimetableEntry, Long>
 
     boolean existsBySectionIdAndDayAndTimeSlot(
             String sectionId, String day, String timeSlot);
+
+    boolean existsBySectionIdAndDayAndSubjectCode(
+            String sectionId, String day, String subjectCode);
+
+    boolean existsBySubjectCodeAndDayAndTimeSlot(
+            String subjectCode, String day, String timeSlot);
+
+    List<TimetableEntry> findBySubjectCode(String subjectCode);
 }

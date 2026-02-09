@@ -20,15 +20,25 @@ public class TimetableController {
         this.repo = repo;
     }
 
-    // Generate timetable
+    // Generate timetable for a specific section
     @PostMapping("/generate/{sectionId}")
     public void generate(@PathVariable String sectionId) {
         service.generateForSection(sectionId);
     }
 
+    // Generate timetable for all sections
+    @PostMapping("/generate-all")
+    public void generateAll() {
+        service.generateForAllSections();
+    }
+
     // Fetch timetable
     @GetMapping("/{sectionId}")
     public List<TimetableEntry> get(@PathVariable String sectionId) {
-        return repo.findBySectionId(sectionId);
+        List<TimetableEntry> entries = repo.findBySectionId(sectionId);
+        if (!entries.isEmpty()) {
+            System.out.println("DEBUG: Entry 0 SubjectName: " + entries.get(0).getSubjectName());
+        }
+        return entries;
     }
 }

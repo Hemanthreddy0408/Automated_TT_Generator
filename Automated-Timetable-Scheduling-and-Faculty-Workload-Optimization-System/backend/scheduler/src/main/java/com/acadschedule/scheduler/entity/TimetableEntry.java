@@ -21,6 +21,9 @@ public class TimetableEntry {
     @Column(name = "subject_code")
     private String subjectCode;
 
+    @Column(name = "subject_name")
+    private String subjectName;
+
     @Column(name = "faculty_name")
     private String facultyName;
 
@@ -44,6 +47,9 @@ public class TimetableEntry {
 
     public String getSubjectCode() { return subjectCode; }
     public void setSubjectCode(String subjectCode) { this.subjectCode = subjectCode; }
+
+    public String getSubjectName() { return subjectName; }
+    public void setSubjectName(String subjectName) { this.subjectName = subjectName; }
 
     public String getFacultyName() { return facultyName; }
     public void setFacultyName(String facultyName) { this.facultyName = facultyName; }

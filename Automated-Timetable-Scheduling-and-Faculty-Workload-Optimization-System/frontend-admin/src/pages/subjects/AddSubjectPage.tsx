@@ -22,6 +22,7 @@ export default function AddSubjectPage() {
   const [practicals, setPracticals] = useState(2);
   const [facultyCount, setFacultyCount] = useState(2);
   const [subjectType, setSubjectType] = useState<"core" | "elective">("core");
+  const [isCommon, setIsCommon] = useState(false);
 
   // Load Data (Edit or Draft)
   useEffect(() => {
@@ -57,6 +58,7 @@ export default function AddSubjectPage() {
     setPracticals(data.labHoursPerWeek || 0);
     setFacultyCount(data.facultyCount || 1);
     setSubjectType(data.elective ? "elective" : "core");
+    setIsCommon(data.commonCourse || false);
   };
 
   const buildPayload = () => ({
@@ -70,6 +72,7 @@ export default function AddSubjectPage() {
     tutorialHoursPerWeek: tutorials,
     labHoursPerWeek: practicals,
     elective: subjectType === "elective",
+    commonCourse: isCommon,
     facultyCount: facultyCount,
     eligibleFaculty: [],
   });
@@ -146,6 +149,24 @@ export default function AddSubjectPage() {
                 </div>
               </div>
 
+              <div>
+                <SectionHeader icon={<Users />} title="Institutional Settings" />
+                <div className="mt-4 flex items-center gap-3 p-4 rounded-xl border bg-muted/20">
+                  <input
+                    type="checkbox"
+                    id="isCommon"
+                    checked={isCommon}
+                    onChange={(e) => setIsCommon(e.target.checked)}
+                    className="h-5 w-5 accent-primary"
+                  />
+                  <label htmlFor="isCommon" className="text-sm font-medium cursor-pointer">
+                    Mark as Common Course (Institutional-wide)
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div>
                 <SectionHeader icon={<Users />} title="Faculty Allocation" />
                 <p className="text-sm text-muted-foreground mt-2">Min. Required Faculty</p>
