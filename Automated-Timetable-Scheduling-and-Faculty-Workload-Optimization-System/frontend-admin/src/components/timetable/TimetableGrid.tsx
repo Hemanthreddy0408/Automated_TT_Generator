@@ -11,6 +11,7 @@ import {
 
 export type TimetableEntry = {
   id?: number;
+  sectionId?: string;
   day: string;
   timeSlot: string;
   subjectCode?: string;

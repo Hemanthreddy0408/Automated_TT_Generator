@@ -1,4 +1,10 @@
-
+-- Clean up existing data to prevent duplicates on restart
+TRUNCATE TABLE timetable_entries RESTART IDENTITY CASCADE;
+TRUNCATE TABLE subject_eligible_faculty RESTART IDENTITY CASCADE;
+TRUNCATE TABLE subjects RESTART IDENTITY CASCADE;
+TRUNCATE TABLE sections RESTART IDENTITY CASCADE;
+TRUNCATE TABLE faculty RESTART IDENTITY CASCADE;
+TRUNCATE TABLE rooms RESTART IDENTITY CASCADE;
 
 INSERT INTO rooms
 (name, code, building, floor, type, capacity, status, active, wheelchair_accessible)

@@ -192,6 +192,11 @@ export const getTimetable = async (sectionId: string) => {
   return Array.isArray(res.data) ? res.data : [];
 };
 
+export const getAllTimetableEntries = async () => {
+  const res = await API.get("/timetable");
+  return Array.isArray(res.data) ? res.data : [];
+};
+
 /* ===========================
    AUDIT LOG API
    =========================== */

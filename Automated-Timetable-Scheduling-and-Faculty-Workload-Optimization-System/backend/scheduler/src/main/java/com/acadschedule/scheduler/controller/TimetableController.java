@@ -41,4 +41,10 @@ public class TimetableController {
         }
         return entries;
     }
+
+    // Get all entries for global analytics
+    @GetMapping
+    public List<TimetableEntry> getAll() {
+        return repo.findAll();
+    }
 }

@@ -17,7 +17,7 @@ import RoomsPage from "./pages/admin/RoomsPage";
 import SubjectsPage from "./pages/admin/SubjectsPage";
 import ConstraintsPage from "./pages/admin/ConstraintsPage";
 import HistoryPage from "./pages/admin/HistoryPage";
-import AnalyticsPage from "@/pages/admin/AnalyticsPage";
+
 
 // Add/Edit Sub-pages
 import AddFacultyPage from "@/pages/faculty/add/AddFacultyPage";
@@ -87,8 +87,6 @@ const App = () => {
               <Route path="/admin/sections" element={<SectionManagement />} />
               <Route path="/admin/constraints" element={<ConstraintsPage />} />
               <Route path="/admin/history" element={<HistoryPage />} />
-              <Route path="/admin/settings" element={<AdminDashboard />} />
-              <Route path="/admin/analytics" element={<AnalyticsPage />} />
               <Route path="/admin/leaves" element={<LeaveRequestsPage />} />
 
               {/* --- 404 CATCH-ALL --- */}
