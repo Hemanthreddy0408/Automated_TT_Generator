@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
+import { toast } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
 import { TimetableGrid, TimetableEntry } from "@/components/timetable/TimetableGrid";
 import { generateTimetable, generateAllTimetables, getTimetable, getSections } from "@/lib/api";
@@ -72,17 +73,29 @@ export default function TimetablePage() {
 
   const handleGenerate = async () => {
     setLoading(true);
-    await generateTimetable(sectionId);
-    await fetchTimetable();
-    setLoading(false);
+    try {
+      await generateTimetable(sectionId);
+      await fetchTimetable();
+      toast.success("Timetable generated and saved successfully!");
+    } catch (error) {
+      toast.error("Failed to generate timetable.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleGenerateAll = async () => {
     if (!confirm("This will clear all existing timetables and regenerate for ALL sections. Continue?")) return;
     setLoading(true);
-    await generateAllTimetables();
-    await fetchTimetable();
-    setLoading(false);
+    try {
+      await generateAllTimetables();
+      await fetchTimetable();
+      toast.success("All timetables regenerated and saved!");
+    } catch (error) {
+      toast.error("Failed to generate timetables.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   // --- Export Logic ---

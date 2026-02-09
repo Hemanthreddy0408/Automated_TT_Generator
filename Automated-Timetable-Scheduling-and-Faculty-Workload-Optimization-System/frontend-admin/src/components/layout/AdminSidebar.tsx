@@ -24,6 +24,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { useUser } from '@/context/UserContext';
 
 const navigationItems = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
@@ -43,6 +44,7 @@ const managementItems = [
 export function AdminSidebar() {
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
+  const { logout } = useUser();
 
   const NavItem = ({ item }: { item: typeof navigationItems[0] }) => {
     const isActive = location.pathname === item.href;
@@ -139,7 +141,7 @@ export function AdminSidebar() {
               <p className="truncate text-sm font-medium text-sidebar-foreground">Admin User</p>
               <p className="truncate text-xs text-sidebar-foreground/60">admin@university.edu</p>
             </div>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-sidebar-foreground/60 hover:text-sidebar-foreground">
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-sidebar-foreground/60 hover:text-sidebar-foreground" onClick={logout}>
               <LogOut className="h-4 w-4" />
             </Button>
           </div>
