@@ -1,10 +1,22 @@
+// React hook for managing component state
 import { useState } from "react";
+
+// Hook for programmatic navigation
 import { useNavigate } from "react-router-dom";
+
+// Admin layout wrapper component
 import { AdminLayout } from "@/components/layout/AdminLayout";
+
+// Reusable button component
 import { Button } from "@/components/ui/button";
+
+// Utility for conditional class names
 import { cn } from "@/lib/utils";
+
+// API function to create a new room
 import { createRoom } from "@/lib/api";
 
+// Icons used in the UI
 import {
   Save,
   Users,
@@ -18,7 +30,8 @@ import {
 } from "lucide-react";
 
 /* ----------------------------------
-   Equipment Config
+   Equipment Configuration Options
+   Used to render selectable equipment buttons
 ----------------------------------- */
 const EQUIPMENT_OPTIONS = [
   { label: "Projector", icon: Video },
@@ -29,8 +42,12 @@ const EQUIPMENT_OPTIONS = [
 ];
 
 export default function AddRoomPage() {
+  // Navigation handler
   const navigate = useNavigate();
 
+  /* -------------------------------
+     State Management for Form Fields
+  -------------------------------- */
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [building, setBuilding] = useState("");
@@ -38,14 +55,19 @@ export default function AddRoomPage() {
   const [type, setType] = useState("LECTURE");
   const [capacity, setCapacity] = useState<number>(0);
   const [accessible, setAccessible] = useState<boolean>(true);
+
+  // Selected equipment list
   const [equipment, setEquipment] = useState<string[]>([
     "Projector",
     "Whiteboard",
   ]);
+
+  // Custom equipment input value
   const [customEquipment, setCustomEquipment] = useState("");
 
   /* ----------------------------------
-     Equipment Toggle
+     Toggle equipment selection
+     Adds or removes equipment from list
   ----------------------------------- */
   const toggleEquipment = (item: string) => {
     setEquipment((prev) =>
@@ -55,6 +77,9 @@ export default function AddRoomPage() {
     );
   };
 
+  /* ----------------------------------
+     Add custom equipment entered by user
+  ----------------------------------- */
   const addCustomEquipment = () => {
     if (!customEquipment.trim()) return;
     if (!equipment.includes(customEquipment)) {
@@ -63,6 +88,10 @@ export default function AddRoomPage() {
     setCustomEquipment("");
   };
 
+  /* ----------------------------------
+     Handle form submission
+     Sends data to backend API
+  ----------------------------------- */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -77,10 +106,11 @@ export default function AddRoomPage() {
         wheelchairAccessible: accessible,
         active: true,
       });
+      // Navigate back to rooms list after success
       navigate("/admin/rooms");
     } catch (error) {
       console.error("Error creating room:", error);
-      // TODO: show error message
+      // TODO: show error message to user
     }
   };
 
@@ -88,7 +118,7 @@ export default function AddRoomPage() {
     <AdminLayout title="Room Management" subtitle="Add New Room">
       <div className="max-w-5xl mx-auto space-y-6">
 
-        {/* HEADER */}
+        {/* PAGE HEADER */}
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold">Add New Room Configuration</h1>
@@ -97,39 +127,67 @@ export default function AddRoomPage() {
             </p>
           </div>
 
+          {/* Back navigation */}
           <Button variant="ghost" onClick={() => navigate("/admin/rooms")}>
             ← Back to List
           </Button>
         </div>
 
-        {/* FORM */}
-        <form onSubmit={handleSubmit} className="bg-card border rounded-2xl shadow-sm overflow-hidden">
+        {/* MAIN FORM */}
+        <form
+          onSubmit={handleSubmit}
+          className="bg-card border rounded-2xl shadow-sm overflow-hidden"
+        >
           <div className="p-8 space-y-8">
 
-            {/* BASIC INFO */}
+            {/* BASIC ROOM INFORMATION */}
             <Section title="Basic Information">
               <div className="grid md:grid-cols-2 gap-8">
-                <Input label="Room Name" placeholder="Physics Lab A" value={name} onChange={(e) => setName(e.target.value)} />
-                <Input label="Room Code" placeholder="PH-LAB-A" value={code} onChange={(e) => setCode(e.target.value)} />
-                <Select label="Building" value={building} onChange={(e) => setBuilding(e.target.value)}>
+                <Input
+                  label="Room Name"
+                  placeholder="Physics Lab A"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+                <Input
+                  label="Room Code"
+                  placeholder="PH-LAB-A"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                />
+                <Select
+                  label="Building"
+                  value={building}
+                  onChange={(e) => setBuilding(e.target.value)}
+                >
                   <option value="">Select Building</option>
                   <option>Main Block</option>
                   <option>Tech Block</option>
                   <option>Science Center</option>
                 </Select>
-                <Input label="Floor" placeholder="Ground Floor" value={floor} onChange={(e) => setFloor(e.target.value)} />
+                <Input
+                  label="Floor"
+                  placeholder="Ground Floor"
+                  value={floor}
+                  onChange={(e) => setFloor(e.target.value)}
+                />
               </div>
             </Section>
 
-            {/* ROOM DETAILS */}
+            {/* ROOM DETAILS SECTION */}
             <Section title="Room Details">
               <div className="grid md:grid-cols-2 gap-8">
-                <Select label="Room Type" value={type} onChange={(e) => setType(e.target.value)}>
+                <Select
+                  label="Room Type"
+                  value={type}
+                  onChange={(e) => setType(e.target.value)}
+                >
                   <option value="LECTURE">Lecture Hall</option>
                   <option value="LAB">Laboratory</option>
                   <option value="SEMINAR">Seminar Room</option>
                 </Select>
 
+                {/* Capacity input */}
                 <div>
                   <label className="text-sm font-medium">Total Capacity</label>
                   <div className="relative mt-1">
@@ -145,7 +203,7 @@ export default function AddRoomPage() {
               </div>
             </Section>
 
-            {/* EQUIPMENT & FEATURES */}
+            {/* EQUIPMENT SELECTION */}
             <Section title="Equipment & Features">
               <div className="flex flex-wrap gap-3">
                 {EQUIPMENT_OPTIONS.map(({ label, icon: Icon }) => {
@@ -169,7 +227,7 @@ export default function AddRoomPage() {
                   );
                 })}
 
-                {/* ADD OTHER */}
+                {/* CUSTOM EQUIPMENT INPUT */}
                 <div className="flex items-center gap-2">
                   <input
                     value={customEquipment}
@@ -189,7 +247,7 @@ export default function AddRoomPage() {
               </div>
             </Section>
 
-            {/* ACCESSIBILITY */}
+            {/* ACCESSIBILITY OPTION */}
             <div className="flex justify-between items-center p-4 rounded-xl bg-muted">
               <div className="flex gap-3">
                 <Info className="text-primary" />
@@ -210,9 +268,13 @@ export default function AddRoomPage() {
             </div>
           </div>
 
-          {/* FOOTER */}
+          {/* FORM ACTION BUTTONS */}
           <div className="px-8 py-6 border-t bg-muted/40 flex justify-end gap-4">
-            <Button type="button" variant="outline" onClick={() => navigate("/admin/rooms")}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate("/admin/rooms")}
+            >
               Cancel
             </Button>
             <Button type="submit" className="gap-2">
@@ -226,8 +288,9 @@ export default function AddRoomPage() {
   );
 }
 
-/* ----------------- REUSABLE UI ----------------- */
+/* ----------------- REUSABLE UI COMPONENTS ----------------- */
 
+// Section wrapper with title
 function Section({
   title,
   children,
@@ -243,6 +306,7 @@ function Section({
   );
 }
 
+// Reusable input field with label
 function Input({
   label,
   ...props
@@ -258,6 +322,7 @@ function Input({
   );
 }
 
+// Reusable select dropdown with label
 function Select({
   label,
   children,
