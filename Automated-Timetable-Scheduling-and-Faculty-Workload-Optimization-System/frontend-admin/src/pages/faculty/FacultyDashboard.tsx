@@ -1,8 +1,5 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-
-
-
 import { Link } from 'react-router-dom';
 import { TimetableGrid, TimetableEntry } from '@/components/timetable/TimetableGrid';
 import { Button } from '@/components/ui/button';
@@ -10,16 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  mockFaculty,
-  mockSessions,
-  mockSections,
-  getSessionsForFaculty,
-  getSubjectById,
-  getRoomById,
-  getSectionById,
-  mockTimeSlots,
-} from '@/data/mockData';
+import { getFacultyTimetable } from '@/lib/api'; // Import API
 import { DAYS_OF_WEEK } from '@/types/timetable';
 import {
   Calendar,
@@ -39,16 +27,42 @@ import { cn } from '@/lib/utils';
 export default function FacultyDashboard() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [currentFaculty, setCurrentFaculty] = useState<any>(null);
+  const [timetableEntries, setTimetableEntries] = useState<TimetableEntry[]>([]);
   const [viewMode, setViewMode] = useState<'week' | 'day'>('week');
   const [currentDay, setCurrentDay] = useState(0);
 
   useEffect(() => {
+    // 1. Fetch Faculty Profile
+    // NOTE: Hardcoded ID 1 for now, in real app use auth context
     axios.get('http://localhost:8083/api/faculty/1')
-      .then(res => setCurrentFaculty(res.data))
+      .then(async (res) => {
+        const faculty = res.data;
+        setCurrentFaculty(faculty);
+
+        // 2. Fetch Faculty Timetable
+        try {
+          const entries = await getFacultyTimetable(faculty.name);
+          // Map API entries to Frontend TimetableEntry
+          const mapped: TimetableEntry[] = entries.map((e: any) => ({
+            id: e.id,
+            day: e.day, // Assuming "MONDAY"
+            timeSlot: e.timeSlot, // "08:00-08:50"
+            subjectCode: e.subjectCode,
+            // Use subjectCode as name if subjectName is missing or mapped differently
+            subjectName: e.subjectName || e.subjectCode,
+            facultyName: e.facultyName,
+            roomNumber: e.roomNumber,
+            type: e.type,
+            hasConflict: false,
+            sectionId: e.sectionId // Added sectionId for dashboard stats
+          }));
+          setTimetableEntries(mapped);
+        } catch (err) {
+          console.error("Failed to fetch timetable", err);
+        }
+      })
       .catch(err => {
         console.error("Failed to fetch faculty:", err);
-        // Fallback to mock if API fails for demo purposes
-        setCurrentFaculty(mockFaculty[0]);
       });
   }, []);
 
@@ -56,35 +70,19 @@ export default function FacultyDashboard() {
     return <div className="p-6">Loading faculty dashboard...</div>;
   }
 
-  const facultySessions = getSessionsForFaculty(currentFaculty.id?.toString() || "");
-  const todaySessions = facultySessions.filter(
-    (s) => s.dayOfWeek === currentDay
-  );
+  // Derived State
+  const currentDayName = DAYS_OF_WEEK[currentDay].toUpperCase(); // "MONDAY"
+  const todaySessions = timetableEntries.filter(e => e.day === currentDayName);
 
-  const totalHours = facultySessions.length;
+  // Sort by time
+  todaySessions.sort((a, b) => a.timeSlot.localeCompare(b.timeSlot));
 
-  const nextSession = facultySessions.find((s) => s.dayOfWeek === currentDay && s.timeSlotId);
-  const nextSubject = nextSession ? getSubjectById(nextSession.subjectId) : null;
-  const nextRoom = nextSession ? getRoomById(nextSession.roomId) : null;
-  const nextSection = nextSession ? getSectionById(nextSession.sectionId) : null;
-  const nextTimeSlot = nextSession ? mockTimeSlots.find((t) => t.id === nextSession.timeSlotId) : null;
+  const totalHours = timetableEntries.length;
 
-  const timetableEntries: TimetableEntry[] = (viewMode === 'week' ? facultySessions : todaySessions).map(session => {
-    const subject = getSubjectById(session.subjectId);
-    const room = getRoomById(session.roomId);
-    const timeSlot = mockTimeSlots.find(t => t.id === session.timeSlotId);
-
-    return {
-      id: parseInt(session.id.replace(/\D/g, '')) || Math.random(),
-      day: DAYS_OF_WEEK[session.dayOfWeek].toUpperCase(),
-      timeSlot: timeSlot ? `${timeSlot.startTime}-${timeSlot.endTime}` : "00:00-00:00",
-      subjectCode: subject?.code,
-      facultyName: currentFaculty.name,
-      roomNumber: room?.code,
-      type: session.sessionType === 'lab' ? 'LAB' : 'LECTURE',
-      hasConflict: session.hasConflict
-    };
-  });
+  // Find next session (today, after current time)
+  // Simple logic: first session of today (since we sorted) 
+  // In a real app, compare with current system time
+  const nextSession = todaySessions.length > 0 ? todaySessions[0] : null;
 
   const getInitials = (fullName: string) => {
     if (!fullName) return "?";
@@ -196,7 +194,7 @@ export default function FacultyDashboard() {
               </div>
               <div>
                 <p className="text-2xl font-bold">
-                  {new Set(facultySessions.map((s) => s.sectionId)).size}
+                  {new Set(timetableEntries.map((s) => (s as any).sectionId)).size}
                 </p>
                 <p className="text-sm text-muted-foreground">Sections</p>
               </div>
@@ -243,7 +241,7 @@ export default function FacultyDashboard() {
             </div>
 
             <TimetableGrid
-              entries={timetableEntries}
+              entries={viewMode === 'week' ? timetableEntries : todaySessions}
             />
           </div>
 
@@ -259,27 +257,29 @@ export default function FacultyDashboard() {
                       Next Class
                     </CardTitle>
                     <Badge className="bg-primary/20 text-primary hover:bg-primary/30">
-                      {nextTimeSlot?.startTime}
+                      {nextSession.timeSlot.split('-')[0]}
                     </Badge>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <p className="text-xl font-semibold">{nextSubject?.name}</p>
-                    <p className="text-sm text-muted-foreground font-mono">{nextSubject?.code}</p>
+                    <p className="text-xl font-semibold">{(nextSession as any).subjectName || nextSession.subjectCode}</p>
+                    <p className="text-sm text-muted-foreground font-mono">{nextSession.subjectCode}</p>
                   </div>
                   <div className="space-y-2 text-sm">
                     <div className="flex items-center gap-2">
                       <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <span>{nextRoom?.name} ({nextRoom?.code})</span>
+                      <span>{nextSession.roomNumber}</span>
                     </div>
+                    {/* Section info not available directly in TimetableEntry unless we add it to backend entity or parse it? 
+                        Backend entity HAS sectionId. But API response might only carry what is in entity. 
+                        TimetableEntry.java has sectionId. 
+                        Let's assume we can display it if available, or just generic "Section"
+                    */}
                     <div className="flex items-center gap-2">
                       <Users className="h-4 w-4 text-muted-foreground" />
-                      <span>Section {nextSection?.name}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Building2 className="h-4 w-4 text-muted-foreground" />
-                      <span>{nextRoom?.building}, Floor {nextRoom?.floor}</span>
+                      {/* Using sectionId from entry (needs cast if not in interface yet) */}
+                      <span>Section {(nextSession as any).sectionId || "A"}</span>
                     </div>
                   </div>
                 </CardContent>
@@ -303,35 +303,29 @@ export default function FacultyDashboard() {
                     No classes scheduled for today
                   </p>
                 ) : (
-                  todaySessions.map((session) => {
-                    const subject = getSubjectById(session.subjectId);
-                    const room = getRoomById(session.roomId);
-                    const section = getSectionById(session.sectionId);
-                    const timeSlot = mockTimeSlots.find((t) => t.id === session.timeSlotId);
-
+                  todaySessions.map((session, idx) => {
                     return (
                       <div
-                        key={session.id}
+                        key={session.id || idx}
                         className={cn(
                           'p-3 rounded-lg border transition-colors',
-                          session.sessionType === 'lecture' && 'slot-lecture',
-                          session.sessionType === 'lab' && 'slot-lab',
-                          session.sessionType === 'tutorial' && 'slot-tutorial'
+                          session.type === 'LECTURE' && 'slot-lecture',
+                          session.type === 'LAB' && 'slot-lab'
                         )}
                       >
                         <div className="flex items-start justify-between">
                           <div>
-                            <p className="font-medium">{subject?.code}</p>
-                            <p className="text-sm opacity-80">{subject?.name}</p>
+                            <p className="font-medium">{session.subjectCode}</p>
+                            <p className="text-sm opacity-80">{(session as any).subjectName || session.subjectCode}</p>
                           </div>
                           <Badge variant="outline" className="text-xs">
-                            {timeSlot?.startTime}
+                            {session.timeSlot.split('-')[0]}
                           </Badge>
                         </div>
                         <div className="flex items-center gap-4 mt-2 text-xs opacity-70">
-                          <span>{room?.code}</span>
+                          <span>{session.roomNumber}</span>
                           <span>•</span>
-                          <span>{section?.name}</span>
+                          <span>Section {(session as any).sectionId}</span>
                         </div>
                       </div>
                     );

@@ -1,100 +1,206 @@
-Automated Timetable Scheduling and Faculty Workload Optimization System
+# Frontend Faculty Portal - Academic Timetable Management
 
-This project is a full-stack web application designed to automate academic timetable generation while efficiently managing faculty workloads using configurable scheduling constraints.
+> User-friendly React-based dashboard for faculty members to view schedules, manage leave requests, and track workload in the academic scheduling system.
 
-Project Overview
+---
 
-Manual timetable creation is time-consuming and prone to conflicts. This system provides a centralized platform where administrators can define scheduling rules, manage resources, and generate optimized timetables while ensuring fairness and constraint compliance.
+## 🎯 Overview
 
-Technologies Used
+The Faculty Portal empowers faculty members to:
+- View assigned courses and personal class schedules
+- Monitor workload distribution and teaching hours
+- Submit and track leave requests
+- Download schedules in multiple formats (PDF, Excel, ICS)
+- Access institutional announcements and deadlines
+- View personal performance metrics and analytics
 
-Frontend
-React (Vite)
-JavaScript / JSX
-Tailwind CSS
-React Router
-Axios
-Backend
-Spring Boot
-Java
-REST APIs
-Spring Data JPA
-Database
-PostgreSQL
+---
 
-Features
-Constraint management with priority levels
-Mandatory
-Preferred
-Optional
-Enable / disable constraints dynamically
+## ✨ Features
 
-Faculty workload optimization
+### Personal Dashboard
+- Quick statistics (courses, hours per week, total students)
+- Workload distribution charts
+- Upcoming classes for next 7 days
+- Recent announcements feed
+- Key performance indicators
 
-Resource management (faculty, rooms, subjects, sections)
+### Schedule Management
+- Weekly and monthly timetable views
+- Detailed course information
+- Room location and timing
+- Student enrollment details
+- Search and filter functionality
 
-Admin dashboard with statistics
+### Leave Management
+- Submit leave requests (Medical, Personal, Academic)
+- Track request status (Pending, Approved, Rejected)
+- View remaining leave balance
+- Leave calendar view
+- Request history and feedback
 
-Scalable REST-based architecture
+### Schedule Export
+- **PDF**: Print-friendly format for sharing
+- **Excel**: Spreadsheet with calculations
+- **ICS**: Import to Google Calendar, Outlook, etc.
+- Flexible date range selection
 
-Project Structure
-Frontend
-src/
-├── components/
-├── pages/
-│   └── admin/
-│       ├── ConstraintsPage.jsx
-│       ├── AddConstraintPage.jsx
-│       └── EditConstraintPage.jsx
-├── services/
-├── lib/
-└── App.jsx
+### Analytics
+- Personal performance metrics
+- Total teaching hours analysis
+- Course distribution breakdown
+- Workload trends and patterns
 
-Backend
-src/main/java/
-├── controller/
-├── service/
-├── repository/
-├── entity/
-└── SchedulerApplication.java
+### Communication
+- Announcement feed with filters
+- Important deadline tracking
+- Department-specific updates
+- System notifications
 
-Constraint Logic
+---
 
-Mandatory constraints must always be satisfied and are never violated.
+## 🚀 Installation & Setup
 
-Preferred constraints are applied when possible but may be relaxed.
+### Navigate to Project Directory
+```bash
+cd frontend-faculty
+```
 
-Optional constraints are applied only if they do not conflict with higher-priority rules.
+### Install Dependencies
+```bash
+bun install        # Using Bun (recommended)
+npm install        # Using npm
+yarn install       # Using yarn
+```
 
-How to Run the Application
-Backend
-mvn clean install
-mvn spring-boot:run
+### Configure Environment Variables
+Create `.env.local`:
+```env
+VITE_API_URL=http://localhost:8083/api
+VITE_APP_NAME=Faculty Portal
+VITE_DEBUG=false
+```
 
-Runs on http://localhost:8080
+### Start Development Server
+```bash
+bun dev            # Using Bun
+npm run dev        # Using npm
+```
 
-Frontend
-npm install
-npm run dev
+**Application URL**: `http://localhost:8081`
 
-Runs on http://localhost:5173
+---
 
-Database Configuration
+## 📂 Project Structure
 
-PostgreSQL is used as the primary database. Configuration can be updated in application.properties.
+```
+frontend-faculty/
+├── src/
+│   ├── components/
+│   │   ├── layout/          # Layout components
+│   │   ├── dashboard/       # Dashboard widgets
+│   │   ├── timetable/       # Schedule display
+│   │   ├── leave/           # Leave management
+│   │   └── ui/              # Shadcn UI components
+│   ├── pages/
+│   │   ├── Dashboard-Faculty.tsx
+│   │   ├── FacultySchedule-Faculty.tsx
+│   │   ├── LeaveStatus-Faculty.tsx
+│   │   ├── Announcements-Faculty.tsx
+│   │   └── Index.tsx
+│   ├── lib/
+│   │   ├── api.ts           # API client
+│   │   └── utils.ts         # Utilities
+│   ├── types/               # TypeScript types
+│   └── main.tsx
+├── package.json
+├── vite.config.ts
+└── tailwind.config.ts
+```
 
-Future Enhancements
+---
 
-Automatic timetable generation algorithm
+## 👤 User Guide
 
-Conflict visualization
+### View Your Schedule
+1. Navigate to **Schedule** page
+2. Use navigation arrows to switch weeks
+3. Click on any class for detailed information
+4. Check room location and timing
 
-Role-based authentication
+### Submit Leave Request
+1. Go to **Leave Management**
+2. Click **"Submit New Request"**
+3. Select start and end dates
+4. Choose leave type
+5. Add reason (optional)
+6. Click **"Submit"**
+7. Check status in **"Leave History"**
 
-Export timetables as PDF/Excel
+### Download Schedule
+1. Open **Schedule** page
+2. Click **"Download"** button
+3. Select format (PDF, Excel, or ICS)
+4. Choose date range
+5. Click **"Download"**
 
-Analytics and reporting module
+### Check Analytics
+1. Navigate to **Analytics**
+2. View personal metrics
+3. Compare with department average
+4. Export reports if available
 
-Status
+---
 
-The project is currently under development with core frontend and backend modules implemented.
+## 💻 Technology Stack
+
+| Technology | Purpose |
+|-----------|---------|
+| React 18.3.1 | UI framework |
+| TypeScript | Type safety |
+| Vite | Build tool |
+| Tailwind CSS | Styling |
+| Shadcn/ui | Components |
+| Axios | HTTP client |
+| Recharts | Charts |
+| jsPDF & XLSX | Export |
+
+---
+
+## 🛠️ Building for Production
+```bash
+bun run build      # Using Bun
+npm run build      # Using npm
+```
+
+Output in `dist/` folder ready for deployment.
+
+---
+
+## 🐛 Troubleshooting
+
+### Can't connect to API
+- Verify backend is running on `http://localhost:8083`
+- Check `VITE_API_URL` in `.env.local`
+
+### Port already in use
+```bash
+npm run dev -- --port 8082
+```
+
+### Missing data
+- Clear browser cache
+- Restart development server
+- Check backend connection
+
+---
+
+## 📚 Additional Resources
+
+- [React Documentation](https://react.dev)
+- [Vite Guide](https://vitejs.dev)
+- [Tailwind CSS](https://tailwindcss.com/docs)
+
+---
+
+**Version**: 1.0.0 | **Last Updated**: February 2026

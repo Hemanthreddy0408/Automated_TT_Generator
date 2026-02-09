@@ -37,8 +37,11 @@ import DepartmentFaculty from "./pages/Department-Faculty";
 import LeaveModal from "./components/leave/LeaveModel";
 import LeaveRequestsPage from "./pages/admin/LeaveRequestsPage";
 import SectionManagement from "./pages/admin/SectionsPage";
+import Login from "./pages/Login";
 
 import { UserProvider } from "./context/UserContext";
+import { AuthProvider } from "./contexts/AuthContext";
+import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -47,58 +50,217 @@ const App = () => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <UserProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              {/* --- PUBLIC --- */}
-              <Route path="/" element={<Index />} />
+      <AuthProvider>
+        <UserProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                {/* --- LOGIN --- */}
+                <Route path="/login" element={<Login />} />
 
-              {/* --- FACULTY PORTAL (NEW DESIGN) --- */}
-              <Route path="/faculty">
-                <Route index element={<Navigate to="/faculty/dashboard" replace />} />
-                <Route path="dashboard" element={<DashboardFaculty onApplyLeave={() => setLeaveModalOpen(true)} />} />
-                <Route path="schedule" element={<FacultySchedule />} />
-                <Route path="leave" element={<LeaveStatusFaculty onApplyLeave={() => setLeaveModalOpen(true)} />} />
-                <Route path="department" element={<DepartmentFaculty />} />
-              </Route>
+                {/* --- PUBLIC --- */}
+                <Route path="/" element={<Index />} />
 
-              {/* --- ADMIN: FACULTY ROUTES --- */}
-              <Route path="/admin/faculty/add/qualifications" element={<AddFacultyQualificationsPage />} />
-              <Route path="/admin/faculty/add/review" element={<AddFacultyReviewPage />} />
-              <Route path="/admin/constraints/add" element={<AddConstraintPage />} />
-              <Route path="/admin/faculty/add" element={<AddFacultyPage />} />
-              <Route path="/admin/faculty" element={<FacultyPage />} />
+                {/* --- FACULTY PORTAL (PROTECTED) --- */}
+                <Route path="/faculty">
+                  <Route index element={<Navigate to="/faculty/dashboard" replace />} />
+                  <Route
+                    path="dashboard"
+                    element={
+                      <ProtectedRoute requiredRole="faculty">
+                        <DashboardFaculty onApplyLeave={() => setLeaveModalOpen(true)} />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="schedule"
+                    element={
+                      <ProtectedRoute requiredRole="faculty">
+                        <FacultySchedule />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="leave"
+                    element={
+                      <ProtectedRoute requiredRole="faculty">
+                        <LeaveStatusFaculty onApplyLeave={() => setLeaveModalOpen(true)} />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="department"
+                    element={
+                      <ProtectedRoute requiredRole="faculty">
+                        <DepartmentFaculty />
+                      </ProtectedRoute>
+                    }
+                  />
+                </Route>
 
-              {/* --- ADMIN: OTHER ROUTES --- */}
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/admin/sections/add" element={<AddSectionPage />} />
-              <Route path="/admin/sections/edit/:id" element={<AddSectionPage />} />
-              <Route path="/admin/timetable" element={<TimetablePage />} />
-              <Route path="/admin/rooms/add" element={<AddRoomPage />} />
-              <Route path="/admin/rooms/edit/:id" element={<EditRoomPage />} />
-              <Route path="/admin/rooms" element={<RoomsPage />} />
-              <Route path="/admin/subjects/add" element={<AddSubjectPage />} />
-              <Route path="/admin/subjects" element={<SubjectsPage />} />
-              <Route path="/admin/sections" element={<SectionManagement />} />
-              <Route path="/admin/constraints" element={<ConstraintsPage />} />
-              <Route path="/admin/history" element={<HistoryPage />} />
-              <Route path="/admin/leaves" element={<LeaveRequestsPage />} />
+                {/* --- ADMIN: FACULTY ROUTES (PROTECTED) --- */}
+                <Route
+                  path="/admin/faculty/add/qualifications"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <AddFacultyQualificationsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/faculty/add/review"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <AddFacultyReviewPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/constraints/add"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <AddConstraintPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/faculty/add"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <AddFacultyPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/faculty"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <FacultyPage />
+                    </ProtectedRoute>
+                  }
+                />
 
-              {/* --- 404 CATCH-ALL --- */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
+                {/* --- ADMIN: OTHER ROUTES (PROTECTED) --- */}
+                <Route
+                  path="/admin"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <AdminDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/sections/add"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <AddSectionPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/sections/edit/:id"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <AddSectionPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/timetable"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <TimetablePage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/rooms/add"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <AddRoomPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/rooms/edit/:id"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <EditRoomPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/rooms"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <RoomsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/subjects/add"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <AddSubjectPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/subjects"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <SubjectsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/sections"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <SectionManagement />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/constraints"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <ConstraintsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/history"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <HistoryPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/leaves"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <LeaveRequestsPage />
+                    </ProtectedRoute>
+                  }
+                />
 
-          {/* Global Leave Modal */}
-          <LeaveModal
-            isOpen={isLeaveModalOpen}
-            onClose={() => setLeaveModalOpen(false)}
-          />
-        </TooltipProvider>
-      </UserProvider>
+                {/* --- 404 CATCH-ALL --- */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+
+            {/* Global Leave Modal */}
+            <LeaveModal
+              isOpen={isLeaveModalOpen}
+              onClose={() => setLeaveModalOpen(false)}
+            />
+          </TooltipProvider>
+        </UserProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 };

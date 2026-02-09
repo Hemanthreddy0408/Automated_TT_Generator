@@ -223,3 +223,48 @@ export const getAuditLogs = async (): Promise<AuditLog[]> => {
     return [];
   }
 };
+
+/* ===========================
+   AUTHENTICATION API
+   =========================== */
+export interface LoginRequest {
+  identifier: string; // email or employeeId
+  password: string;
+  role: "admin" | "faculty";
+}
+
+export interface UserData {
+  id: number;
+  name: string;
+  email: string;
+  department: string;
+  employeeId: string;
+}
+
+export interface LoginResponse {
+  success: boolean;
+  message: string;
+  role: string | null;
+  user: UserData | null;
+}
+
+export const loginUser = async (credentials: LoginRequest): Promise<LoginResponse> => {
+  try {
+    const res = await API.post("/auth/login", credentials);
+    return res.data;
+  } catch (error: any) {
+    if (error.response && error.response.data) {
+      return error.response.data;
+    }
+    return {
+      success: false,
+      message: "Network error. Please check your connection.",
+      role: null,
+      user: null,
+    };
+  }
+};
+
+export const logout = async (): Promise<void> => {
+  await API.post("/auth/logout");
+};

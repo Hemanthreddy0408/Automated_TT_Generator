@@ -27,7 +27,12 @@ public interface TimetableRepository extends JpaRepository<TimetableEntry, Long>
     // Find all entries for a subject (used for elective alignment)
     List<TimetableEntry> findBySubjectCode(String subjectCode);
 
+
     // Count occurrences of a subject for a section on a specific day (used to limit multiple same-subject per day)
     @Query("SELECT COUNT(t) FROM TimetableEntry t WHERE t.sectionId = :sectionId AND t.day = :day AND t.subjectCode = :subjectCode")
     long countSubjectPerDay(String sectionId, String day, String subjectCode);
+
+    // Find by Faculty Name
+    List<TimetableEntry> findByFacultyName(String facultyName);
+
 }

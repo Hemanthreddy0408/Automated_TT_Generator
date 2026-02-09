@@ -49,6 +49,7 @@ public class TimetableController {
         }
     }
 
+
     /**
      * Generate for all sections with global workload tracking.
      * commit param same semantics.
@@ -93,6 +94,15 @@ public class TimetableController {
     public ResponseEntity<List<TimetableEntry>> get(@PathVariable String sectionId) {
         return ResponseEntity.ok(timetableRepo.findBySectionId(sectionId));
     }
+
+
+    // Fetch timetable for a specific faculty
+    @GetMapping("/faculty/{name}")
+    public List<TimetableEntry> getByFaculty(@PathVariable String name) {
+        return repo.findByFacultyName(name);
+    }
+
+    // Get all entries for global analytics
 
     @GetMapping
     public ResponseEntity<List<TimetableEntry>> getAll() {
