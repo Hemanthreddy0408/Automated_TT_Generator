@@ -34,7 +34,6 @@ import DashboardFaculty from "./pages/Dashboard-Faculty";
 import FacultySchedule from "./pages/FacultySchedule-Faculty";
 import LeaveStatusFaculty from "./pages/LeaveStatus-Faculty";
 import DepartmentFaculty from "./pages/Department-Faculty";
-import AnnouncementsFaculty from "./pages/Announcements-Faculty";
 import LeaveModal from "./components/leave/LeaveModel";
 import LeaveRequestsPage from "./pages/admin/LeaveRequestsPage";
 import SectionManagement from "./pages/admin/SectionsPage";
@@ -64,7 +63,6 @@ const App = () => {
                 <Route path="schedule" element={<FacultySchedule />} />
                 <Route path="leave" element={<LeaveStatusFaculty onApplyLeave={() => setLeaveModalOpen(true)} />} />
                 <Route path="department" element={<DepartmentFaculty />} />
-                <Route path="announcements" element={<AnnouncementsFaculty onApplyLeave={() => setLeaveModalOpen(true)} />} />
               </Route>
 
               {/* --- ADMIN: FACULTY ROUTES --- */}

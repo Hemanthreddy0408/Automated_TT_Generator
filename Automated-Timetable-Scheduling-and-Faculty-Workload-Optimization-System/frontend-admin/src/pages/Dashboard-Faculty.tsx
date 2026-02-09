@@ -1,13 +1,48 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Sidebar from '../components/layout/Sidebar';
 import ScheduleGrid from '../components/dashboard/ScheduleGrid';
 import StatCard from '../components/dashboard/StatCard';
 import { useUser } from '../context/UserContext';
+import { getFacultyTimetable } from '../lib/api';
+import { TimetableEntry } from '../components/timetable/TimetableGrid';
+import { toast } from 'sonner';
 
 const Dashboard = ({ onApplyLeave }: { onApplyLeave: () => void }) => {
-  const { user, loading } = useUser();
+  const { user, loading: userLoading } = useUser();
+  const [entries, setEntries] = useState<TimetableEntry[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  if (loading) return null; // Let main layout or sidebar handle loading if needed, or just show nothing
+  useEffect(() => {
+    const fetchSchedule = async () => {
+      if (user?.name) {
+        setLoading(true);
+        try {
+          const data = await getFacultyTimetable(user.name);
+          setEntries(data);
+        } catch (error) {
+          console.error("Failed to fetch faculty schedule", error);
+
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+    fetchSchedule();
+  }, [user?.name]);
+
+  if (userLoading) return null;
+
+  // Calculate Stats
+  const today = new Date().toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
+  const todaysClasses = entries.filter(e => e.day.toUpperCase() === today);
+
+  const weeklyLoad = entries.length; // Assuming each entry is 1 hour or standard slot. 
+  // Actually slots are 50 mins, but for load calculation, let's just count sessions for now or use credits if available.
+  // The user model has maxHoursPerWeek.
+
+  const theoryLoad = entries.filter(e => e.type === 'LECTURE').length;
+  const labLoad = entries.filter(e => e.type === 'LAB').length;
+
 
   return (
     <div className="flex min-h-screen bg-[#f1f5f9]">
@@ -33,14 +68,14 @@ const Dashboard = ({ onApplyLeave }: { onApplyLeave: () => void }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <StatCard
               label="Today's Classes"
-              value="03"
-              subText="2 Theory, 1 Lab"
+              value={todaysClasses.length.toString().padStart(2, '0')}
+              subText={`${todaysClasses.filter(e => e.type === 'LECTURE').length} Theory, ${todaysClasses.filter(e => e.type === 'LAB').length} Lab`}
               icon="school"
             />
             <StatCard
               label="Weekly Load"
-              value={`${(user as any)?.maxHoursPerWeek || 18}h`}
-              subText="Assigned hours"
+              value={`${weeklyLoad}h`}
+              subText={`Max ${(user as any)?.maxHoursPerWeek || 20}h`}
               icon="timer"
             />
             <StatCard
@@ -61,16 +96,16 @@ const Dashboard = ({ onApplyLeave }: { onApplyLeave: () => void }) => {
             <div className="xl:col-span-2 bg-white rounded-3xl p-8 border border-slate-200 shadow-sm transition-all hover:shadow-md">
               <h4 className="text-xl font-bold mb-2">Current Week Schedule</h4>
               <p className="text-sm text-slate-500 mb-8 font-medium">My Personalized Academic Calendar</p>
-              <ScheduleGrid />
+              {loading ? <p>Loading...</p> : <ScheduleGrid entries={entries} />}
             </div>
 
             <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm">
               <h4 className="text-lg font-bold mb-6 flex items-center gap-2">
                 <span className="material-symbols-outlined text-[#10b981]">analytics</span> My Workload
               </h4>
-              <WorkloadProgress label="Total Hours" current={18} max={(user as any)?.maxHoursPerWeek || 20} color="bg-[#10b981]" />
-              <WorkloadProgress label="Theory Load" current={12} max={(user as any)?.maxHoursPerWeek || 20} color="bg-sky-500" />
-              <WorkloadProgress label="Lab Load" current={6} max={(user as any)?.maxHoursPerWeek || 20} color="bg-purple-500" />
+              <WorkloadProgress label="Total Hours" current={weeklyLoad} max={(user as any)?.maxHoursPerWeek || 20} color="bg-[#10b981]" />
+              <WorkloadProgress label="Theory Load" current={theoryLoad} max={(user as any)?.maxHoursPerWeek || 20} color="bg-sky-500" />
+              <WorkloadProgress label="Lab Load" current={labLoad} max={(user as any)?.maxHoursPerWeek || 20} color="bg-purple-500" />
             </div>
           </div>
         </div>
@@ -88,7 +123,7 @@ const WorkloadProgress = ({ label, current, max, color }: any) => (
       </span>
     </div>
     <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-      <div className={`h-full ${color} transition-all duration-500`} style={{ width: `${(current / max) * 100}%` }}></div>
+      <div className={`h-full ${color} transition-all duration-500`} style={{ width: `${Math.min((current / max) * 100, 100)}%` }}></div>
     </div>
   </div>
 );

@@ -10,7 +10,6 @@ const Sidebar = () => {
     { icon: 'event_available', label: 'My Schedule', path: '/faculty/schedule' },
     { icon: 'history_edu', label: 'Leave Status', path: '/faculty/leave' },
     { icon: 'group', label: 'Department', path: '/faculty/department' },
-    { icon: 'campaign', label: 'Announcements', path: '/faculty/announcements' },
   ];
 
   return (

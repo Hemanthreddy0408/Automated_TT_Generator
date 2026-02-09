@@ -1,13 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/layout/Sidebar';
 import ScheduleGrid from '../components/dashboard/ScheduleGrid';
 import { useUser } from '../context/UserContext';
 import { generateICS } from '../lib/icsUtils';
 import { toast } from 'sonner';
+import { getFacultyTimetable } from '../lib/api';
+import { TimetableEntry } from '../components/timetable/TimetableGrid';
 
 const FacultySchedule = () => {
     const { user } = useUser();
     const [view, setView] = useState('Weekly'); // 'Weekly' or 'Day'
+    const [entries, setEntries] = useState<TimetableEntry[]>([]);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        const fetchSchedule = async () => {
+            if (user?.name) {
+                setLoading(true);
+                try {
+                    const data = await getFacultyTimetable(user.name);
+                    setEntries(data);
+                } catch (error) {
+                    console.error("Failed to fetch faculty schedule", error);
+                    toast.error("Failed to load schedule.");
+                } finally {
+                    setLoading(false);
+                }
+            }
+        };
+        fetchSchedule();
+    }, [user?.name]);
 
     const addToOutlook = () => {
         const event = {
@@ -46,6 +68,25 @@ const FacultySchedule = () => {
 
         toast.success("Schedule downloaded as ICS with Reminder!");
     };
+
+    // Insights
+    const busiestDay = React.useMemo(() => {
+        const counts: Record<string, number> = {};
+        entries.forEach(e => {
+            counts[e.day] = (counts[e.day] || 0) + 1;
+        });
+        const maxDay = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b, "");
+        return { day: maxDay, count: counts[maxDay] || 0 };
+    }, [entries]);
+
+    const commonRoom = React.useMemo(() => {
+        const counts: Record<string, number> = {};
+        entries.forEach(e => {
+            if (e.roomNumber) counts[e.roomNumber] = (counts[e.roomNumber] || 0) + 1;
+        });
+        const maxRoom = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b, "TBA");
+        return maxRoom;
+    }, [entries]);
 
     return (
         <div className="flex min-h-screen bg-[#f1f5f9]">
@@ -96,8 +137,10 @@ const FacultySchedule = () => {
                             </div>
                         </div>
 
-                        {/* Pass 'view' to ScheduleGrid to filter columns */}
-                        <ScheduleGrid view={view as any} />
+                        {/* Pass 'view' and 'entries' to ScheduleGrid */}
+                        {loading ? <p className="text-center p-10 text-slate-400">Loading schedule...</p> :
+                            <ScheduleGrid view={view as any} entries={entries} />
+                        }
                     </div>
 
                     <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -111,11 +154,11 @@ const FacultySchedule = () => {
                             <ul className="space-y-3 relative z-10">
                                 <li className="flex items-center gap-3 text-sm text-slate-600">
                                     <div className="w-1.5 h-1.5 rounded-full bg-sky-500"></div>
-                                    Busiest day: <strong>Monday</strong> (4 sessions)
+                                    Busiest day: <strong>{busiestDay.day || 'N/A'}</strong> ({busiestDay.count} sessions)
                                 </li>
                                 <li className="flex items-center gap-3 text-sm text-slate-600">
                                     <div className="w-1.5 h-1.5 rounded-full bg-sky-500"></div>
-                                    Assigned Room: <strong>LH-102, Lab-402</strong>
+                                    Assigned Room: <strong>{commonRoom}</strong>
                                 </li>
                             </ul>
                         </div>

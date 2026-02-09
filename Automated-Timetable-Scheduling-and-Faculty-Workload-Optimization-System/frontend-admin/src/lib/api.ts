@@ -197,6 +197,11 @@ export const getAllTimetableEntries = async () => {
   return Array.isArray(res.data) ? res.data : [];
 };
 
+export const getFacultyTimetable = async (facultyName: string) => {
+  const res = await API.get(`/timetable/faculty/${facultyName}`);
+  return Array.isArray(res.data) ? res.data : [];
+};
+
 /* ===========================
    AUDIT LOG API
    =========================== */
