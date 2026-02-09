@@ -43,24 +43,51 @@ public class TimetableGenerationService {
     private static final List<String> DAYS = List.of("MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY");
 
     private static final List<String> SLOTS = List.of(
-            "08:00-08:50", // 0 - Morning
-            "09:00-09:50", // 1
-            "10:00-10:50", // 2
+            "NO_CLASS", // 0 - Skip first slot (no classes at 08:00)
+            "09:00-09:50", // 1 - Start classes from here
+            "10:00-10:50", // 2 - Morning lab can start here (uses 2-3)
             "11:00-11:50", // 3
-            "12:00-12:50", // 4 - Last morning
+            "12:00-12:50", // 4 - Last morning slot
             "LUNCH_BREAK", // 5 - Break (no classes)
-            "02:10-03:00", // 6 - Afternoon start
-            "03:10-04:00", // 7
+            "02:10-03:00", // 6 - Afternoon start, labs can start here
+            "03:10-04:00", // 7 - Labs can start here
             "04:10-05:00" // 8
     );
 
+    /*
+     * Slot indices:
+     * 0: NO_CLASS (skip this slot)
+     * 1-4: Morning slots (09:00 to 12:50) - classes start here
+     * 5: LUNCH_BREAK (no classes scheduled)
+     * 6-8: Afternoon slots (02:10 to 05:00)
+     * 
+     * Labs (2 consecutive hours) can be at:
+     * - Morning: ONE lab starting at index 2 (slots 2-3: 10:00-11:50)
+     * - Afternoon: Labs starting at 6 or 7 (slots 6-7 or 7-8)
+     */
+
     private static final Set<Integer> AFTERNOON = Set.of(6, 7, 8);
+    private static final Set<Integer> MORNING_LAB_SLOTS = Set.of(2); // Only slot 2 for morning labs
     private static final int DEFAULT_DAILY = 6;
     private static final int DEFAULT_WEEKLY = 30;
 
     /* ================== PUBLIC ================== */
 
+    /**
+     * Generate timetable for a section (backward compatible version).
+     * Delegates to overload with null existingFacultyLoad.
+     */
     public List<TimetableEntry> generateForSection(String sectionId, boolean commit) {
+        return generateForSection(sectionId, commit, null);
+    }
+
+    /**
+     * Generate timetable for a section with optional existing faculty load
+     * tracking.
+     * This overload is used by generateForAllSections() to track workload globally.
+     */
+    public List<TimetableEntry> generateForSection(String sectionId, boolean commit,
+            Map<Long, Integer> existingFacultyLoad) {
 
         Section section = sectionRepo.findById(Long.parseLong(sectionId))
                 .orElseThrow();
@@ -77,7 +104,10 @@ public class TimetableGenerationService {
         /* ========= STEP 1: FIX FACULTY PER SUBJECT ========= */
 
         Map<Long, Faculty> subjectFaculty = new HashMap<>();
-        Map<Long, Integer> facultyLoad = new HashMap<>();
+        // Initialize with existing load if provided (for global tracking across
+        // sections)
+        Map<Long, Integer> facultyLoad = new HashMap<>(
+                existingFacultyLoad != null ? existingFacultyLoad : new HashMap<>());
 
         for (Subject s : subjects) {
             // Bi-directional eligibility check (US1.1)
@@ -153,7 +183,11 @@ public class TimetableGenerationService {
         List<Session> failedSessions = new ArrayList<>();
 
         // PASS 1: Place all LAB sessions first (most constrained - need consecutive
-        // afternoon slots)
+        // slots)
+        Map<String, Integer> morningLabCount = new HashMap<>(); // Track morning labs per day
+        for (String d : DAYS)
+            morningLabCount.put(d, 0);
+
         for (String day : DAYS) {
             dailyLoad.clear(); // Reset daily load for new day
 
@@ -162,7 +196,7 @@ public class TimetableGenerationService {
                     continue; // Skip lectures in pass 1
 
                 boolean placed = tryPlaceSession(s, sectionId, day, occ, dailyLoad, weeklyLoad,
-                        rooms, section, result, commit);
+                        rooms, section, result, commit, morningLabCount);
                 if (!placed) {
                     failedSessions.add(s);
                 }
@@ -178,7 +212,7 @@ public class TimetableGenerationService {
                     continue; // Skip labs in pass 2
 
                 boolean placed = tryPlaceSession(s, sectionId, day, occ, dailyLoad, weeklyLoad,
-                        rooms, section, result, commit);
+                        rooms, section, result, commit, morningLabCount);
                 if (!placed) {
                     failedSessions.add(s);
                 }
@@ -207,7 +241,7 @@ public class TimetableGenerationService {
                 }
 
                 placed = tryPlaceSession(s, sectionId, day, occ, dailyLoad, weeklyLoad,
-                        rooms, section, result, commit);
+                        rooms, section, result, commit, morningLabCount);
                 if (placed)
                     break;
             }
@@ -230,7 +264,8 @@ public class TimetableGenerationService {
     private boolean tryPlaceSession(Session s, String sectionId, String day,
             Occupancy occ, Map<Long, Integer> dailyLoad,
             Map<Long, Integer> weeklyLoad, List<Room> rooms,
-            Section section, List<TimetableEntry> result, boolean commit) {
+            Section section, List<TimetableEntry> result, boolean commit,
+            Map<String, Integer> morningLabCount) {
 
         Faculty f = s.faculty;
         int dLoad = dailyLoad.getOrDefault(f.getId(), 0);
@@ -247,13 +282,20 @@ public class TimetableGenerationService {
         // Try each time slot
         for (int si = 0; si < SLOTS.size(); si++) {
 
-            // Skip lunch break slot
-            if (SLOTS.get(si).equals("LUNCH_BREAK"))
+            // Skip NO_CLASS and LUNCH_BREAK slots
+            if (SLOTS.get(si).equals("NO_CLASS") || SLOTS.get(si).equals("LUNCH_BREAK"))
                 continue;
 
-            // Labs must be in afternoon
-            if (s.length == 2 && !AFTERNOON.contains(si))
-                continue;
+            // For labs: can be in morning (slot 2, max 1 per day) OR afternoon (slots 6-7)
+            if (s.length == 2) {
+                boolean canPlaceMorning = MORNING_LAB_SLOTS.contains(si)
+                        && morningLabCount.getOrDefault(day, 0) < 1;
+                boolean canPlaceAfternoon = (si == 6 || si == 7);
+
+                if (!canPlaceMorning && !canPlaceAfternoon) {
+                    continue; // Can't place lab at this slot
+                }
+            }
 
             // Check we have enough consecutive slots
             if (si + s.length > SLOTS.size())
@@ -335,6 +377,11 @@ public class TimetableGenerationService {
             dailyLoad.put(f.getId(), dLoad + s.length);
             weeklyLoad.put(f.getId(), wLoad + s.length);
 
+            // Track morning lab if placed in morning
+            if (s.length == 2 && MORNING_LAB_SLOTS.contains(si)) {
+                morningLabCount.put(day, morningLabCount.getOrDefault(day, 0) + 1);
+            }
+
             return true;
         }
 
@@ -354,8 +401,12 @@ public class TimetableGenerationService {
         // Find ANY available slot (ignore workload limits as last resort)
         for (String day : DAYS) {
             for (int si = 0; si < SLOTS.size(); si++) {
+                // Skip NO_CLASS and LUNCH_BREAK slots
+                if (SLOTS.get(si).equals("NO_CLASS") || SLOTS.get(si).equals("LUNCH_BREAK"))
+                    continue;
 
-                if (SLOTS.get(si).equals("LUNCH_BREAK"))
+                // Even in force mode, labs should be at slot 2 (morning) or 6-7 (afternoon)
+                if (s.length == 2 && si != 2 && si != 6 && si != 7)
                     continue;
                 if (si + s.length > SLOTS.size())
                     continue;
@@ -429,9 +480,50 @@ public class TimetableGenerationService {
 
     public List<TimetableEntry> generateForAllSections(boolean commit) {
         List<TimetableEntry> all = new ArrayList<>();
-        for (Section s : sectionRepo.findAll()) {
-            all.addAll(generateForSection(String.valueOf(s.getId()), commit));
+
+        // Track faculty workload globally across all sections for balanced distribution
+        Map<Long, Integer> globalFacultyLoad = new HashMap<>();
+
+        // If not deleting existing timetables, initialize with current faculty loads
+        if (!commit) {
+            List<TimetableEntry> existing = timetableRepo.findAll();
+            for (TimetableEntry entry : existing) {
+                // Find faculty by name to get ID
+                List<Faculty> matchingFaculty = facultyRepo.findAll().stream()
+                        .filter(f -> f.getName().equals(entry.getFacultyName()))
+                        .toList();
+
+                if (!matchingFaculty.isEmpty()) {
+                    Faculty f = matchingFaculty.get(0);
+                    // Lab sessions are 2 hours, lectures are 1 hour
+                    int hours = entry.getType().equals("LAB") ? 2 : 1;
+                    globalFacultyLoad.put(f.getId(),
+                            globalFacultyLoad.getOrDefault(f.getId(), 0) + hours);
+                }
+            }
         }
+
+        // Generate timetable for each section, passing and updating global load
+        for (Section s : sectionRepo.findAll()) {
+            List<TimetableEntry> sectionTT = generateForSection(
+                    String.valueOf(s.getId()), commit, globalFacultyLoad);
+            all.addAll(sectionTT);
+
+            // Update global load with newly assigned sessions
+            for (TimetableEntry entry : sectionTT) {
+                List<Faculty> matchingFaculty = facultyRepo.findAll().stream()
+                        .filter(f -> f.getName().equals(entry.getFacultyName()))
+                        .toList();
+
+                if (!matchingFaculty.isEmpty()) {
+                    Faculty f = matchingFaculty.get(0);
+                    int hours = entry.getType().equals("LAB") ? 2 : 1;
+                    globalFacultyLoad.put(f.getId(),
+                            globalFacultyLoad.getOrDefault(f.getId(), 0) + hours);
+                }
+            }
+        }
+
         return all;
     }
 
