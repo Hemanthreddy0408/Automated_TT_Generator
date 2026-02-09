@@ -2,54 +2,32 @@ package com.acadschedule.scheduler.repository;
 
 import com.acadschedule.scheduler.entity.TimetableEntry;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.*;
-import org.springframework.data.repository.query.Param;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
+
 
 import java.util.List;
 
 @Repository
 public interface TimetableRepository extends JpaRepository<TimetableEntry, Long> {
 
-        @Query("""
-SELECT COUNT(t) 
-FROM TimetableEntry t 
-WHERE t.sectionId = :sid 
-AND t.day = :day 
-AND t.subjectCode = :sub
-""")
-long countSubjectPerDay(
-        @Param("sid") String sid,
-        @Param("day") String day,
-        @Param("sub") String sub
-);
-
-
-    // ✅ Used to clear old timetable
-    @Modifying
-    @Transactional
-    @Query("DELETE FROM TimetableEntry t WHERE t.sectionId = :sectionId")
-    void deleteBySectionId(@Param("sectionId") String sectionId);
-
-    // ✅ Used for rendering timetable
+    // Find entries for a section (used by frontend)
     List<TimetableEntry> findBySectionId(String sectionId);
 
-    // ✅ Hard constraints
-    boolean existsByFacultyNameAndDayAndTimeSlot(
-            String facultyName, String day, String timeSlot);
+    // Delete entries for a section (used when committing regeneration)
+    void deleteBySectionId(String sectionId);
 
-    boolean existsByRoomNumberAndDayAndTimeSlot(
-            String roomNumber, String day, String timeSlot);
+    // Check existence helpers used by scheduler (derives column names from TimetableEntry fields)
+    boolean existsBySectionIdAndDayAndTimeSlot(String sectionId, String day, String timeSlot);
 
-    boolean existsBySectionIdAndDayAndTimeSlot(
-            String sectionId, String day, String timeSlot);
+    boolean existsByFacultyNameAndDayAndTimeSlot(String facultyName, String day, String timeSlot);
 
-    boolean existsBySectionIdAndDayAndSubjectCode(
-            String sectionId, String day, String subjectCode);
+    boolean existsByRoomNumberAndDayAndTimeSlot(String roomNumber, String day, String timeSlot);
 
-    boolean existsBySubjectCodeAndDayAndTimeSlot(
-            String subjectCode, String day, String timeSlot);
-
+    // Find all entries for a subject (used for elective alignment)
     List<TimetableEntry> findBySubjectCode(String subjectCode);
+
+    // Count occurrences of a subject for a section on a specific day (used to limit multiple same-subject per day)
+    @Query("SELECT COUNT(t) FROM TimetableEntry t WHERE t.sectionId = :sectionId AND t.day = :day AND t.subjectCode = :subjectCode")
+    long countSubjectPerDay(String sectionId, String day, String subjectCode);
 }
