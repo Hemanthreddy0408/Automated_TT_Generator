@@ -94,16 +94,14 @@ public class TimetableController {
     }
 
     // Fetch timetable for a specific faculty
-    @GetMapping("/faculty/{name}")
-    public List<TimetableEntry> getByFaculty(@PathVariable String name) {
+    @GetMapping("/faculty")
+    public List<TimetableEntry> getByFaculty(@RequestParam String name) {
         return timetableRepo.findByFacultyName(name);
     }
-
-
-    // Get all entries for global analytics
-
+    // 🔥 ADD THIS METHOD BACK
     @GetMapping
-    public ResponseEntity<List<TimetableEntry>> getAll() {
+    public ResponseEntity<List<TimetableEntry>> getAllTimetableEntries() {
         return ResponseEntity.ok(timetableRepo.findAll());
     }
+
 }

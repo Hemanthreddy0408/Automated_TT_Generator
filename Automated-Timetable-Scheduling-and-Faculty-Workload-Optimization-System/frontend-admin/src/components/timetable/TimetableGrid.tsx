@@ -23,7 +23,8 @@ export type TimetableEntry = {
 };
 
 type Props = {
-  entries?: TimetableEntry[];
+  timetable?: any; // Day -> TimeSlot matrix
+  entries?: TimetableEntry[]; // Flat array of entries
 };
 
 // Pastel color palette for subjects
@@ -54,24 +55,24 @@ const getColorForSubject = (subjectCode?: string) => {
   return COLORS[Math.abs(hash) % COLORS.length];
 };
 
-export function TimetableGrid({ entries = [] }: Props) {
+export function TimetableGrid({ timetable = {} }: Props) {
   const DAYS = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"];
 
   const TIME_SLOTS = [
-    "08:00-08:50",
-    "09:00-09:50",
-    "10:00-10:50",
+    "09:00-09:40",
+    "09:40-10:30",
     "10:30-10:45", // BREAK
-    "11:00-11:50",
-    "12:00-12:50",
-    "01:15-02:05", // LUNCH
-    "02:10-03:00",
-    "03:10-04:00",
-    "04:10-05:00",
+    "10:45-11:35",
+    "11:35-12:25",
+    "12:25-01:15",
+    "LUNCH_BREAK", // LUNCH
+    "02:05-02:55",
+    "02:55-03:45",
+    "03:45-04:35",
   ];
 
   const findEntry = (day: string, slot: string) =>
-    entries.find(e => e.day === day && e.timeSlot === slot);
+    timetable?.[day]?.[slot];
 
   return (
     <div className="overflow-x-auto border rounded-2xl bg-white shadow-xl">
@@ -97,7 +98,7 @@ export function TimetableGrid({ entries = [] }: Props) {
             </div>
             {TIME_SLOTS.map(slot => {
               const entry = findEntry(day, slot);
-              const isSpecial = slot === "10:30-10:45" || slot === "01:15-02:05";
+              const isSpecial = slot === "10:30-10:45" || slot === "LUNCH_BREAK";
               const label = slot === "10:30-10:45" ? "BREAK" : "LUNCH";
 
               if (isSpecial) {

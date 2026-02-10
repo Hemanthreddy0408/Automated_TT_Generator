@@ -53,34 +53,34 @@ public class TimetableGenerationService {
 
     private static final List<String> DAYS = List.of("MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY");
 
-    private static final List<String> SLOTS = List.of(
-            "NO_CLASS", // 0 - Skip first slot (no classes at 08:00)
-            "09:00-09:40", // 1 - Start classes from here
-            "09:40-10:30",// 2 - Morning lab can start here (uses 2-3)
-            "10:30-10:45", 
-            "10:45-11:35", // 3
-            "11:35-12:25",
-            "12:25-01:15", // 4 - Last morning slot
-            "LUNCH_BREAK", // 5 - Break (no classes)
-            "02:05-02:55", // 6 - Afternoon start, labs can start here
-            "02:55-03:45", // 7 - Labs can start here
-            "03:45-04:35" // 8
-    );
+    private static final List<String> TIME_SLOTS = List.of(
+    "09:00-09:40",
+    "09:40-10:30",
+    "10:30-10:45", // BREAK
+    "10:45-11:35",
+    "11:35-12:25",
+    "12:25-01:15",
+    "LUNCH_BREAK",
+    "02:05-02:55",
+    "02:55-03:45",
+    "03:45-04:35"
+);
+
 
     /*
      * Slot indices:
      * 0: NO_CLASS (skip this slot)
-     * 1-4: Morning slots (09:00 to 12:50) - classes start here
+     * 1-4: Morning TIME_SLOTS (09:00 to 12:50) - classes start here
      * 5: LUNCH_BREAK (no classes scheduled)
-     * 6-8: Afternoon slots (02:10 to 05:00)
+     * 6-8: Afternoon TIME_SLOTS (02:10 to 05:00)
      * 
      * Labs (2 consecutive hours) can be at:
-     * - Morning: ONE lab starting at index 2 (slots 2-3: 10:00-11:50)
-     * - Afternoon: Labs starting at 6 or 7 (slots 6-7 or 7-8)
+     * - Morning: ONE lab starting at index 2 (TIME_SLOTS 2-3: 10:00-11:50)
+     * - Afternoon: Labs starting at 6 or 7 (TIME_SLOTS 6-7 or 7-8)
      */
 
     private static final Set<Integer> AFTERNOON = Set.of(6, 7, 8);
-    private static final Set<Integer> MORNING_LAB_SLOTS = Set.of(2); // Only slot 2 for morning labs
+    private static final Set<Integer> MORNING_LAB_TIME_SLOTS = Set.of(2); // Only slot 2 for morning labs
     private static final int DEFAULT_DAILY = 8;
     private static final int DEFAULT_WEEKLY = 45;
 
@@ -155,7 +155,7 @@ public class TimetableGenerationService {
                 sessions.add(lec);
             }
 
-            // Create lab sessions (2 consecutive slots)
+            // Create lab sessions (2 consecutive TIME_SLOTS)
             for (int i = 0; i < labSessions; i++) {
                 Session lab = new Session();
                 lab.subject = s;
@@ -283,29 +283,29 @@ public class TimetableGenerationService {
 
         // Try each time slot (RANDOM ORDER to avoid deadlock)
         List<Integer> slotOrder = new ArrayList<>();
-        for (int i = 0; i < SLOTS.size(); i++) slotOrder.add(i);
+        for (int i = 0; i < TIME_SLOTS.size(); i++) slotOrder.add(i);
         Collections.shuffle(slotOrder);
 
         for (int si : slotOrder) {
 
-            // LIMIT: max 7 teaching slots per day per section
+            // LIMIT: max 7 teaching TIME_SLOTS per day per section
             int currentLoad = sectionDailyLoad.getOrDefault(day, 0);
             if (currentLoad + s.length > 7) continue;
 
-            // Skip NO_CLASS and LUNCH_BREAK slots
-            if (SLOTS.get(si).equals("NO_CLASS") || SLOTS.get(si).equals("LUNCH_BREAK"))
+            // Skip NO_CLASS and LUNCH_BREAK TIME_SLOTS
+            if (TIME_SLOTS.get(si).equals("NO_CLASS") || TIME_SLOTS.get(si).equals("LUNCH_BREAK"))
                 continue;
 
 
 
-            // Check we have enough consecutive slots
-            if (si + s.length > SLOTS.size())
+            // Check we have enough consecutive TIME_SLOTS
+            if (si + s.length > TIME_SLOTS.size())
                 continue;
 
-            // Check if consecutive slots skip over lunch break
+            // Check if consecutive TIME_SLOTS skip over lunch break
             boolean spansLunch = false;
             for (int k = 0; k < s.length; k++) {
-                if (SLOTS.get(si + k).equals("LUNCH_BREAK")) {
+                if (TIME_SLOTS.get(si + k).equals("LUNCH_BREAK")) {
                     spansLunch = true;
                     break;
                 }
@@ -313,10 +313,10 @@ public class TimetableGenerationService {
             if (spansLunch)
                 continue;
 
-            // Check if all required slots are free
+            // Check if all required TIME_SLOTS are free
             boolean allFree = true;
             for (int k = 0; k < s.length; k++) {
-                if (occ.blocked(sectionId, f.getName(), day, SLOTS.get(si + k))) {
+                if (occ.blocked(sectionId, f.getName(), day, TIME_SLOTS.get(si + k))) {
                     allFree = false;
                     break;
                 }
@@ -339,10 +339,10 @@ public class TimetableGenerationService {
                     }
                 }
 
-                // Check if room is free for all required slots
+                // Check if room is free for all required TIME_SLOTS
                 boolean roomFree = true;
                 for (int k = 0; k < s.length; k++) {
-                    if (occ.roomBlocked(r.getName(), day, SLOTS.get(si + k))) {
+                    if (occ.roomBlocked(r.getName(), day, TIME_SLOTS.get(si + k))) {
                         roomFree = false;
                         break;
                     }
@@ -361,7 +361,7 @@ public class TimetableGenerationService {
                     
                     boolean roomFree = true;
                     for (int k = 0; k < s.length; k++) {
-                        if (occ.roomBlocked(r.getName(), day, SLOTS.get(si + k))) {
+                        if (occ.roomBlocked(r.getName(), day, TIME_SLOTS.get(si + k))) {
                             roomFree = false;
                             break;
                         }
@@ -381,7 +381,7 @@ public class TimetableGenerationService {
                 TimetableEntry e = new TimetableEntry();
                 e.setSectionId(sectionId);
                 e.setDay(day);
-                e.setTimeSlot(SLOTS.get(si + k));
+                e.setTimeSlot(TIME_SLOTS.get(si + k));
                 e.setSubjectCode(s.subject.getCode());
                 e.setSubjectName(s.subject.getName());
                 e.setFacultyName(f.getName());
@@ -391,7 +391,7 @@ public class TimetableGenerationService {
                 result.add(e);
                 if (commit)
                     timetableRepo.save(e);
-                occ.mark(sectionId, f.getName(), room.getName(), day, SLOTS.get(si + k));
+                occ.mark(sectionId, f.getName(), room.getName(), day, TIME_SLOTS.get(si + k));
             }
 
             // Update workload counters
@@ -399,7 +399,7 @@ public class TimetableGenerationService {
             weeklyLoad.put(f.getId(), wLoad + s.length);
 
             // Track morning lab if placed in morning
-            if (s.length == 2 && MORNING_LAB_SLOTS.contains(si)) {
+            if (s.length == 2 && MORNING_LAB_TIME_SLOTS.contains(si)) {
                 morningLabCount.put(day, morningLabCount.getOrDefault(day, 0) + 1);
             }
 

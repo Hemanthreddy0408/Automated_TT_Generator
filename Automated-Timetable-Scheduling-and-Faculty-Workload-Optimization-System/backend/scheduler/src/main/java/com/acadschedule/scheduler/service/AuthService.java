@@ -67,12 +67,8 @@ public class AuthService {
      * For demo: any faculty email/employeeId with password "faculty123"
      */
     private LoginResponse authenticateFaculty(String identifier, String password) {
-        // Try to find faculty by email or employeeId
-        Optional<Faculty> facultyOpt = facultyRepository.findByEmail(identifier);
-        
-        if (facultyOpt.isEmpty()) {
-            facultyOpt = facultyRepository.findByEmployeeId(identifier);
-        }
+        // Try to find faculty by email and password
+        Optional<Faculty> facultyOpt = facultyRepository.findByEmailAndPassword(identifier, password);
 
         if (facultyOpt.isPresent()) {
             Faculty faculty = facultyOpt.get();
@@ -82,18 +78,14 @@ public class AuthService {
                 return new LoginResponse(false, "Account is inactive. Please contact administrator.", null, null);
             }
 
-            // For demo purposes, accept "faculty123" as password
-            // In production, store hashed passwords in Faculty entity
-            if ("faculty123".equals(password)) {
-                UserData userData = new UserData(
-                    faculty.getId(),
-                    faculty.getName(),
-                    faculty.getEmail(),
-                    faculty.getDepartment(),
-                    faculty.getEmployeeId()
-                );
-                return new LoginResponse(true, "Login successful", "faculty", userData);
-            }
+            UserData userData = new UserData(
+                faculty.getId(),
+                faculty.getName(),
+                faculty.getEmail(),
+                faculty.getDepartment(),
+                faculty.getEmployeeId()
+            );
+            return new LoginResponse(true, "Login successful", "faculty", userData);
         }
 
         return new LoginResponse(false, "Invalid faculty credentials", null, null);

@@ -6,6 +6,10 @@ import { TimetableGrid, TimetableEntry } from '@/components/timetable/TimetableG
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+
+import { buildTimetableMatrix } from "@/utils/timetableMapper";
+
+
 import {
   Select,
   SelectContent,
@@ -74,9 +78,17 @@ export default function AdminDashboard() {
         });
 
         // Default to first section for preview
-        if (secData.length > 0 && !selectedSectionId) {
+        // Auto select section that actually has timetable
+        const sectionWithTT = secData.find(sec =>
+          ttData.some(t => String(t.sectionId) === String(sec.id))
+        );
+
+        if (sectionWithTT) {
+          setSelectedSectionId(String(sectionWithTT.id));
+        } else if (secData.length > 0) {
           setSelectedSectionId(String(secData[0].id));
-        }
+}
+
 
       } catch (error) {
         console.error("Failed to fetch dashboard data", error);
@@ -94,6 +106,10 @@ export default function AdminDashboard() {
     // The api might return sectionId as string in entry. section.id is number/long.
     // Let's coerce both to string.
   }, [allEntries, selectedSectionId]);
+  
+  const timetableMatrix = useMemo(() => {
+  return buildTimetableMatrix(selectedSectionEntries);
+}, [selectedSectionEntries]);
 
   // Derived: Active Conflicts (Simple client-side check)
   // We check for Faculty Double Booking or Room Double Booking
@@ -254,8 +270,9 @@ export default function AdminDashboard() {
             </div>
             {selectedSectionId ? (
               <TimetableGrid
-                entries={selectedSectionEntries}
+                timetable={timetableMatrix}
               />
+
             ) : (
               <div className="h-64 flex items-center justify-center border-2 border-dashed rounded-xl bg-slate-50">
                 <p className="text-slate-400">Select a section to view timetable</p>

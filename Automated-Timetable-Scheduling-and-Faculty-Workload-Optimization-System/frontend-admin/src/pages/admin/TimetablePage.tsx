@@ -33,11 +33,22 @@ export default function TimetablePage() {
   const sectionId = searchParams.get("sectionId") || "583cb115-a010-4ce9-bb42-83092a820e";
 
   const [entries, setEntries] = useState<TimetableEntry[]>([]);
+  const [timetable, setTimetable] = useState<any>({});
   const [sections, setSections] = useState<Section[]>([]);
   const [selectedSection, setSelectedSection] = useState<Section | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // 1. Fetch All Sections on Mount
+  // 1. Helper to transform flat array to Day -> TimeSlot matrix
+  const transformTimetable = (data: any[]) => {
+    const table: any = {};
+    data.forEach((entry) => {
+      if (!table[entry.day]) table[entry.day] = {};
+      table[entry.day][entry.timeSlot] = entry;
+    });
+    return table;
+  };
+
+  // 2. Fetch All Sections on Mount
   useEffect(() => {
     const init = async () => {
       try {
@@ -61,6 +72,8 @@ export default function TimetablePage() {
   const fetchTimetable = async () => {
     const data = await getTimetable(sectionId);
     setEntries(data);
+    const matrix = transformTimetable(data);
+    setTimetable(matrix);
   };
 
   useEffect(() => {
@@ -235,7 +248,7 @@ export default function TimetablePage() {
             </div>
 
             {/* TIMETABLE GRID */}
-            <TimetableGrid entries={entries} />
+            <TimetableGrid timetable={timetable} />
           </>
         )}
       </div>
