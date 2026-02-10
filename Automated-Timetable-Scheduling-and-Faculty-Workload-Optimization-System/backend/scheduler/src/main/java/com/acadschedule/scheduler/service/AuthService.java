@@ -46,19 +46,20 @@ public class AuthService {
      * For demo: admin@acadschedule.com / password123
      */
     private LoginResponse authenticateAdmin(String identifier, String password) {
-        // Simple admin check - in production, use proper user table with hashed passwords
-        if ("admin@acadschedule.com".equalsIgnoreCase(identifier) && adminPassword.equals(password)) {
-            UserData userData = new UserData(
-                0L,
-                "Administrator",
-                "admin@acadschedule.com",
-                "Administration",
-                "ADMIN001"
-            );
-            return new LoginResponse(true, "Login successful", "admin", userData);
-        }
-        return new LoginResponse(false, "Invalid admin credentials", null, null);
+    if (identifier.endsWith("@acadschedule.com") && adminPassword.equals(password)){
+
+        UserData userData = new UserData(
+            0L,
+            "Administrator",
+            "admin@acadschedule.com",
+            "Administration",
+            "ADMIN001"
+        );
+        return new LoginResponse(true, "Login successful", "admin", userData);
     }
+    return new LoginResponse(false, "Invalid admin credentials", null, null);
+}
+
 
     /**
      * Faculty authentication

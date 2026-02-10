@@ -16,7 +16,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/timetable")
-@CrossOrigin(origins = "http://localhost:8080")
 public class TimetableController {
 
     private final TimetableGenerationService service;
@@ -97,10 +96,12 @@ public class TimetableController {
 
 
     // Fetch timetable for a specific faculty
-    @GetMapping("/faculty/{name}")
-    public List<TimetableEntry> getByFaculty(@PathVariable String name) {
-        return repo.findByFacultyName(name);
+    @GetMapping("/faculty")
+    public ResponseEntity<List<TimetableEntry>> getByFaculty(@RequestParam String name) {
+        System.out.println("DEBUG: Fetching timetable for faculty: [" + name + "]");
+        return ResponseEntity.ok(timetableRepo.findByFacultyNameIgnoreCase(name.trim()));
     }
+
 
     // Get all entries for global analytics
 

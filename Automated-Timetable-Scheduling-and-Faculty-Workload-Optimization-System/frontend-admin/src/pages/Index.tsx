@@ -79,6 +79,9 @@ export default function Index() {
           </nav>
 
           <div className="flex items-center gap-3">
+            <Link to="/login">
+              <Button variant="outline">Sign In</Button>
+            </Link>
             <Link to="/faculty">
               <Button variant="ghost">Faculty Portal</Button>
             </Link>
@@ -106,18 +109,24 @@ export default function Index() {
               <span className="text-gradient">Management System</span>
             </h1>
             <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
-              A smart, constraint-aware scheduling platform that automatically creates, 
+              A smart, constraint-aware scheduling platform that automatically creates,
               optimizes, and manages academic schedules with zero conflicts and complete transparency.
             </p>
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link to="/admin">
+              <Link to="/login">
                 <Button size="lg" className="gap-2 px-8">
+                  Sign In Now
+                  <ArrowRight className="h-5 w-5" />
+                </Button>
+              </Link>
+              <Link to="/admin">
+                <Button size="lg" variant="outline" className="gap-2 px-8">
                   <Calendar className="h-5 w-5" />
-                  Open Admin Dashboard
+                  Admin Dashboard
                 </Button>
               </Link>
               <Link to="/faculty">
-                <Button size="lg" variant="outline" className="gap-2 px-8">
+                <Button size="lg" variant="ghost" className="gap-2 px-8">
                   <Users className="h-5 w-5" />
                   Faculty Portal
                 </Button>
@@ -179,7 +188,7 @@ export default function Index() {
             <div>
               <h2 className="text-3xl font-bold mb-6">Built for Modern Universities</h2>
               <p className="text-muted-foreground mb-8">
-                Our system handles the complexity of academic scheduling with ease, 
+                Our system handles the complexity of academic scheduling with ease,
                 ensuring optimal resource utilization and zero scheduling conflicts.
               </p>
 

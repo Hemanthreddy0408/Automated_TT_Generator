@@ -1,13 +1,14 @@
 package com.acadschedule.scheduler.dto;
-import com.acadschedule.scheduler.dto.UserData;
 
 public class LoginRequest {
-    private String identifier; // email or employeeId
-    private String password;
-    private String role; // "admin" or "faculty"
 
-    // Constructors
-    public LoginRequest() {}
+    private String identifier;
+    private String password;
+    private String role;
+
+    // 🔴 VERY IMPORTANT: empty constructor for Jackson
+    public LoginRequest() {
+    }
 
     public LoginRequest(String identifier, String password, String role) {
         this.identifier = identifier;
@@ -15,7 +16,6 @@ public class LoginRequest {
         this.role = role;
     }
 
-    // Getters and Setters
     public String getIdentifier() {
         return identifier;
     }

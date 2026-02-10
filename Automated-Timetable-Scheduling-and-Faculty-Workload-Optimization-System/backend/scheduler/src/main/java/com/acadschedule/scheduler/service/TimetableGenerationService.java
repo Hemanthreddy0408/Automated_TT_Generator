@@ -40,18 +40,31 @@ public class TimetableGenerationService {
 
     /* ================== CONFIG ================== */
 
+    private static final Map<String, Set<String>> SYNONYMS = Map.ofEntries(
+            Map.entry("PROGRAMMING", Set.of("CODING", "SOFTWARE", "SE")),
+            Map.entry("NETWORKS", Set.of("CN", "NETWORK", "COMMUNICATION")),
+            Map.entry("DATABASE", Set.of("DBMS", "DATA", "SQL")),
+            Map.entry("AI", Set.of("ML", "INTELLIGENCE")),
+            Map.entry("ML", Set.of("AI", "LEARNING")),
+            Map.entry("MATHEMATICS", Set.of("MATH", "CALCULUS", "PROBABILITY", "DISCRETE")),
+            Map.entry("HARDWARE", Set.of("DIGITAL", "ELECTRICAL", "ELECTRONICS")),
+            Map.entry("SYSTEMS", Set.of("OS", "OPERATING"))
+    );
+
     private static final List<String> DAYS = List.of("MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY");
 
     private static final List<String> SLOTS = List.of(
             "NO_CLASS", // 0 - Skip first slot (no classes at 08:00)
-            "09:00-09:50", // 1 - Start classes from here
-            "10:00-10:50", // 2 - Morning lab can start here (uses 2-3)
-            "11:00-11:50", // 3
-            "12:00-12:50", // 4 - Last morning slot
+            "09:00-09:40", // 1 - Start classes from here
+            "09:40-10:30",// 2 - Morning lab can start here (uses 2-3)
+            "10:30-10:45", 
+            "10:45-11:35", // 3
+            "11:35-12:25",
+            "12:25-01:15", // 4 - Last morning slot
             "LUNCH_BREAK", // 5 - Break (no classes)
-            "02:10-03:00", // 6 - Afternoon start, labs can start here
-            "03:10-04:00", // 7 - Labs can start here
-            "04:10-05:00" // 8
+            "02:05-02:55", // 6 - Afternoon start, labs can start here
+            "02:55-03:45", // 7 - Labs can start here
+            "03:45-04:35" // 8
     );
 
     /*
@@ -68,8 +81,8 @@ public class TimetableGenerationService {
 
     private static final Set<Integer> AFTERNOON = Set.of(6, 7, 8);
     private static final Set<Integer> MORNING_LAB_SLOTS = Set.of(2); // Only slot 2 for morning labs
-    private static final int DEFAULT_DAILY = 6;
-    private static final int DEFAULT_WEEKLY = 30;
+    private static final int DEFAULT_DAILY = 8;
+    private static final int DEFAULT_WEEKLY = 45;
 
     /* ================== PUBLIC ================== */
 
@@ -78,16 +91,35 @@ public class TimetableGenerationService {
      * Delegates to overload with null existingFacultyLoad.
      */
     public List<TimetableEntry> generateForSection(String sectionId, boolean commit) {
-        return generateForSection(sectionId, commit, null);
+
+    int MAX_ATTEMPTS = 50;
+    RuntimeException lastError = null;
+
+    for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+        try {
+            System.out.println("Attempt " + attempt + " for section " + sectionId);
+            return generateForSection(sectionId, commit, null, null);
+        } catch (RuntimeException e) {
+            lastError = e;
+        }
     }
+
+    throw new RuntimeException(
+        "Failed after multiple attempts. Timetable likely over-constrained.",
+        lastError
+    );
+}
 
     /**
      * Generate timetable for a section with optional existing faculty load
      * tracking.
      * This overload is used by generateForAllSections() to track workload globally.
      */
-    public List<TimetableEntry> generateForSection(String sectionId, boolean commit,
-            Map<Long, Integer> existingFacultyLoad) {
+    public List<TimetableEntry> generateForSection(
+            String sectionId,
+            boolean commit,
+            Map<Long, Integer> existingFacultyLoad,
+            Occupancy globalOcc) {
 
         Section section = sectionRepo.findById(Long.parseLong(sectionId))
                 .orElseThrow();
@@ -101,157 +133,97 @@ public class TimetableGenerationService {
 
         List<Room> rooms = roomRepo.findAll().stream().filter(Room::isActive).toList();
 
-        /* ========= STEP 1: FIX FACULTY PER SUBJECT ========= */
-
-        Map<Long, Faculty> subjectFaculty = new HashMap<>();
         // Initialize with existing load if provided (for global tracking across
         // sections)
-        Map<Long, Integer> facultyLoad = new HashMap<>(
+        Map<Long, Integer> weeklyLoad = new HashMap<>(
                 existingFacultyLoad != null ? existingFacultyLoad : new HashMap<>());
 
-        for (Subject s : subjects) {
-            // Bi-directional eligibility check (US1.1)
-            Faculty f = faculties.stream()
-                    .filter(x -> {
-                        // Check if subject allows this faculty (or has no restrictions)
-                        boolean subjectAllows = s.getEligibleFaculty().isEmpty()
-                                || s.getEligibleFaculty().contains(x.getName());
-
-                        // Check if faculty is qualified for this subject (or has no restrictions)
-                        boolean facultyQualified = x.getEligibleSubjects().isEmpty()
-                                || x.getEligibleSubjects().contains(s.getCode())
-                                || x.getEligibleSubjects().contains(s.getName());
-
-                        return subjectAllows && facultyQualified;
-                    })
-                    .min(Comparator
-                            .comparingInt((Faculty x) -> facultyLoad.getOrDefault(x.getId(), 0))
-                            .thenComparing(Faculty::getName)) // Tie-breaker for consistency
-                    .orElseThrow(() -> new RuntimeException(
-                            "No eligible faculty found for subject: " + s.getName()));
-
-            subjectFaculty.put(s.getId(), f);
-
-            // Fix: Actually increment the load count (US1.8)
-            int sessionCount = s.getLectureHoursPerWeek() + s.getLabHoursPerWeek();
-            facultyLoad.put(f.getId(), facultyLoad.getOrDefault(f.getId(), 0) + sessionCount);
-        }
 
         /* ========= STEP 2: EXPAND ALL REQUIRED SESSIONS ========= */
 
         List<Session> sessions = new ArrayList<>();
 
         for (Subject s : subjects) {
-            Faculty f = subjectFaculty.get(s.getId());
+            int lectureHours = lectureHours(s);
+            int labSessions = labSessions(s);
 
-            for (int i = 0; i < s.getLectureHoursPerWeek(); i++) {
-                Session newSession = new Session();
-                newSession.subject = s;
-                newSession.faculty = f;
-                newSession.length = 1;
-                sessions.add(newSession);
+            // Create lecture sessions
+            for (int i = 0; i < lectureHours; i++) {
+                Session lec = new Session();
+                lec.subject = s;
+                lec.length = 1;
+                sessions.add(lec);
             }
 
-            for (int i = 0; i < s.getLabHoursPerWeek() / 2; i++) {
-                Session newSession = new Session();
-                newSession.subject = s;
-                newSession.faculty = f;
-                newSession.length = 2;
-                sessions.add(newSession);
+            // Create lab sessions (2 consecutive slots)
+            for (int i = 0; i < labSessions; i++) {
+                Session lab = new Session();
+                lab.subject = s;
+                lab.length = 2;
+                sessions.add(lab);
             }
         }
+
 
         Collections.shuffle(sessions, new Random(section.getId()));
 
-        /* ========= STEP 3: DAY DISTRIBUTION ========= */
+        /* ========= STEP 3: MULTI-PASS PLACEMENT ========= */
 
-        Map<String, List<Session>> dayMap = new LinkedHashMap<>();
-        for (String d : DAYS)
-            dayMap.put(d, new ArrayList<>());
-
-        int di = 0;
-        for (Session s : sessions) {
-            dayMap.get(DAYS.get(di++ % DAYS.size())).add(s);
-        }
-
-        /* ========= STEP 4: MULTI-PASS PLACEMENT ========= */
-
-        Occupancy occ = new Occupancy();
-        Map<Long, Integer> dailyLoad = new HashMap<>(); // faculty -> hours today
-        Map<Long, Integer> weeklyLoad = new HashMap<>(); // faculty -> hours this week
+        Occupancy occ = globalOcc != null ? globalOcc : new Occupancy();
         List<TimetableEntry> result = new ArrayList<>();
         List<Session> failedSessions = new ArrayList<>();
 
-        // PASS 1: Place all LAB sessions first (most constrained - need consecutive
-        // slots)
-        Map<String, Integer> morningLabCount = new HashMap<>(); // Track morning labs per day
-        for (String d : DAYS)
-            morningLabCount.put(d, 0);
+        // Track state across days for this section
+        Map<String, Map<Long, Integer>> dailyWorkloads = new HashMap<>();
+        Map<String, Integer> morningLabCounts = new HashMap<>();
+        Map<String, Integer> sectionDailyLoad = new HashMap<>();
+        for (String d : DAYS) {
+            dailyWorkloads.put(d, new HashMap<>());
+            morningLabCounts.put(d, 0);
+            sectionDailyLoad.put(d, 0);
+        }
 
-        for (String day : DAYS) {
-            dailyLoad.clear(); // Reset daily load for new day
+        // PASS 1: Place all LAB sessions (most constrained)
+        for (Session s : sessions) {
+            if (s.length != 2) continue;
 
-            for (Session s : dayMap.get(day)) {
-                if (s.length == 1)
-                    continue; // Skip lectures in pass 1
+            boolean placed = false;
+            List<String> shuffledDays = new ArrayList<>(DAYS);
+            Collections.shuffle(shuffledDays);
 
-                boolean placed = tryPlaceSession(s, sectionId, day, occ, dailyLoad, weeklyLoad,
-                        rooms, section, result, commit, morningLabCount);
-                if (!placed) {
-                    failedSessions.add(s);
+            for (String day : shuffledDays) {
+                if (tryPlaceSession(s, sectionId, day, occ, dailyWorkloads.get(day), weeklyLoad,
+                        rooms, faculties, section, result, commit, morningLabCounts, sectionDailyLoad)) {
+                    placed = true;
+                    break;
                 }
             }
+            if (!placed) failedSessions.add(s);
         }
 
         // PASS 2: Place all LECTURE sessions
-        for (String day : DAYS) {
-            dailyLoad.clear(); // Reset daily load for new day
+        for (Session s : sessions) {
+            if (s.length != 1) continue;
 
-            for (Session s : dayMap.get(day)) {
-                if (s.length == 2)
-                    continue; // Skip labs in pass 2
+            boolean placed = false;
+            List<String> shuffledDays = new ArrayList<>(DAYS);
+            Collections.shuffle(shuffledDays);
 
-                boolean placed = tryPlaceSession(s, sectionId, day, occ, dailyLoad, weeklyLoad,
-                        rooms, section, result, commit, morningLabCount);
-                if (!placed) {
-                    failedSessions.add(s);
+            for (String day : shuffledDays) {
+                if (tryPlaceSession(s, sectionId, day, occ, dailyWorkloads.get(day), weeklyLoad,
+                        rooms, faculties, section, result, commit, morningLabCounts, sectionDailyLoad)) {
+                    placed = true;
+                    break;
                 }
             }
+            if (!placed) failedSessions.add(s);
         }
 
-        // PASS 3: Retry failed sessions with relaxed constraints
-        for (Session s : failedSessions) {
-            boolean placed = false;
-
-            // Try all days until we find a spot
-            for (String day : DAYS) {
-                dailyLoad.clear(); // Reset for this day
-
-                // Recalculate daily load for this specific day
-                for (TimetableEntry entry : result) {
-                    if (entry.getDay().equals(day)) {
-                        Faculty f = facultyRepo.findAll().stream()
-                                .filter(x -> x.getName().equals(entry.getFacultyName()))
-                                .findFirst().orElse(null);
-                        if (f != null) {
-                            int type = entry.getType().equals("LAB") ? 2 : 1;
-                            dailyLoad.put(f.getId(), dailyLoad.getOrDefault(f.getId(), 0) + type);
-                        }
-                    }
-                }
-
-                placed = tryPlaceSession(s, sectionId, day, occ, dailyLoad, weeklyLoad,
-                        rooms, section, result, commit, morningLabCount);
-                if (placed)
-                    break;
-            }
-
-            if (!placed) {
-                // Last resort: force placement with relaxed constraints
-                System.err.println("WARNING: Could not optimally place session for subject "
-                        + s.subject.getName() + ". Forcing placement.");
-                forcePlaceSession(s, sectionId, occ, rooms, section, result, commit);
-            }
+        if (!failedSessions.isEmpty()) {
+            throw new RuntimeException(
+                "Unable to generate conflict-free timetable. " +
+                "Please add more faculty/rooms or reduce load."
+            );
         }
 
         return result;
@@ -264,38 +236,67 @@ public class TimetableGenerationService {
     private boolean tryPlaceSession(Session s, String sectionId, String day,
             Occupancy occ, Map<Long, Integer> dailyLoad,
             Map<Long, Integer> weeklyLoad, List<Room> rooms,
-            Section section, List<TimetableEntry> result, boolean commit,
-            Map<String, Integer> morningLabCount) {
+            List<Faculty> faculties, Section section, List<TimetableEntry> result,
+            boolean commit, Map<String, Integer> morningLabCount,
+            Map<String, Integer> sectionDailyLoad) {
 
-        Faculty f = s.faculty;
-        int dLoad = dailyLoad.getOrDefault(f.getId(), 0);
-        int wLoad = weeklyLoad.getOrDefault(f.getId(), 0);
+        // Get ALL possible faculty who still have capacity
+        List<Faculty> sortedCandidates = faculties.stream()
+                .filter(x -> {
+                    int dLoadX = dailyLoad.getOrDefault(x.getId(), 0);
+                    int wLoadX = weeklyLoad.getOrDefault(x.getId(), 0);
 
-        int dLimit = f.getMaxHoursPerDay() > 0 ? f.getMaxHoursPerDay() : DEFAULT_DAILY;
-        int wLimit = f.getMaxHoursPerWeek() > 0 ? f.getMaxHoursPerWeek() : DEFAULT_WEEKLY;
+                    int dLimitX = x.getMaxHoursPerDay() > 0 ? x.getMaxHoursPerDay() : DEFAULT_DAILY;
+                    int wLimitX = x.getMaxHoursPerWeek() > 0 ? x.getMaxHoursPerWeek() : DEFAULT_WEEKLY;
 
-        // Check if this session would exceed workload limits
-        if (dLoad + s.length > dLimit || wLoad + s.length > wLimit) {
-            return false; // Can't place today, will try another day
+                    return (dLoadX + s.length <= dLimitX) &&
+                           (wLoadX + s.length <= wLimitX);
+                })
+                .sorted(Comparator
+                        .comparingInt((Faculty x) -> -specializationScore(x, s.subject))
+                        .thenComparingInt(x -> weeklyLoad.getOrDefault(x.getId(), 0))
+                        .thenComparing(Faculty::getName))
+                .toList();
+
+        if (sortedCandidates.isEmpty()) return false;
+
+        // ⭐ MAGIC: Randomize the order of the top 5 suitability candidates
+        // This spreads the load across multiple experts and breaks the "greedy trap"
+        List<Faculty> candidatePool = new ArrayList<>(sortedCandidates);
+        int poolSize = Math.min(5, candidatePool.size());
+        List<Faculty> top5 = new ArrayList<>(candidatePool.subList(0, poolSize));
+        Collections.shuffle(top5);
+
+        // Combine shuffled top 5 with the rest
+        List<Faculty> candidateFaculty = new ArrayList<>(top5);
+        if (candidatePool.size() > poolSize) {
+            candidateFaculty.addAll(candidatePool.subList(poolSize, candidatePool.size()));
         }
 
-        // Try each time slot
-        for (int si = 0; si < SLOTS.size(); si++) {
+        // TRY EACH FACULTY until placement succeeds
+        for (Faculty f : candidateFaculty) {
+            s.faculty = f;
+
+            int dLoad = dailyLoad.getOrDefault(f.getId(), 0);
+            int wLoad = weeklyLoad.getOrDefault(f.getId(), 0);
+
+
+        // Try each time slot (RANDOM ORDER to avoid deadlock)
+        List<Integer> slotOrder = new ArrayList<>();
+        for (int i = 0; i < SLOTS.size(); i++) slotOrder.add(i);
+        Collections.shuffle(slotOrder);
+
+        for (int si : slotOrder) {
+
+            // LIMIT: max 7 teaching slots per day per section
+            int currentLoad = sectionDailyLoad.getOrDefault(day, 0);
+            if (currentLoad + s.length > 7) continue;
 
             // Skip NO_CLASS and LUNCH_BREAK slots
             if (SLOTS.get(si).equals("NO_CLASS") || SLOTS.get(si).equals("LUNCH_BREAK"))
                 continue;
 
-            // For labs: can be in morning (slot 2, max 1 per day) OR afternoon (slots 6-7)
-            if (s.length == 2) {
-                boolean canPlaceMorning = MORNING_LAB_SLOTS.contains(si)
-                        && morningLabCount.getOrDefault(day, 0) < 1;
-                boolean canPlaceAfternoon = (si == 6 || si == 7);
 
-                if (!canPlaceMorning && !canPlaceAfternoon) {
-                    continue; // Can't place lab at this slot
-                }
-            }
 
             // Check we have enough consecutive slots
             if (si + s.length > SLOTS.size())
@@ -325,6 +326,7 @@ public class TimetableGenerationService {
 
             // Find suitable room
             Room room = null;
+            // First pass: try to find a specialized room (e.g. LAB for lab sessions)
             for (Room r : rooms) {
                 if (r.getCapacity() < section.getCapacity())
                     continue;
@@ -352,8 +354,27 @@ public class TimetableGenerationService {
                 }
             }
 
+            // Fallback second pass: if no specialized room found, try any room with capacity
+            if (room == null) {
+                for (Room r : rooms) {
+                    if (r.getCapacity() < section.getCapacity()) continue;
+                    
+                    boolean roomFree = true;
+                    for (int k = 0; k < s.length; k++) {
+                        if (occ.roomBlocked(r.getName(), day, SLOTS.get(si + k))) {
+                            roomFree = false;
+                            break;
+                        }
+                    }
+                    if (roomFree) {
+                        room = r;
+                        break;
+                    }
+                }
+            }
+
             if (room == null)
-                continue; // No suitable room found
+                continue; // No suitable room found even in fallback
 
             // SUCCESS! Place the session
             for (int k = 0; k < s.length; k++) {
@@ -382,150 +403,120 @@ public class TimetableGenerationService {
                 morningLabCount.put(day, morningLabCount.getOrDefault(day, 0) + 1);
             }
 
+            sectionDailyLoad.put(day, sectionDailyLoad.getOrDefault(day, 0) + s.length);
+
             return true;
         }
 
-        return false; // Could not place in this day
+        } // end faculty loop
+        
+        return false; // no faculty could place this session
     }
 
     /**
-     * Force placement of a session when all normal attempts fail
-     * This ensures ALL sessions are placed (critical requirement)
+     * Helper to divide text into uppercase keywords
      */
-    private void forcePlaceSession(Session s, String sectionId, Occupancy occ,
-            List<Room> rooms, Section section,
-            List<TimetableEntry> result, boolean commit) {
+    private Set<String> tokenize(String text) {
+        if (text == null) return Set.of();
+        text = text.toUpperCase()
+                .replaceAll("[^A-Z0-9 ]", " ")   // remove symbols
+                .replaceAll("\\s+", " ")         // remove extra spaces
+                .trim();
+        return new HashSet<>(Arrays.asList(text.split(" ")));
+    }
 
-        Faculty f = s.faculty;
+    /**
+     * Scoring system to rank faculty suitability for a subject
+     */
+    private int specializationScore(Faculty f, Subject s) {
+        Set<String> subjectWords = tokenize(s.getName());
+        Set<String> facultyWords = tokenize(f.getSpecialization());
 
-        // Find ANY available slot (ignore workload limits as last resort)
-        for (String day : DAYS) {
-            for (int si = 0; si < SLOTS.size(); si++) {
-                // Skip NO_CLASS and LUNCH_BREAK slots
-                if (SLOTS.get(si).equals("NO_CLASS") || SLOTS.get(si).equals("LUNCH_BREAK"))
-                    continue;
+        int score = 0;
 
-                // Even in force mode, labs should be at slot 2 (morning) or 6-7 (afternoon)
-                if (s.length == 2 && si != 2 && si != 6 && si != 7)
-                    continue;
-                if (si + s.length > SLOTS.size())
-                    continue;
+        for (String sw : subjectWords) {
+            // Direct word match
+            if (facultyWords.contains(sw)) {
+                score += 50;
+            }
 
-                // Check lunch break span
-                boolean spansLunch = false;
-                for (int k = 0; k < s.length; k++) {
-                    if (SLOTS.get(si + k).equals("LUNCH_BREAK")) {
-                        spansLunch = true;
-                        break;
+            // Synonym match
+            if (SYNONYMS.containsKey(sw)) {
+                for (String syn : SYNONYMS.get(sw)) {
+                    if (facultyWords.contains(syn)) {
+                        score += 40;
                     }
                 }
-                if (spansLunch)
-                    continue;
+            }
 
-                boolean allFree = true;
-                for (int k = 0; k < s.length; k++) {
-                    if (occ.blocked(sectionId, f.getName(), day, SLOTS.get(si + k))) {
-                        allFree = false;
-                        break;
-                    }
-                }
-                if (!allFree)
-                    continue;
-
-                // Find ANY room (relax capacity and type constraints)
-                Room room = rooms.isEmpty() ? null : rooms.get(0);
-                for (Room r : rooms) {
-                    boolean roomFree = true;
-                    for (int k = 0; k < s.length; k++) {
-                        if (occ.roomBlocked(r.getName(), day, SLOTS.get(si + k))) {
-                            roomFree = false;
-                            break;
+            // Reverse synonym match
+            for (Map.Entry<String, Set<String>> entry : SYNONYMS.entrySet()) {
+                if (facultyWords.contains(entry.getKey())) {
+                    for (String syn : entry.getValue()) {
+                        if (subjectWords.contains(syn)) {
+                            score += 40;
                         }
                     }
-                    if (roomFree) {
-                        room = r;
-                        break;
-                    }
                 }
-
-                if (room == null)
-                    continue;
-
-                // Place it!
-                for (int k = 0; k < s.length; k++) {
-                    TimetableEntry e = new TimetableEntry();
-                    e.setSectionId(sectionId);
-                    e.setDay(day);
-                    e.setTimeSlot(SLOTS.get(si + k));
-                    e.setSubjectCode(s.subject.getCode());
-                    e.setSubjectName(s.subject.getName());
-                    e.setFacultyName(f.getName());
-                    e.setRoomNumber(room.getName());
-                    e.setType(s.length == 2 ? "LAB" : "LECTURE");
-
-                    result.add(e);
-                    if (commit)
-                        timetableRepo.save(e);
-                    occ.mark(sectionId, f.getName(), room.getName(), day, SLOTS.get(si + k));
-                }
-
-                return; // Successfully forced placement
             }
         }
 
-        // If we get here, truly impossible (likely data issue)
-        throw new RuntimeException("CRITICAL: Cannot place session for " + s.subject.getName()
-                + ". Check room/faculty availability.");
+        // ⭐ Better LAB faculty matching
+if (isLabSubject(s) && f.getSpecialization() != null) {
+    String spec = f.getSpecialization().toUpperCase();
+
+    if (spec.contains("LAB") ||
+        spec.contains("PROGRAMMING") ||
+        spec.contains("HARDWARE") ||
+        spec.contains("NETWORK"))
+    {
+        score += 20;
+    }
+}
+
+
+        // Fallback: Check manual eligibility if specified
+        if (f.getEligibleSubjects() != null &&
+                (f.getEligibleSubjects().contains(s.getCode()) ||
+                        f.getEligibleSubjects().contains(s.getName()))) {
+            score += 30;
+        }
+
+        return score;
     }
 
-    public List<TimetableEntry> generateForAllSections(boolean commit) {
-        List<TimetableEntry> all = new ArrayList<>();
 
-        // Track faculty workload globally across all sections for balanced distribution
-        Map<Long, Integer> globalFacultyLoad = new HashMap<>();
+   public List<TimetableEntry> generateForAllSections(boolean commit) {
 
-        // If not deleting existing timetables, initialize with current faculty loads
-        if (!commit) {
-            List<TimetableEntry> existing = timetableRepo.findAll();
-            for (TimetableEntry entry : existing) {
-                // Find faculty by name to get ID
-                List<Faculty> matchingFaculty = facultyRepo.findAll().stream()
-                        .filter(f -> f.getName().equals(entry.getFacultyName()))
-                        .toList();
+    int MAX_ATTEMPTS = 50;
+    RuntimeException lastError = null;
 
-                if (!matchingFaculty.isEmpty()) {
-                    Faculty f = matchingFaculty.get(0);
-                    // Lab sessions are 2 hours, lectures are 1 hour
-                    int hours = entry.getType().equals("LAB") ? 2 : 1;
-                    globalFacultyLoad.put(f.getId(),
-                            globalFacultyLoad.getOrDefault(f.getId(), 0) + hours);
-                }
+    for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+        try {
+            System.out.println("GLOBAL GENERATION ATTEMPT " + attempt);
+
+            List<TimetableEntry> all = new ArrayList<>();
+            Map<Long, Integer> globalFacultyLoad = new HashMap<>();
+            Occupancy globalOcc = new Occupancy();
+
+
+            for (Section s : sectionRepo.findAll()) {
+                List<TimetableEntry> sectionTT = generateForSection(
+                        String.valueOf(s.getId()), commit, globalFacultyLoad, globalOcc);
+                all.addAll(sectionTT);
             }
+
+            return all; // SUCCESS 🎉
         }
-
-        // Generate timetable for each section, passing and updating global load
-        for (Section s : sectionRepo.findAll()) {
-            List<TimetableEntry> sectionTT = generateForSection(
-                    String.valueOf(s.getId()), commit, globalFacultyLoad);
-            all.addAll(sectionTT);
-
-            // Update global load with newly assigned sessions
-            for (TimetableEntry entry : sectionTT) {
-                List<Faculty> matchingFaculty = facultyRepo.findAll().stream()
-                        .filter(f -> f.getName().equals(entry.getFacultyName()))
-                        .toList();
-
-                if (!matchingFaculty.isEmpty()) {
-                    Faculty f = matchingFaculty.get(0);
-                    int hours = entry.getType().equals("LAB") ? 2 : 1;
-                    globalFacultyLoad.put(f.getId(),
-                            globalFacultyLoad.getOrDefault(f.getId(), 0) + hours);
-                }
-            }
+        catch (RuntimeException e) {
+            lastError = e;
+            timetableRepo.deleteAll(); // clear partial timetable and retry fresh
         }
-
-        return all;
     }
+
+    throw new RuntimeException("Global timetable generation failed after retries", lastError);
+}
+
 
     /* ================== OCCUPANCY ================== */
 
@@ -547,6 +538,30 @@ public class TimetableGenerationService {
             return used.contains(room + "|" + day + "|" + slot);
         }
     }
+    /* ================= SUBJECT TYPE HELPERS ================= */
+
+    /* ================= SUBJECT TYPE HELPERS ================= */
+
+private boolean isLabSubject(Subject s) {
+    // LAB if explicitly marked OR lab hours exist (future proof)
+    return "LAB".equalsIgnoreCase(s.getType()) || s.getLabHoursPerWeek() > 0;
+}
+
+private int lectureHours(Subject s) {
+    return s.getLectureHoursPerWeek();
+}
+
+private int labSessions(Subject s) {
+    if (!isLabSubject(s)) return 0;
+
+    // If lab hours exist → convert hours → sessions
+    if (s.getLabHoursPerWeek() > 0)
+        return Math.max(1, s.getLabHoursPerWeek() / 2);
+
+    // If marked LAB but hours missing → still give 1 lab
+    return 1;
+}
+
 
     /* ================== SESSION CLASS ================== */
 

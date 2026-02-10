@@ -18,6 +18,10 @@ import jakarta.persistence.Column;
 @Table(name = "subjects")
 public class Subject {
 
+    @Column(name = "type")
+private String type;   // THEORY or LAB
+
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -87,6 +91,13 @@ public class Subject {
     public void setName(String name) { this.name = name; }
     public void setDepartment(String department) { this.department = department; }
     public void setCredits(int credits) { this.credits = credits; }
+    public String getType() {
+    return type;
+}
+
+public void setType(String type) {
+    this.type = type;
+}
 
     public List<String> getEligibleFaculty() { return eligibleFaculty; }
     public void setEligibleFaculty(List<String> eligibleFaculty) { this.eligibleFaculty = eligibleFaculty; }

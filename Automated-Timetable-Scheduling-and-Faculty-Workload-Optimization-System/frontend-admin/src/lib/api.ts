@@ -198,7 +198,7 @@ export const getAllTimetableEntries = async () => {
 };
 
 export const getFacultyTimetable = async (facultyName: string) => {
-  const res = await API.get(`/timetable/faculty/${facultyName}`);
+  const res = await API.get(`/timetable/faculty`, { params: { name: facultyName } });
   return Array.isArray(res.data) ? res.data : [];
 };
 

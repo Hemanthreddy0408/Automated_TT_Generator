@@ -54,17 +54,17 @@ export default function Login() {
     };
 
     return (
-        <div className="bg-background-light dark:bg-background-dark min-h-screen flex flex-col items-center justify-center p-4 font-display">
+        <div className="bg-background min-h-screen flex flex-col items-center justify-center p-4 font-sans">
 
             {/* HEADER */}
             <header className="absolute top-0 w-full p-8 flex justify-center">
                 <div className="flex items-center space-x-2">
-                    <div className="bg-slate-900 dark:bg-primary p-1.5 rounded-lg">
-                        <span className="material-icons-outlined text-white text-xl">
+                    <div className="bg-primary p-1.5 rounded-lg">
+                        <span className="material-icons-outlined text-primary-foreground text-xl">
                             auto_awesome
                         </span>
                     </div>
-                    <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+                    <span className="text-xl font-bold tracking-tight text-foreground">
                         AcadSchedule
                     </span>
                 </div>
@@ -72,7 +72,7 @@ export default function Login() {
 
             {/* LOGIN CARD */}
             <main className="w-full max-w-md">
-                <div className="bg-surface-light dark:bg-surface-dark p-8 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 transition hover:-translate-y-1">
+                <div className="bg-card p-8 rounded-2xl shadow-xl border border-border transition hover:-translate-y-1">
 
                     <div className="text-center mb-8">
                         <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">

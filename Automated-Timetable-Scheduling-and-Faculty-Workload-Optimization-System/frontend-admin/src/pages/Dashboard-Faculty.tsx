@@ -17,7 +17,9 @@ const Dashboard = ({ onApplyLeave }: { onApplyLeave: () => void }) => {
       if (user?.name) {
         setLoading(true);
         try {
+          console.log("DEBUG: Fetching schedule for:", user.name);
           const data = await getFacultyTimetable(user.name);
+          console.log("DEBUG: Fetched entries:", data);
           setEntries(data);
         } catch (error) {
           console.error("Failed to fetch faculty schedule", error);

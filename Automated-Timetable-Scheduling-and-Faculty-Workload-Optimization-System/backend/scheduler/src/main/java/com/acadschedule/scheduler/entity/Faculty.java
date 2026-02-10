@@ -51,7 +51,13 @@ public class Faculty {
     @Column(name = "eligible_subjects")
     private List<String> eligibleSubjects = new ArrayList<>();
 
+    @Column(nullable = false)
+    private String password;
+
     // ===== Getters & Setters =====
+
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }

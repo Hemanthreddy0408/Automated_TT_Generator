@@ -35,4 +35,8 @@ public interface TimetableRepository extends JpaRepository<TimetableEntry, Long>
     // Find by Faculty Name
     List<TimetableEntry> findByFacultyName(String facultyName);
 
+    // ✅ Robust search: case insensitive + partial match (LIKE)
+    @Query("SELECT t FROM TimetableEntry t WHERE LOWER(t.facultyName) LIKE LOWER(CONCAT('%', :facultyName, '%'))")
+    List<TimetableEntry> findByFacultyNameIgnoreCase(String facultyName);
+
 }
