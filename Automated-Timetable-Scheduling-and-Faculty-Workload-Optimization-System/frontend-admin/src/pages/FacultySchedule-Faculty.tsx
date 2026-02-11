@@ -1,12 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Sidebar from '../components/layout/Sidebar';
-import ScheduleGrid from '../components/dashboard/ScheduleGrid';
+import { TimetableGrid } from '../components/timetable/TimetableGrid';
 import { useUser } from '../context/UserContext';
 import { generateICS } from '../lib/icsUtils';
 import { toast } from 'sonner';
 import { getFacultyTimetable } from '../lib/api';
 import { TimetableEntry } from '../components/timetable/TimetableGrid';
+import { buildTimetableMatrix } from '../utils/timetableMapper';
 
+/**
+ * Faculty Schedule Page
+ * Allows faculty members to view their full weekly timetable in a grid format,
+ * export their schedule to Outlook, or download it as an ICS file.
+ */
 const FacultySchedule = () => {
     const { user } = useUser();
     const [view, setView] = useState('Weekly'); // 'Weekly' or 'Day'
@@ -18,7 +24,9 @@ const FacultySchedule = () => {
             if (user?.name) {
                 setLoading(true);
                 try {
+                    console.log("DEBUG [FacultySchedule]: Fetching for", user.name);
                     const data = await getFacultyTimetable(user.name);
+                    console.log("DEBUG [FacultySchedule]: Fetched entries", data);
                     setEntries(data);
                 } catch (error) {
                     console.error("Failed to fetch faculty schedule", error);
@@ -31,28 +39,44 @@ const FacultySchedule = () => {
         fetchSchedule();
     }, [user?.name]);
 
+    const timetableMatrix = useMemo(() => {
+        if (!entries || entries.length === 0) return {};
+
+        const mappedEntries = entries.map(e => ({
+            ...e,
+            type: (e.type === 'LECTURE' || e.type === 'LAB') ? e.type : 'LECTURE'
+        })) as TimetableEntry[];
+
+        const matrix = buildTimetableMatrix(mappedEntries);
+        console.log("DEBUG [FacultySchedule]: Matrix built", matrix);
+        return matrix;
+    }, [entries]);
+
     const addToOutlook = () => {
         const event = {
-            subject: "Data Structures Lecture (CS301)",
-            startdt: "2024-10-28T09:00:00Z",
-            enddt: "2024-10-28T10:30:00Z",
-            location: "Room LH-102",
+            subject: "Academic Schedule Sync",
+            startdt: new Date().toISOString(),
+            enddt: new Date().toISOString(),
+            location: "Academic Block",
             body: "Weekly Academic Schedule Sync from AcadSchedule Portal"
         };
-
-        // Outlook Web Deep Link format
         const outlookUrl = `https://outlook.office.com/calendar/0/deeplink/compose?path=/calendar/action/compose&rru=addevent&subject=${encodeURIComponent(event.subject)}&startdt=${event.startdt}&enddt=${event.enddt}&body=${encodeURIComponent(event.body)}&location=${encodeURIComponent(event.location)}`;
-
         window.open(outlookUrl, '_blank');
         toast.success("Opening Outlook Web Calendar...");
     };
 
     const handleDownloadICS = () => {
+        if (entries.length === 0) {
+            toast.error("No schedule entries to download.");
+            return;
+        }
+
+        const firstEntry = entries[0];
         const event = {
-            title: "Data Structures Lecture (CS301)",
-            startDate: new Date("2024-10-28T09:00:00Z"),
-            endDate: new Date("2024-10-28T10:30:00Z"),
-            location: "Room LH-102",
+            title: `${firstEntry.subjectCode} - ${firstEntry.subjectName}`,
+            startDate: new Date(),
+            endDate: new Date(),
+            location: firstEntry.roomNumber || "TBA",
             description: "Weekly Academic Schedule"
         };
 
@@ -66,10 +90,9 @@ const FacultySchedule = () => {
         link.click();
         document.body.removeChild(link);
 
-        toast.success("Schedule downloaded as ICS with Reminder!");
+        toast.success("Schedule downloaded as ICS!");
     };
 
-    // Insights
     const busiestDay = React.useMemo(() => {
         const counts: Record<string, number> = {};
         entries.forEach(e => {
@@ -92,9 +115,9 @@ const FacultySchedule = () => {
         <div className="flex min-h-screen bg-[#f1f5f9]">
             <Sidebar />
             <main className="flex-1 flex flex-col min-w-0">
-                <header className="h-20 flex items-center justify-between px-8 bg-white border-b border-slate-200 sticky top-0 z-10">
+                <header className="h-20 flex items-center justify-between px-8 bg-white border-b border-slate-200 sticky top-0 z-10 text-slate-900 shadow-sm">
                     <div>
-                        <h2 className="text-xl font-bold text-slate-800">
+                        <h2 className="text-xl font-bold">
                             {view} Schedule
                         </h2>
                         <p className="text-xs text-slate-500 font-medium">
@@ -104,7 +127,7 @@ const FacultySchedule = () => {
                     <div className="flex gap-3">
                         <button
                             onClick={addToOutlook}
-                            className="px-4 py-2 text-sm font-bold bg-[#0078d4] text-white rounded-xl flex items-center gap-2 hover:bg-[#005a9e] transition-all shadow-lg shadow-blue-500/20"
+                            className="px-4 py-2 text-sm font-bold bg-[#0078d4] text-white rounded-xl flex items-center gap-2 hover:bg-[#005a9e] transition-all shadow-md"
                         >
                             <span className="material-symbols-outlined text-lg">calendar_add_on</span> Add to Outlook
                         </button>
@@ -118,14 +141,14 @@ const FacultySchedule = () => {
                 </header>
 
                 <div className="p-8">
-                    <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-xl">
+                    <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-2xl overflow-hidden">
                         <div className="flex items-center justify-between mb-8">
                             <div className="flex gap-2 bg-slate-100 p-1.5 rounded-2xl">
                                 {['Weekly', 'Day'].map((tab) => (
                                     <button
                                         key={tab}
                                         onClick={() => setView(tab)}
-                                        className={`px-6 py-2 rounded-xl text-xs font-bold transition-all ${view === tab ? 'bg-white text-[#111827] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                        className={`px-6 py-2 rounded-xl text-xs font-bold transition-all ${view === tab ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                                     >
                                         {tab} View
                                     </button>
@@ -137,10 +160,20 @@ const FacultySchedule = () => {
                             </div>
                         </div>
 
-                        {/* Pass 'view' and 'entries' to ScheduleGrid */}
-                        {loading ? <p className="text-center p-10 text-slate-400">Loading schedule...</p> :
-                            <ScheduleGrid view={view as any} entries={entries} />
-                        }
+                        {loading ? (
+                            <div className="flex flex-col items-center justify-center p-20 text-slate-400 gap-4">
+                                <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full"></div>
+                                <p className="font-medium">Syncing with timetable database...</p>
+                            </div>
+                        ) : entries.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center p-20 text-slate-400 gap-4 border-2 border-dashed rounded-3xl">
+                                <span className="material-symbols-outlined text-6xl opacity-20">calendar_today</span>
+                                <p className="font-bold text-lg">No classes found in the timetable</p>
+                                <p className="text-sm">The admin hasn't generated your schedule yet, or you have no duties assigned.</p>
+                            </div>
+                        ) : (
+                            <TimetableGrid timetable={timetableMatrix} />
+                        )}
                     </div>
 
                     <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">

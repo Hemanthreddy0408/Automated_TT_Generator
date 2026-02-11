@@ -65,27 +65,40 @@ export default function HistoryPage() {
 
   const [logs, setLogs] = useState<HistoryEntry[]>([]);
 
+  /**
+   * Fetch audit logs from the backend on component mount.
+   * Cleans and maps the database records into a format suitable for the UI table.
+   */
   useEffect(() => {
     getAuditLogs().then(data => {
+      if (!Array.isArray(data)) return;
+
       const mapped: HistoryEntry[] = data.map(log => {
-        // FIX: convert postgres timestamp -> ISO format (handle spaces or missing T)
-        const isoTime = log.timestamp.includes('T') ? log.timestamp : log.timestamp.replace(' ', 'T');
+        // Robustness: Handle potential null/undefined fields from API
+        const rawTime = log.timestamp || new Date().toISOString();
+        const cleanDesc = log.description || "No description provided";
+        const cleanUser = log.userEmail || "Unknown User";
+
+        // Convert Postgres/Jackson timestamp -> Standard ISO for Date object
+        const isoTime = rawTime.includes('T') ? rawTime : rawTime.replace(' ', 'T');
         const dateObj = new Date(isoTime);
 
         return {
           id: String(log.id),
-          user: log.userEmail,
-          role: log.userEmail === 'System/Admin' ? 'System Process' : 'Admin',
-          action: `${log.actionType} ${log.entityType}`,
-          description: log.description.length > 50 ? log.description.substring(0, 50) + '...' : log.description,
-          type: log.userEmail === 'System/Admin' ? 'SYSTEM' : 'MANUAL',
-          timestamp: dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          date: dateObj.toLocaleDateString(),
+          user: cleanUser,
+          role: cleanUser.includes('System') ? 'System Process' : 'Admin',
+          action: `${log.actionType || 'Action'} ${log.entityType || ''}`,
+          description: cleanDesc.length > 50 ? cleanDesc.substring(0, 50) + '...' : cleanDesc,
+          type: cleanUser.includes('System') ? 'SYSTEM' : 'MANUAL',
+          timestamp: isNaN(dateObj.getTime()) ? "00:00" : dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          date: isNaN(dateObj.getTime()) ? "Long ago" : dateObj.toLocaleDateString(),
           rollback: false,
           avatar: undefined
         };
       });
       setLogs(mapped);
+    }).catch(err => {
+      console.error("Critical: Failed to map audit logs", err);
     });
   }, []);
 
@@ -119,14 +132,14 @@ export default function HistoryPage() {
         {/* STATS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {/* Total Actions */}
-          <Card className="rounded-xl shadow-sm hover:shadow-md transition-shadow">
+          <Card className="rounded-xl shadow-sm hover:shadow-md transition-shadow focus-within:ring-2 focus-within:ring-primary">
             <CardContent className="p-8 flex justify-between items-start">
               <div className="space-y-2">
                 <p className="text-sm font-medium text-muted-foreground">Total Actions</p>
-                <p className="text-3xl font-bold mt-2">1,284</p>
-                <p className="text-xs text-green-600 font-medium">↗ +12% this week</p>
+                <p className="text-3xl font-bold mt-2">{logs.length.toLocaleString()}</p>
+                <p className="text-xs text-green-600 font-medium">Activity Stream</p>
               </div>
-              <div className="bg-blue-100 text-blue-600 p-4 rounded-xl">
+              <div className="bg-blue-100 text-blue-600 p-4 rounded-xl shadow-sm">
                 <List className="h-6 w-6" />
               </div>
             </CardContent>
@@ -136,13 +149,13 @@ export default function HistoryPage() {
           <Card className="rounded-xl shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="p-8 flex justify-between items-start">
               <div className="space-y-2">
-                <p className="text-sm font-medium text-muted-foreground">Automated</p>
-                <p className="text-3xl font-bold mt-2">452</p>
+                <p className="text-sm font-medium text-muted-foreground">System Actions</p>
+                <p className="text-3xl font-bold mt-2">{logs.filter(l => l.type === 'SYSTEM').length.toLocaleString()}</p>
                 <p className="text-xs text-muted-foreground font-medium">
-                  Generated versions
+                  Automated processes
                 </p>
               </div>
-              <div className="bg-purple-100 text-purple-600 p-4 rounded-xl">
+              <div className="bg-purple-100 text-purple-600 p-4 rounded-xl shadow-sm">
                 <Zap className="h-6 w-6" />
               </div>
             </CardContent>
@@ -152,29 +165,29 @@ export default function HistoryPage() {
           <Card className="rounded-xl shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="p-8 flex justify-between items-start">
               <div className="space-y-2">
-                <p className="text-sm font-medium text-muted-foreground">Manual Edits</p>
-                <p className="text-3xl font-bold mt-2">832</p>
+                <p className="text-sm font-medium text-muted-foreground">Admin Actions</p>
+                <p className="text-3xl font-bold mt-2">{logs.filter(l => l.type === 'MANUAL').length.toLocaleString()}</p>
                 <p className="text-xs text-muted-foreground font-medium">
-                  Direct adjustments
+                  Manual adjustments
                 </p>
               </div>
-              <div className="bg-amber-100 text-amber-600 p-4 rounded-xl">
+              <div className="bg-amber-100 text-amber-600 p-4 rounded-xl shadow-sm">
                 <Edit className="h-6 w-6" />
               </div>
             </CardContent>
           </Card>
 
-          {/* Rollbacks */}
+          {/* Rollbacks (Currently hardcoded as backend doesn't support them yet) */}
           <Card className="rounded-xl shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="p-8 flex justify-between items-start">
               <div className="space-y-2">
                 <p className="text-sm font-medium text-muted-foreground">Rollbacks</p>
-                <p className="text-3xl font-bold mt-2">24</p>
+                <p className="text-3xl font-bold mt-2">0</p>
                 <p className="text-xs text-muted-foreground font-medium">
                   Changes reverted
                 </p>
               </div>
-              <div className="bg-red-100 text-red-600 p-4 rounded-xl">
+              <div className="bg-red-100 text-red-600 p-4 rounded-xl shadow-sm">
                 <History className="h-6 w-6" />
               </div>
             </CardContent>

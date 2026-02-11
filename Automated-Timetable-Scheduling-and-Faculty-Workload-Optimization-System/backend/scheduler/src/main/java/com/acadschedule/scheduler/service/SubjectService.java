@@ -8,19 +8,30 @@ import com.acadschedule.scheduler.repository.SubjectRepository;
 public class SubjectService {
 
     private final SubjectRepository subjectRepository;
+    private final AuditLogService auditLogService;
 
-    public SubjectService(SubjectRepository subjectRepository) {
+    public SubjectService(SubjectRepository subjectRepository, AuditLogService auditLogService) {
         this.subjectRepository = subjectRepository;
+        this.auditLogService = auditLogService;
     }
 
+    /**
+     * Create a new subject and log the action.
+     */
     public Subject createSubject(Subject subject) {
-        return subjectRepository.save(subject);
+        Subject saved = subjectRepository.save(subject);
+        auditLogService.logAction("SUBJECT", "CREATE", 
+            "Created new subject: " + saved.getName() + " (" + saved.getCode() + ")", "Admin");
+        return saved;
     }
 
     public List<Subject> getAllSubjects() {
         return subjectRepository.findAll();
     }
 
+    /**
+     * Update an existing subject and log the action.
+     */
     @org.springframework.transaction.annotation.Transactional
     public Subject updateSubject(Long id, Subject subjectDetails) {
         Subject subject = subjectRepository.findById(id)
@@ -37,18 +48,24 @@ public class SubjectService {
         subject.setCommonCourse(subjectDetails.isCommonCourse());
         subject.setFacultyCount(subjectDetails.getFacultyCount());
         
-        // Update eligible faculty list
         if (subjectDetails.getEligibleFaculty() != null) {
             subject.setEligibleFaculty(subjectDetails.getEligibleFaculty());
         }
 
-        return subjectRepository.save(subject);
+        Subject updated = subjectRepository.save(subject);
+        auditLogService.logAction("SUBJECT", "UPDATE", 
+            "Updated subject details for: " + updated.getCode(), "Admin");
+        return updated;
     }
 
-    // ✅ NEW: Delete Subject
+    /**
+     * Delete a subject and log the action.
+     */
     public void deleteSubject(Long id) {
         Subject subject = subjectRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Subject not found with id: " + id));
         subjectRepository.delete(subject);
+        auditLogService.logAction("SUBJECT", "DELETE", 
+            "Deleted subject: " + subject.getName() + " (" + subject.getCode() + ")", "Admin");
     }
 }

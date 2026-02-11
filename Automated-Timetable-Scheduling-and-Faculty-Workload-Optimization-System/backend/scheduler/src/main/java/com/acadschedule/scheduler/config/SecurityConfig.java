@@ -8,6 +8,11 @@ import org.springframework.security.web.SecurityFilterChain;
 
 import java.util.List;
 
+/**
+ * SecurityConfig.java
+ * Configures Spring Security and CORS policies.
+ * Ensures the frontend (localhost:8081/8082) can communicate with this API.
+ */
 @Configuration
 public class SecurityConfig {
 
@@ -22,7 +27,9 @@ public class SecurityConfig {
         // ✅ Spring Boot 3 / Spring Security 6 REQUIRED
         configuration.setAllowedOriginPatterns(List.of(
                 "http://localhost:3000",
-                "http://localhost:8080"
+                "http://localhost:8080",
+                "http://localhost:8081",
+                "http://localhost:8082"
         ));
 
         configuration.setAllowedHeaders(List.of("*"));

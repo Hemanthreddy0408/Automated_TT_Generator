@@ -9,9 +9,11 @@ import java.util.List;
 public class RoomService {
 
     private final RoomRepository roomRepository;
+    private final AuditLogService auditLogService;
 
-    public RoomService(RoomRepository roomRepository) {
+    public RoomService(RoomRepository roomRepository, AuditLogService auditLogService) {
         this.roomRepository = roomRepository;
+        this.auditLogService = auditLogService;
     }
 
     public List<Room> findAll() {
@@ -23,11 +25,23 @@ public class RoomService {
                 .orElseThrow(() -> new RuntimeException("Room not found with id: " + id));
     }
 
+    /**
+     * Save/Create a room and log the action.
+     */
     public Room save(Room room) {
-        return roomRepository.save(room);
+        Room saved = roomRepository.save(room);
+        auditLogService.logAction("ROOM", "SAVE", 
+            "Saved/Updated room: " + saved.getName() + " (Capacity: " + saved.getCapacity() + ")", "Admin");
+        return saved;
     }
 
+    /**
+     * Delete a room by ID and log the action.
+     */
     public void deleteById(Long id) {
+        Room room = findById(id);
         roomRepository.deleteById(id);
+        auditLogService.logAction("ROOM", "DELETE", 
+            "Deleted room: " + room.getName(), "Admin");
     }
 }

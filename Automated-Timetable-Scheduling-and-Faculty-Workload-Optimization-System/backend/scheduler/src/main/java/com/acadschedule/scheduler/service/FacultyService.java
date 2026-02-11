@@ -10,14 +10,21 @@ import java.util.List;
 public class FacultyService {
 
     private final FacultyRepository facultyRepository;
+    private final AuditLogService auditLogService;
 
-    public FacultyService(FacultyRepository facultyRepository) {
+    public FacultyService(FacultyRepository facultyRepository, AuditLogService auditLogService) {
         this.facultyRepository = facultyRepository;
+        this.auditLogService = auditLogService;
     }
 
-    // CREATE
+    /**
+     * Create a new faculty member and log the action.
+     */
     public Faculty createFaculty(Faculty faculty) {
-        return facultyRepository.save(faculty);
+        Faculty saved = facultyRepository.save(faculty);
+        auditLogService.logAction("FACULTY", "CREATE", 
+            "Created new faculty: " + saved.getName() + " (" + saved.getEmployeeId() + ")", "Admin");
+        return saved;
     }
 
     // READ ALL
@@ -31,11 +38,12 @@ public class FacultyService {
                 .orElseThrow(() -> new RuntimeException("Faculty not found with id: " + id));
     }
 
-    // ✅ NEW: UPDATE
+    /**
+     * Update an existing faculty member and log the action.
+     */
     public Faculty updateFaculty(Long id, Faculty facultyDetails) {
-        Faculty faculty = getFacultyById(id); // Re-use the method above to find the user first
+        Faculty faculty = getFacultyById(id); 
 
-        // Update all fields with new data
         faculty.setName(facultyDetails.getName());
         faculty.setEmail(facultyDetails.getEmail());
         faculty.setDepartment(facultyDetails.getDepartment());
@@ -48,14 +56,19 @@ public class FacultyService {
         faculty.setSpecialization(facultyDetails.getSpecialization());
         faculty.setEligibleSubjects(facultyDetails.getEligibleSubjects());
 
-        return facultyRepository.save(faculty);
+        Faculty updated = facultyRepository.save(faculty);
+        auditLogService.logAction("FACULTY", "UPDATE", 
+            "Updated faculty details for: " + updated.getName(), "Admin");
+        return updated;
     }
 
-    // ✅ NEW: DELETE
+    /**
+     * Delete a faculty member and log the action.
+     */
     public void deleteFaculty(Long id) {
-        if (!facultyRepository.existsById(id)) {
-            throw new RuntimeException("Faculty not found with id: " + id);
-        }
+        Faculty faculty = getFacultyById(id);
         facultyRepository.deleteById(id);
+        auditLogService.logAction("FACULTY", "DELETE", 
+            "Deleted faculty: " + faculty.getName() + " (" + faculty.getEmployeeId() + ")", "Admin");
     }
 }

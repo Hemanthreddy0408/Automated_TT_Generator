@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Sidebar from '../components/layout/Sidebar';
 import axios from 'axios';
 import { toast } from 'sonner';
+import { useUser } from '../context/UserContext';
 
 interface LeaveRequest {
   id: number;
@@ -12,13 +13,20 @@ interface LeaveRequest {
   appliedDate: string;
 }
 
+/**
+ * Leave Status Page (Faculty)
+ * Displays the history of leave requests for the logged-in faculty member.
+ * Allows cancelling pending requests and shows the current approval status.
+ */
 const LeaveStatus = ({ onApplyLeave }: { onApplyLeave: () => void }) => {
+  const { user } = useUser();
   const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchLeaves = async () => {
+    if (!user?.id) return;
     try {
-      const response = await axios.get('http://localhost:8083/api/leaves/faculty/1', { timeout: 5000 });
+      const response = await axios.get(`http://localhost:8083/api/leaves/faculty/${user.id}`, { timeout: 5000 });
       setLeaves(response.data);
     } catch (error) {
       console.error('Error fetching leaves:', error);
@@ -29,8 +37,10 @@ const LeaveStatus = ({ onApplyLeave }: { onApplyLeave: () => void }) => {
   };
 
   useEffect(() => {
-    fetchLeaves();
-  }, []);
+    if (user?.id) {
+      fetchLeaves();
+    }
+  }, [user?.id]);
 
   const handleDelete = async (id: number) => {
     if (!confirm('Are you sure you want to cancel this leave request?')) return;

@@ -14,6 +14,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * TimetableController.java
+ * REST API for timetable generation and retrieval.
+ * Provides endpoints for generating schedules per section or globally.
+ */
 @RestController
 @RequestMapping("/api/timetable")
 public class TimetableController {

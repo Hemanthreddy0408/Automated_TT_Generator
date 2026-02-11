@@ -24,18 +24,21 @@ public class TimetableGenerationService {
     private final SubjectRepository subjectRepo;
     private final RoomRepository roomRepo;
     private final SectionRepository sectionRepo;
+    private final AuditLogService auditLogService;
 
     public TimetableGenerationService(
             TimetableRepository timetableRepo,
             FacultyRepository facultyRepo,
             SubjectRepository subjectRepo,
             RoomRepository roomRepo,
-            SectionRepository sectionRepo) {
+            SectionRepository sectionRepo,
+            AuditLogService auditLogService) {
         this.timetableRepo = timetableRepo;
         this.facultyRepo = facultyRepo;
         this.subjectRepo = subjectRepo;
         this.roomRepo = roomRepo;
         this.sectionRepo = sectionRepo;
+        this.auditLogService = auditLogService;
     }
 
     /* ================== CONFIG ================== */
@@ -87,8 +90,8 @@ public class TimetableGenerationService {
     /* ================== PUBLIC ================== */
 
     /**
-     * Generate timetable for a section (backward compatible version).
-     * Delegates to overload with null existingFacultyLoad.
+     * Entry point for generating a single section's timetable.
+     * Implements a retry logic to overcome random deadlocks in the allocation engine.
      */
     public List<TimetableEntry> generateForSection(String sectionId, boolean commit) {
 
@@ -98,7 +101,14 @@ public class TimetableGenerationService {
     for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
         try {
             System.out.println("Attempt " + attempt + " for section " + sectionId);
-            return generateForSection(sectionId, commit, null, null);
+            List<TimetableEntry> result = generateForSection(sectionId, commit, null, null);
+            
+            if (commit) {
+                auditLogService.logAction("TIMETABLE", "GENERATE", 
+                    "Generated timetable for Section ID: " + sectionId, "System/Admin");
+            }
+            
+            return result;
         } catch (RuntimeException e) {
             lastError = e;
         }
@@ -486,6 +496,10 @@ if (isLabSubject(s) && f.getSpecialization() != null) {
     }
 
 
+    /**
+     * Generates timetables for all sections while sharing global workload and room occupancy.
+     * This ensures no faculty is overbooked across different sections.
+     */
    public List<TimetableEntry> generateForAllSections(boolean commit) {
 
     int MAX_ATTEMPTS = 50;
@@ -504,6 +518,11 @@ if (isLabSubject(s) && f.getSpecialization() != null) {
                 List<TimetableEntry> sectionTT = generateForSection(
                         String.valueOf(s.getId()), commit, globalFacultyLoad, globalOcc);
                 all.addAll(sectionTT);
+            }
+
+            if (commit) {
+                auditLogService.logAction("TIMETABLE", "GENERATE_ALL", 
+                    "Successfully generated master timetable for all sections (" + all.size() + " entries)", "System/Admin");
             }
 
             return all; // SUCCESS 🎉

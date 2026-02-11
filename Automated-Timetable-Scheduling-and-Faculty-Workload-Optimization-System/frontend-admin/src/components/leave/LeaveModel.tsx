@@ -8,6 +8,11 @@ interface LeaveModalProps {
   onClose: () => void;
 }
 
+/**
+ * LeaveModal Component
+ * a reusable modal interface that allows faculty members to submit their
+ * leave requests directly to the system. Handles validation and backend submission.
+ */
 const LeaveModal = ({ isOpen, onClose }: LeaveModalProps) => {
   const { user } = useUser();
   const [leaveType, setLeaveType] = useState("Casual Leave");
@@ -24,7 +29,7 @@ const LeaveModal = ({ isOpen, onClose }: LeaveModalProps) => {
 
     try {
       const payload = {
-        facultyId: user?.id || 1,
+        facultyId: user?.id,
         facultyName: user?.name || "Faculty Member",
         leaveType,
         startDate,
