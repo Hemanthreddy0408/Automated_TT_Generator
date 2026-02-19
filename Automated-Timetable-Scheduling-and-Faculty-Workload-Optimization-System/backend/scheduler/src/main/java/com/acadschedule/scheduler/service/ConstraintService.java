@@ -1,32 +1,33 @@
 package com.acadschedule.scheduler.service;
 
-import com.acadschedule.scheduler.entity.Constraint;
-import com.acadschedule.scheduler.repository.ConstraintRepository;
+import java.time.LocalDateTime;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import com.acadschedule.scheduler.entity.AuditLog;
+import com.acadschedule.scheduler.repository.AuditLogRepository;
 
 @Service
 public class ConstraintService {
 
-    private final ConstraintRepository constraintRepository;
+    @Autowired
+    private AuditLogRepository auditLogRepository;
 
-    public ConstraintService(ConstraintRepository constraintRepository) {
-        this.constraintRepository = constraintRepository;
-    }
+    public void optimizeTimetable() {
 
-    public List<Constraint> getAllConstraints() {
-        return constraintRepository.findAll();
-    }
+        // ------------------------------
+        // EXISTING OPTIMIZATION LOGIC
+        // ------------------------------
+        // ------------------------------
+        // ADD THIS LOGGING CODE
+        // ------------------------------
+        AuditLog log = new AuditLog();
+        log.setActionType("OPTIMIZED");
+        log.setEntityType("TIMETABLE");
+        log.setDescription("Timetable optimized successfully");
+        log.setTimestamp(LocalDateTime.now());
 
-    public Constraint createConstraint(Constraint constraint) {
-        return constraintRepository.save(constraint);
-    }
-
-    public void toggleConstraintStatus(String id) {
-        Constraint constraint = constraintRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Constraint not found with id: " + id));
-        constraint.setActive(!constraint.isActive());
-        constraintRepository.save(constraint);
+        auditLogRepository.save(log);
     }
 }
