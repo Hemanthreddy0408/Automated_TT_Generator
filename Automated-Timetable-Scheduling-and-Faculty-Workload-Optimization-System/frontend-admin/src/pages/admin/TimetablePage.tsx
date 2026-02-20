@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { TimetableGrid, TimetableEntry } from "@/components/timetable/TimetableGrid";
 import { generateTimetable, generateAllTimetables, getTimetable, getSections } from "@/lib/api";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { Loader2, Users, School, Calendar } from "lucide-react";
+import { Loader2, Users, School, Calendar, Coffee, Utensils } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Section } from "@/types/timetable";
 import {
@@ -249,6 +249,39 @@ export default function TimetablePage() {
 
             {/* TIMETABLE GRID */}
             <TimetableGrid timetable={timetable} />
+
+            {/* LEGEND */}
+            <Card>
+              <CardContent className="py-4">
+                <div className="flex flex-wrap items-center gap-6">
+                  <span className="text-sm font-medium text-muted-foreground">Legend:</span>
+                  <div className="flex items-center gap-2">
+                    <div className="h-4 w-4 rounded bg-blue-50 border border-blue-200 border-l-4 border-l-blue-500" />
+                    <span className="text-sm">Lecture</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-4 w-4 rounded bg-purple-50 border border-purple-200 border-l-4 border-l-purple-500" />
+                    <span className="text-sm">Lab</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-4 w-4 rounded bg-slate-50 border border-slate-200 flex items-center justify-center">
+                      <Coffee className="h-2.5 w-2.5 text-slate-400" />
+                    </div>
+                    <span className="text-sm">Break</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-4 w-4 rounded bg-slate-50 border border-slate-200 flex items-center justify-center">
+                      <Utensils className="h-2.5 w-2.5 text-slate-400" />
+                    </div>
+                    <span className="text-sm">Lunch</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-4 w-4 rounded border-2 border-dashed border-destructive bg-destructive/10" />
+                    <span className="text-sm">Conflict</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </>
         )}
       </div>
