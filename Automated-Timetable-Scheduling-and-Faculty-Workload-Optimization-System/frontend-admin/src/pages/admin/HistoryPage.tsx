@@ -12,6 +12,9 @@ import {
   Zap,
   Edit,
   History,
+  FileSpreadsheet,
+  FileText,
+  ChevronDown,
 } from 'lucide-react';
 
 import {
@@ -26,11 +29,20 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { getAuditLogs, AuditLog } from "@/lib/api";
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 type HistoryType = 'MANUAL' | 'SYSTEM' | 'EXPORT';
 
@@ -122,6 +134,51 @@ export default function HistoryPage() {
     (page - 1) * pageSize,
     page * pageSize
   );
+
+  /* ---------- EXPORT LOGIC ---------- */
+  const getExportData = () => filtered.map(row => ({
+    User: row.user,
+    Role: row.role,
+    Action: row.action,
+    Description: row.description,
+    Type: row.type,
+    Timestamp: row.timestamp,
+    Date: row.date,
+  }));
+
+  const exportToCSV = () => {
+    const ws = XLSX.utils.json_to_sheet(getExportData());
+    const csv = XLSX.utils.sheet_to_csv(ws);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'AuditLog_History.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const exportToExcel = () => {
+    const ws = XLSX.utils.json_to_sheet(getExportData());
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Audit Log');
+    XLSX.writeFile(wb, 'AuditLog_History.xlsx');
+  };
+
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    doc.text('History & Audit Log', 14, 15);
+    autoTable(doc, {
+      head: [['User', 'Role', 'Action', 'Description', 'Type', 'Timestamp', 'Date']],
+      body: filtered.map(row => [
+        row.user, row.role, row.action, row.description, row.type, row.timestamp, row.date
+      ]),
+      startY: 20,
+      styles: { fontSize: 8 },
+    });
+    doc.save('AuditLog_History.pdf');
+  };
 
   return (
     <AdminLayout
@@ -278,15 +335,31 @@ export default function HistoryPage() {
                 </SelectContent>
               </Select>
 
-              {/* Export */}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="ml-auto gap-2 rounded-full px-4 py-3 text-muted-foreground hover:bg-muted/50"
-              >
-                <Download className="h-4 w-4" />
-                Export CSV
-              </Button>
+              {/* Export Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="ml-auto gap-2 rounded-full px-4 py-3 text-muted-foreground hover:bg-muted/50"
+                  >
+                    <Download className="h-4 w-4" />
+                    Export
+                    <ChevronDown className="h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={exportToCSV} className="gap-2">
+                    <FileText className="h-4 w-4" /> CSV
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={exportToExcel} className="gap-2">
+                    <FileSpreadsheet className="h-4 w-4" /> Excel
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={exportToPDF} className="gap-2">
+                    <FileText className="h-4 w-4" /> PDF
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
             </div>
           </CardContent>
