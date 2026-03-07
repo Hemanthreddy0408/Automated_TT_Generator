@@ -106,6 +106,13 @@ export const deleteFaculty = async (id: number) => {
   await API.delete(`/faculty/${id}`);
 };
 
+/* -------- UPDATE FACULTY PASSWORD -------- */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const updateFacultyPassword = async (id: number, payload: any) => {
+  const res = await API.put(`/faculty/${id}/password`, payload);
+  return res.data;
+};
+
 /* ===========================
    SUBJECTS API
    =========================== */
@@ -246,11 +253,36 @@ export interface LoginResponse {
   message: string;
   role: string | null;
   user: UserData | null;
+  preAuthToken?: string;
+}
+
+export interface OtpVerifyRequest {
+  preAuthToken: string;
+  otp: string;
+  identifier: string;
+  role: "admin" | "faculty";
 }
 
 export const loginUser = async (credentials: LoginRequest): Promise<LoginResponse> => {
   try {
     const res = await API.post("/auth/login", credentials);
+    return res.data;
+  } catch (error: any) {
+    if (error.response && error.response.data) {
+      return error.response.data;
+    }
+    return {
+      success: false,
+      message: "Network error. Please check your connection.",
+      role: null,
+      user: null,
+    };
+  }
+};
+
+export const verifyOtp = async (request: OtpVerifyRequest): Promise<LoginResponse> => {
+  try {
+    const res = await API.post("/auth/verify-otp", request);
     return res.data;
   } catch (error: any) {
     if (error.response && error.response.data) {

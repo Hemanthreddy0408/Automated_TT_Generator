@@ -6,6 +6,7 @@ import { useUser } from '../context/UserContext';
 import { getFacultyTimetable } from '../lib/api';
 import { buildTimetableMatrix } from '../utils/timetableMapper';
 import { toast } from 'sonner';
+import PasswordModal from '../components/auth/PasswordModal';
 
 /**
  * Faculty Dashboard Component
@@ -16,6 +17,7 @@ const Dashboard = ({ onApplyLeave }: { onApplyLeave: () => void }) => {
   const { user, loading: userLoading } = useUser();
   const [entries, setEntries] = useState<TimetableEntry[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isPasswordModalOpen, setPasswordModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchSchedule = async () => {
@@ -68,12 +70,20 @@ const Dashboard = ({ onApplyLeave }: { onApplyLeave: () => void }) => {
               Welcome back, <span className="text-[#10b981] font-bold">{user?.name || "Professor"}</span>
             </p>
           </div>
-          <button
-            onClick={onApplyLeave}
-            className="px-6 py-2.5 bg-[#10b981] text-white rounded-xl text-sm font-bold shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 active:scale-95 transition-all"
-          >
-            Apply Leave
-          </button>
+          <div className="flex gap-4 items-center">
+            <button
+              onClick={() => setPasswordModalOpen(true)}
+              className="px-6 py-2.5 bg-slate-800 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-slate-700 active:scale-95 transition-all"
+            >
+              Change Password
+            </button>
+            <button
+              onClick={onApplyLeave}
+              className="px-6 py-2.5 bg-[#10b981] text-white rounded-xl text-sm font-bold shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 active:scale-95 transition-all"
+            >
+              Apply Leave
+            </button>
+          </div>
         </header>
 
         <div className="p-8 space-y-8 overflow-y-auto">
@@ -152,6 +162,12 @@ const Dashboard = ({ onApplyLeave }: { onApplyLeave: () => void }) => {
           </div>
         </div>
       </main>
+
+      {/* Password Change Modal */}
+      <PasswordModal
+        isOpen={isPasswordModalOpen}
+        onClose={() => setPasswordModalOpen(false)}
+      />
     </div>
   );
 };

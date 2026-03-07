@@ -12,10 +12,13 @@ public class LeaveService {
 
     private final LeaveRepository leaveRepo;
     private final AuditLogService auditLogService;
+    private final NotificationService notificationService;
 
-    public LeaveService(LeaveRepository leaveRepo, AuditLogService auditLogService) {
+    public LeaveService(LeaveRepository leaveRepo, AuditLogService auditLogService,
+            NotificationService notificationService) {
         this.leaveRepo = leaveRepo;
         this.auditLogService = auditLogService;
+        this.notificationService = notificationService;
     }
 
     public List<LeaveRequest> getAllRequests() {
@@ -37,8 +40,15 @@ public class LeaveService {
             request.setStatus("Pending");
         }
         LeaveRequest saved = leaveRepo.save(request);
-        auditLogService.logAction("LEAVE", "CREATE", 
-            "Submitted leave request for: " + saved.getFacultyName() + " (" + saved.getLeaveType() + ")", saved.getFacultyName());
+        auditLogService.logAction("LEAVE", "CREATE",
+                "Submitted leave request for: " + saved.getFacultyName() + " (" + saved.getLeaveType() + ")",
+                saved.getFacultyName());
+
+        notificationService.createAdminNotification(
+                "New Leave Request",
+                saved.getFacultyName() + " has submitted a new leave request.",
+                "LEAVE_REQUESTED");
+
         return saved;
     }
 
@@ -49,8 +59,18 @@ public class LeaveService {
         return leaveRepo.findById(id).map(request -> {
             request.setStatus(status);
             LeaveRequest updated = leaveRepo.save(request);
-            auditLogService.logAction("LEAVE", "STATUS_CHANGE", 
-                "Updated leave status to " + status + " for: " + updated.getFacultyName(), "Admin");
+            auditLogService.logAction("LEAVE", "STATUS_CHANGE",
+                    "Updated leave status to " + status + " for: " + updated.getFacultyName(), "Admin");
+
+            if (updated.getFacultyId() != null) {
+                notificationService.createFacultyNotification(
+                        updated.getFacultyId(),
+                        "Leave Request " + status,
+                        "Your leave request from " + updated.getStartDate() + " to " + updated.getEndDate()
+                                + " has been " + status.toLowerCase() + ".",
+                        "LEAVE_STATUS_" + status.toUpperCase());
+            }
+
             return updated;
         }).orElseThrow(() -> new RuntimeException("Leave Request not found"));
     }
@@ -59,9 +79,10 @@ public class LeaveService {
      * Delete a leave request and log the action.
      */
     public void deleteRequest(Long id) {
-        LeaveRequest request = leaveRepo.findById(id).orElseThrow(() -> new RuntimeException("Leave Request not found"));
+        LeaveRequest request = leaveRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Leave Request not found"));
         leaveRepo.deleteById(id);
-        auditLogService.logAction("LEAVE", "DELETE", 
-            "Cancelled/Deleted leave request for: " + request.getFacultyName(), request.getFacultyName());
+        auditLogService.logAction("LEAVE", "DELETE",
+                "Cancelled/Deleted leave request for: " + request.getFacultyName(), request.getFacultyName());
     }
 }

@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { getFacultyTimetable } from '../lib/api';
 import { TimetableEntry } from '../components/timetable/TimetableGrid';
 import { buildTimetableMatrix } from '../utils/timetableMapper';
+import PasswordModal from '../components/auth/PasswordModal';
 
 /**
  * Faculty Schedule Page
@@ -18,6 +19,7 @@ const FacultySchedule = () => {
     const [view, setView] = useState('Weekly'); // 'Weekly' or 'Day'
     const [entries, setEntries] = useState<TimetableEntry[]>([]);
     const [loading, setLoading] = useState(false);
+    const [isPasswordModalOpen, setPasswordModalOpen] = useState(false);
 
     useEffect(() => {
         const fetchSchedule = async () => {
@@ -117,30 +119,20 @@ const FacultySchedule = () => {
             <main className="flex-1 flex flex-col min-w-0">
                 <header className="h-20 flex items-center justify-between px-8 bg-white border-b border-slate-200 sticky top-0 z-10 text-slate-900 shadow-sm">
                     <div>
-                        <h2 className="text-xl font-bold">
-                            {view} Schedule
-                        </h2>
-                        <p className="text-xs text-slate-500 font-medium">
-                            {user?.name || 'Faculty Member'} - {user?.department || 'Department'}
+                        <h2 className="text-xl font-bold text-slate-900 tracking-tight">My Schedule</h2>
+                        <p className="text-xs text-slate-500 font-medium tracking-tight">
+                            Class timetable for <span className="text-[#10b981] font-bold">{user?.name}</span>
                         </p>
                     </div>
-                    <div className="flex gap-3">
-                        <button
-                            onClick={addToOutlook}
-                            className="px-4 py-2 text-sm font-bold bg-[#0078d4] text-white rounded-xl flex items-center gap-2 hover:bg-[#005a9e] transition-all shadow-md"
-                        >
-                            <span className="material-symbols-outlined text-lg">calendar_add_on</span> Add to Outlook
-                        </button>
-                        <button
-                            onClick={handleDownloadICS}
-                            className="px-4 py-2 text-sm font-bold bg-white text-slate-600 border border-slate-200 rounded-xl flex items-center gap-2 hover:bg-slate-50 transition-colors shadow-sm"
-                        >
-                            <span className="material-symbols-outlined text-lg">download</span> ICS
-                        </button>
-                    </div>
+                    <button
+                        onClick={() => setPasswordModalOpen(true)}
+                        className="px-6 py-2.5 bg-slate-800 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-slate-700 active:scale-95 transition-all"
+                    >
+                        Change Password
+                    </button>
                 </header>
 
-                <div className="p-8">
+                <div className="p-8 space-y-8 overflow-y-auto">
                     <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-2xl overflow-hidden">
                         <div className="flex items-center justify-between mb-8">
                             <div className="flex gap-2 bg-slate-100 p-1.5 rounded-2xl">
@@ -209,6 +201,11 @@ const FacultySchedule = () => {
                     </div>
                 </div>
             </main>
+
+            <PasswordModal
+                isOpen={isPasswordModalOpen}
+                onClose={() => setPasswordModalOpen(false)}
+            />
         </div>
     );
 };

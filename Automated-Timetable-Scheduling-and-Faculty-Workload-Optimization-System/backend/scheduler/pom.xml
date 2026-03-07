@@ -56,6 +56,12 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- Mail Support -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+
         <!-- Jackson Date Support -->
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>

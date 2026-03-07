@@ -1,13 +1,16 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { loginUser } from "@/lib/api";
+import { loginUser, verifyOtp } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function Login() {
+    const [step, setStep] = useState<"LOGIN" | "OTP">("LOGIN");
     const [role, setRole] = useState<"admin" | "faculty">("admin");
     const [dark, setDark] = useState(false);
     const [identifier, setIdentifier] = useState("");
     const [password, setPassword] = useState("");
+    const [otp, setOtp] = useState("");
+    const [preAuthToken, setPreAuthToken] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
@@ -26,24 +29,50 @@ export default function Login() {
         setLoading(true);
 
         try {
-            const response = await loginUser({
-                identifier,
-                password,
-                role,
-            });
+            if (step === "LOGIN") {
+                const response = await loginUser({
+                    identifier,
+                    password,
+                    role,
+                });
 
-            if (response.success && response.user) {
-                // Save to auth context
-                authLogin(response.user, role);
-
-                // Get the page user was trying to access, or use default
-                const from = (location.state as any)?.from?.pathname ||
-                    (role === "admin" ? "/admin" : "/faculty/dashboard");
-
-                // Navigate to intended page or default
-                navigate(from, { replace: true });
+                if (response.success) {
+                    if (response.preAuthToken) {
+                        setPreAuthToken(response.preAuthToken);
+                        setStep("OTP");
+                    } else if (response.user) {
+                        // Bypass OTP for direct login (e.g. Admin)
+                        authLogin(response.user, role);
+                        const from = (location.state as any)?.from?.pathname ||
+                            (role === "admin" ? "/admin" : "/faculty/dashboard");
+                        navigate(from, { replace: true });
+                    } else {
+                        setError("Login failed: Missing authentication data");
+                    }
+                } else {
+                    setError(response.message || "Login failed");
+                }
             } else {
-                setError(response.message || "Login failed");
+                const response = await verifyOtp({
+                    preAuthToken,
+                    otp,
+                    identifier,
+                    role
+                });
+
+                if (response.success && response.user) {
+                    // Save to auth context
+                    authLogin(response.user, role);
+
+                    // Get the page user was trying to access, or use default
+                    const from = (location.state as any)?.from?.pathname ||
+                        (role === "admin" ? "/admin" : "/faculty/dashboard");
+
+                    // Navigate to intended page or default
+                    navigate(from, { replace: true });
+                } else {
+                    setError(response.message || "OTP Verification failed");
+                }
             }
         } catch (err) {
             setError("An unexpected error occurred. Please try again.");
@@ -102,67 +131,104 @@ export default function Login() {
                     </div>
 
                     {/* ROLE SWITCH */}
-                    <div className="flex p-1 bg-slate-100 dark:bg-slate-900/50 rounded-xl mb-8">
-                        <button
-                            type="button"
-                            onClick={() => setRole("admin")}
-                            className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${role === "admin"
-                                ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
-                                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-                                }`}
-                        >
-                            Admin
-                        </button>
+                    {step === "LOGIN" && (
+                        <div className="flex p-1 bg-slate-100 dark:bg-slate-900/50 rounded-xl mb-8">
+                            <button
+                                type="button"
+                                onClick={() => setRole("admin")}
+                                className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${role === "admin"
+                                    ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
+                                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                                    }`}
+                            >
+                                Admin
+                            </button>
 
-                        <button
-                            type="button"
-                            onClick={() => setRole("faculty")}
-                            className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${role === "faculty"
-                                ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
-                                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-                                }`}
-                        >
-                            Faculty
-                        </button>
-                    </div>
+                            <button
+                                type="button"
+                                onClick={() => setRole("faculty")}
+                                className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${role === "faculty"
+                                    ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
+                                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                                    }`}
+                            >
+                                Faculty
+                            </button>
+                        </div>
+                    )}
 
                     {/* FORM */}
                     <form className="space-y-5" onSubmit={handleSubmit}>
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                                Email Address / Employee ID
-                            </label>
-                            <input
-                                type="text"
-                                placeholder="e.g. j.doe@institution.edu"
-                                value={identifier}
-                                onChange={(e) => setIdentifier(e.target.value)}
-                                required
-                                className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
-                            />
-                        </div>
+                        {step === "LOGIN" ? (
+                            <>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                                        Email Address / Employee ID
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. j.doe@institution.edu"
+                                        value={identifier}
+                                        onChange={(e) => setIdentifier(e.target.value)}
+                                        required
+                                        className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
+                                    />
+                                </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                                Password
-                            </label>
-                            <input
-                                type="password"
-                                placeholder="••••••••"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                                className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
-                            />
-                        </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                                        Password
+                                    </label>
+                                    <input
+                                        type="password"
+                                        placeholder="••••••••"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        required
+                                        className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
+                                    />
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <div className="mb-4">
+                                    <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                                        We sent an OTP to your registered email. Please enter it below.
+                                    </p>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                                        Enter OTP
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder="123456"
+                                        value={otp}
+                                        onChange={(e) => setOtp(e.target.value)}
+                                        required
+                                        maxLength={6}
+                                        className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary text-center tracking-widest text-lg font-mono"
+                                    />
+                                </div>
+                            </>
+                        )}
 
                         <button
                             type="submit"
                             disabled={loading}
                             className="w-full bg-primary hover:bg-teal-600 text-white font-semibold py-3 rounded-xl shadow-md transition active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {loading ? "Signing in..." : `Sign In as ${role}`}
+                            {loading ? "Processing..." : step === "LOGIN" ? `Sign In as ${role}` : "Verify OTP"}
                         </button>
+
+                        {step === "OTP" && (
+                            <button
+                                type="button"
+                                onClick={() => setStep("LOGIN")}
+                                disabled={loading}
+                                className="w-full text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-sm font-medium py-2 transition disabled:opacity-50"
+                            >
+                                Back to Login
+                            </button>
+                        )}
                     </form>
 
                     {/* SSO */}

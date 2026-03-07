@@ -25,6 +25,7 @@ public class TimetableGenerationService {
     private final RoomRepository roomRepo;
     private final SectionRepository sectionRepo;
     private final AuditLogService auditLogService;
+    private final NotificationService notificationService;
 
     public TimetableGenerationService(
             TimetableRepository timetableRepo,
@@ -32,13 +33,15 @@ public class TimetableGenerationService {
             SubjectRepository subjectRepo,
             RoomRepository roomRepo,
             SectionRepository sectionRepo,
-            AuditLogService auditLogService) {
+            AuditLogService auditLogService,
+            NotificationService notificationService) {
         this.timetableRepo = timetableRepo;
         this.facultyRepo = facultyRepo;
         this.subjectRepo = subjectRepo;
         this.roomRepo = roomRepo;
         this.sectionRepo = sectionRepo;
         this.auditLogService = auditLogService;
+        this.notificationService = notificationService;
     }
 
     /* ================== CONFIG ================== */
@@ -104,6 +107,11 @@ public class TimetableGenerationService {
                 if (commit) {
                     auditLogService.logAction("TIMETABLE", "GENERATE",
                             "Generated timetable for Section ID: " + sectionId, "System/Admin");
+
+                    notificationService.createAdminNotification(
+                            "Timetable Generated",
+                            "Timetable for Section ID " + sectionId + " was successfully generated.",
+                            "TIMETABLE_SECTION_GENERATED");
                 }
 
                 return result;
@@ -552,6 +560,21 @@ public class TimetableGenerationService {
                     auditLogService.logAction("TIMETABLE", "GENERATE_ALL",
                             "Successfully generated master timetable for all sections (" + all.size() + " entries)",
                             "System/Admin");
+
+                    notificationService.createAdminNotification(
+                            "Master Timetable Generated",
+                            "The master timetable for all sections was successfully generated or optimized.",
+                            "TIMETABLE_MASTER_GENERATED");
+
+                    // Notify all faculty about the new timetable
+                    List<Faculty> activeFaculties = facultyRepo.findAll().stream().filter(Faculty::isActive).toList();
+                    for (Faculty f : activeFaculties) {
+                        notificationService.createFacultyNotification(
+                                f.getId(),
+                                "Timetable Updated",
+                                "A new timetable has been generated. Please check your schedule.",
+                                "TIMETABLE_UPDATED");
+                    }
                 }
 
                 return all; // SUCCESS 🎉

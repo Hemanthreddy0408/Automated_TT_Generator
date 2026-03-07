@@ -3,6 +3,7 @@ import Sidebar from '../components/layout/Sidebar';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { useUser } from '../context/UserContext';
+import PasswordModal from '../components/auth/PasswordModal';
 
 interface LeaveRequest {
   id: number;
@@ -22,6 +23,7 @@ const LeaveStatus = ({ onApplyLeave }: { onApplyLeave: () => void }) => {
   const { user } = useUser();
   const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isPasswordModalOpen, setPasswordModalOpen] = useState(false);
 
   const fetchLeaves = async () => {
     if (!user?.id) return;
@@ -69,13 +71,24 @@ const LeaveStatus = ({ onApplyLeave }: { onApplyLeave: () => void }) => {
       <Sidebar />
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <header className="h-20 flex items-center justify-between px-8 bg-white border-b border-slate-200">
-          <h2 className="text-xl font-bold">Leave Management</h2>
-          <button
-            onClick={onApplyLeave}
-            className="px-5 py-2.5 bg-[#10b981] text-white rounded-xl text-sm font-bold shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 transition-colors"
-          >
-            Apply Leave
-          </button>
+          <div>
+            <h2 className="text-xl font-bold text-slate-900 tracking-tight">Leave Management</h2>
+          </div>
+          <div className="flex gap-4 items-center">
+            <button
+              onClick={() => setPasswordModalOpen(true)}
+              className="px-6 py-2.5 bg-slate-800 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-slate-700 active:scale-95 transition-all"
+            >
+              Change Password
+            </button>
+            <button
+              onClick={onApplyLeave}
+              className="px-6 py-2.5 bg-[#10b981] text-white rounded-xl text-sm font-bold shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 active:scale-95 transition-all flex items-center gap-2"
+            >
+              <span className="material-symbols-outlined text-sm">calendar_month</span>
+              Apply Leave
+            </button>
+          </div>
         </header>
 
         <div className="p-8 space-y-8 overflow-y-auto">
@@ -134,6 +147,11 @@ const LeaveStatus = ({ onApplyLeave }: { onApplyLeave: () => void }) => {
           </div>
         </div>
       </main>
+
+      <PasswordModal
+        isOpen={isPasswordModalOpen}
+        onClose={() => setPasswordModalOpen(false)}
+      />
     </div>
   );
 };

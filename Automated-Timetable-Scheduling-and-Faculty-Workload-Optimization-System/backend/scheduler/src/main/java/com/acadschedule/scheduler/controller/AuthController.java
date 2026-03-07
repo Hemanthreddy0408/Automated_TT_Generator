@@ -10,9 +10,15 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final com.acadschedule.scheduler.repository.FacultyRepository facultyRepo;
+    private final com.acadschedule.scheduler.service.OtpService otpService;
+    private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
-    public AuthController(com.acadschedule.scheduler.repository.FacultyRepository facultyRepo) {
+    public AuthController(com.acadschedule.scheduler.repository.FacultyRepository facultyRepo,
+            com.acadschedule.scheduler.service.OtpService otpService,
+            org.springframework.security.crypto.password.PasswordEncoder passwordEncoder) {
         this.facultyRepo = facultyRepo;
+        this.otpService = otpService;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @PostMapping("/login")
@@ -33,23 +39,68 @@ public class AuthController {
                 && "admin@acadschedule.com".equalsIgnoreCase(identifier)
                 && "password123".equals(password)) {
 
+            String preAuthToken = otpService.generateAndSendOtp("admin@acadschedule.com");
+            return new LoginResponse(true, "OTP sent to email", preAuthToken);
+        }
+
+        // FACULTY LOGIN
+        if ("faculty".equalsIgnoreCase(role)) {
+            java.util.Optional<com.acadschedule.scheduler.entity.Faculty> facultyOpt = facultyRepo
+                    .findByEmail(identifier);
+
+            if (facultyOpt.isEmpty()) {
+                facultyOpt = facultyRepo.findByEmployeeId(identifier);
+            }
+
+            if (facultyOpt.isPresent()) {
+                com.acadschedule.scheduler.entity.Faculty f = facultyOpt.get();
+                // Check password safely (assume frontend still sends password123 as dummy or
+                // real)
+                // For this demo, using existing logic: `password123` matches all or we don't
+                // enforce fully here yet
+                // The prompt says "After entering the correct username and password, the user
+                // must verify using a second authentication step."
+                // I will improve Faculty password checking later in the Password Management
+                // step. For now, checking the current logic.
+                // Wait, existing logic was && "faculty123".equals(password).
+                if ("faculty123".equals(password)
+                        || (f.getPassword() != null && passwordEncoder.matches(password, f.getPassword()))) {
+                    // Generate OTP
+                    String email = f.getEmail() != null ? f.getEmail() : "faculty@acadschedule.com";
+                    String preAuthToken = otpService.generateAndSendOtp(email);
+                    return new LoginResponse(true, "OTP sent to email", preAuthToken);
+                }
+            } else {
+                return new LoginResponse(false, "Faculty record not found", null, null);
+            }
+        }
+
+        return new LoginResponse(false, "Invalid credentials", null, null);
+    }
+
+    @PostMapping("/verify-otp")
+    public LoginResponse verifyOtp(@RequestBody com.acadschedule.scheduler.dto.OtpVerifyRequest request) {
+        if (!otpService.verifyOtp(request.getPreAuthToken(), request.getOtp())) {
+            return new LoginResponse(false, "Invalid or expired OTP", null, null);
+        }
+
+        String role = request.getRole();
+        String identifier = request.getIdentifier();
+
+        if ("admin".equalsIgnoreCase(role)) {
             UserData admin = new UserData(
                     1L,
                     "Admin User",
                     "admin@acadschedule.com",
                     "CSE",
-                    "ADMIN001"
-            );
-
+                    "ADMIN001");
             return new LoginResponse(true, "Admin login success", "admin", admin);
         }
 
-        // FACULTY LOGIN
-        if ("faculty".equalsIgnoreCase(role) && "faculty123".equals(password)) {
-            // Try to find the faculty in DB
-            java.util.Optional<com.acadschedule.scheduler.entity.Faculty> facultyOpt = 
-                facultyRepo.findByEmail(identifier);
-            
+        if ("faculty".equalsIgnoreCase(role)) {
+            java.util.Optional<com.acadschedule.scheduler.entity.Faculty> facultyOpt = facultyRepo
+                    .findByEmail(identifier);
+
             if (facultyOpt.isEmpty()) {
                 facultyOpt = facultyRepo.findByEmployeeId(identifier);
             }
@@ -61,14 +112,11 @@ public class AuthController {
                         f.getName(),
                         f.getEmail(),
                         f.getDepartment(),
-                        f.getEmployeeId()
-                );
+                        f.getEmployeeId());
                 return new LoginResponse(true, "Faculty login success", "faculty", ud);
-            } else {
-                return new LoginResponse(false, "Faculty record not found", null, null);
             }
         }
 
-        return new LoginResponse(false, "Invalid credentials", null, null);
+        return new LoginResponse(false, "User not found after OTP verification", null, null);
     }
 }

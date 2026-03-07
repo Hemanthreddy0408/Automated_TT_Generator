@@ -42,4 +42,15 @@ public class FacultyController {
         facultyService.deleteFaculty(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PutMapping("/{id}/password")
+    public ResponseEntity<String> updatePassword(@PathVariable Long id,
+            @RequestBody com.acadschedule.scheduler.dto.PasswordChangeRequest request) {
+        boolean success = facultyService.updatePassword(id, request.getOldPassword(), request.getNewPassword());
+        if (success) {
+            return ResponseEntity.ok("Password updated successfully");
+        } else {
+            return ResponseEntity.badRequest().body("Invalid old password");
+        }
+    }
 }
