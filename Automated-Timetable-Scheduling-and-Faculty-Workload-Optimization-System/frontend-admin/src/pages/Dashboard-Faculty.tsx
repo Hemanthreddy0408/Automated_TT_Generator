@@ -7,6 +7,7 @@ import { getFacultyTimetable } from '../lib/api';
 import { buildTimetableMatrix } from '../utils/timetableMapper';
 import { toast } from 'sonner';
 import PasswordModal from '../components/auth/PasswordModal';
+import { TimetableLegend } from '../components/timetable/TimetableLegend';
 
 /**
  * Faculty Dashboard Component
@@ -143,6 +144,8 @@ const Dashboard = ({ onApplyLeave }: { onApplyLeave: () => void }) => {
                   <TimetableGrid timetable={timetableMatrix} />
                 </div>
               )}
+
+              <TimetableLegend entries={entries} />
             </div>
 
             <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-lg flex flex-col">

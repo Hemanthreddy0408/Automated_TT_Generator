@@ -205,7 +205,8 @@ export const getAllTimetableEntries = async () => {
 };
 
 export const getFacultyTimetable = async (facultyName: string) => {
-  const res = await API.get(`/timetable/faculty`, { params: { name: facultyName } });
+  const encodedName = encodeURIComponent(facultyName);
+  const res = await API.get(`/timetable/faculty/${encodedName}`);
   return Array.isArray(res.data) ? res.data : [];
 };
 

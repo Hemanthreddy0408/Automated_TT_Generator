@@ -101,3 +101,11 @@ export const createConstraint = async (data: any) => {
 export const toggleConstraintStatus = async (id: string) => {
   await axios.patch(`${API_BASE_URL}/api/constraints/${id}/toggle`);
 };
+
+/* ===========================
+   TIMETABLE API
+   =========================== */
+export const getFacultySchedule = async (facultyName: string) => {
+  const res = await axios.get(`${API_BASE_URL}/api/timetable/faculty/${facultyName}`);
+  return res.data;
+};

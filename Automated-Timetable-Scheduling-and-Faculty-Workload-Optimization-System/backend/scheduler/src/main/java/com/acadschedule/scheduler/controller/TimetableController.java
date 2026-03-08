@@ -29,6 +29,11 @@ public class TimetableController {
     public List<TimetableEntry> getBySection(@PathVariable String sectionId) {
         return repo.findBySectionId(sectionId);
     }
+    
+    @GetMapping("/faculty/{facultyName}")
+    public List<TimetableEntry> getByFaculty(@PathVariable String facultyName) {
+        return repo.findByFacultyName(facultyName);
+    }
 
     @PostMapping("/generate-all")
     public ResponseEntity<?> generateAll() {

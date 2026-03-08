@@ -10,4 +10,5 @@ import java.util.List;
 public interface TimetableRepository extends JpaRepository<TimetableEntry, Long> {
     void deleteBySectionId(String sectionId);
     List<TimetableEntry> findBySectionId(String sectionId);
+    List<TimetableEntry> findByFacultyName(String facultyName);
 }

@@ -15,24 +15,33 @@ interface Faculty {
 
 const Dashboard = ({ onApplyLeave }: { onApplyLeave: () => void }) => {
   const [faculty, setFaculty] = useState<Faculty | null>(null);
+  const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchFaculty = async () => {
+    const fetchData = async () => {
       try {
-        // Add 5 second timeout to prevent infinite loading if backend is deadlocked
-        const response = await axios.get('http://localhost:8082/api/faculty/1', { timeout: 5000 });
-        setFaculty(response.data);
+        const response = await axios.get('http://localhost:8083/api/faculty/1', { timeout: 5000 });
+        const fData = response.data;
+        setFaculty(fData);
+
+        // Fetch sessions using the faculty name
+        if (fData.name) {
+          const scheduleRes = await axios.get(`http://localhost:8083/api/timetable/faculty/${fData.name}`);
+          setSessions(scheduleRes.data);
+        }
       } catch (error) {
-        console.error('Error fetching faculty:', error);
-        // Toast is not imported here, but we'll use a silent fallback
+        console.error('Error fetching dashboard data:', error);
       } finally {
         setLoading(false);
       }
     };
-    fetchFaculty();
+    fetchData();
   }, []);
 
+  const theorySessions = sessions.filter((s: any) => s.type?.toLowerCase().includes('theory')).length;
+  const labSessions = sessions.filter((s: any) => s.type?.toLowerCase().includes('lab')).length;
+  const totalHours = sessions.length * 1.5; // Assuming 1.5h per slot
 
   return (
     <div className="flex min-h-screen bg-[#f1f5f9]">
@@ -54,26 +63,37 @@ const Dashboard = ({ onApplyLeave }: { onApplyLeave: () => void }) => {
         <div className="p-8 space-y-8 overflow-y-auto">
           {/* Top Stats */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <StatCard label="Today's Classes" value="03" subText="2 Theory, 1 Lab" icon="school" />
-            <StatCard label="Weekly Load" value={`${faculty?.maxHoursPerWeek || 18}h`} subText="Remaining: 2h" icon="timer" />
-            <StatCard label="My Subjects" value={faculty?.eligibleSubjects ? faculty.eligibleSubjects.length.toString().padStart(2, '0') : "04"} subText="Fall 2024" icon="menu_book" />
-            <StatCard label="Assigned Sections" value="05" subText="Active groups" icon="layers" />
+            <StatCard label="Today's Classes" value={String(theorySessions + labSessions).padStart(2, '0')} subText={`${theorySessions} Theory, ${labSessions} Lab`} icon="school" />
+            <StatCard label="Weekly Load" value={`${totalHours}h`} subText={`Max: ${faculty?.maxHoursPerWeek || 20}h`} icon="timer" />
+            <StatCard label="My Subjects" value={faculty?.eligibleSubjects ? faculty.eligibleSubjects.length.toString().padStart(2, '0') : "04"} subText="Active Curriculum" icon="menu_book" />
+            <StatCard label="Department" value={faculty?.department || "CSE"} subText="Academic Unit" icon="layers" />
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
             <div className="xl:col-span-2 bg-white rounded-3xl p-8 border border-slate-200 shadow-sm">
               <h4 className="text-xl font-bold mb-2">Current Week Schedule</h4>
               <p className="text-sm text-slate-500 mb-8">My Personalized Academic Calendar</p>
-              <ScheduleGrid />
+              {loading ? (
+                <div className="h-64 flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-800 shadow-sm"></div>
+                </div>
+              ) : sessions.length > 0 ? (
+                <ScheduleGrid sessions={sessions} />
+              ) : (
+                <div className="h-64 flex flex-col items-center justify-center text-slate-400 gap-4">
+                  <span className="material-symbols-outlined text-6xl opacity-10">calendar_month</span>
+                  <p className="text-sm font-medium">No classes scheduled for you this week.</p>
+                </div>
+              )}
             </div>
 
             <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm">
               <h4 className="text-lg font-bold mb-6 flex items-center gap-2">
                 <span className="material-symbols-outlined text-[#10b981]">analytics</span> My Workload
               </h4>
-              <WorkloadProgress label="Total Hours" current={18} max={faculty?.maxHoursPerWeek || 20} color="bg-[#10b981]" />
-              <WorkloadProgress label="Theory Load" current={12} max={faculty?.maxHoursPerWeek || 20} color="bg-sky-500" />
-              <WorkloadProgress label="Lab Load" current={6} max={faculty?.maxHoursPerWeek || 20} color="bg-purple-500" />
+              <WorkloadProgress label="Total Hours" current={totalHours} max={faculty?.maxHoursPerWeek || 20} color="bg-[#10b981]" />
+              <WorkloadProgress label="Theory Load" current={theorySessions * 1.5} max={faculty?.maxHoursPerWeek || 20} color="bg-sky-500" />
+              <WorkloadProgress label="Lab Load" current={labSessions * 1.5} max={faculty?.maxHoursPerWeek || 20} color="bg-purple-500" />
             </div>
           </div>
         </div>

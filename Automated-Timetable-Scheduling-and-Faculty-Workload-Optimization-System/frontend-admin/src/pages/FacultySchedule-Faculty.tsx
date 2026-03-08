@@ -8,6 +8,7 @@ import { getFacultyTimetable } from '../lib/api';
 import { TimetableEntry } from '../components/timetable/TimetableGrid';
 import { buildTimetableMatrix } from '../utils/timetableMapper';
 import PasswordModal from '../components/auth/PasswordModal';
+import { TimetableLegend } from '../components/timetable/TimetableLegend';
 
 /**
  * Faculty Schedule Page
@@ -20,6 +21,21 @@ const FacultySchedule = () => {
     const [entries, setEntries] = useState<TimetableEntry[]>([]);
     const [loading, setLoading] = useState(false);
     const [isPasswordModalOpen, setPasswordModalOpen] = useState(false);
+    const [selectedDay, setSelectedDay] = useState(new Date().toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase());
+
+    const DAYS_LIST = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"];
+    const TIME_SLOTS = [
+        "09:00-09:40",
+        "09:40-10:30",
+        "10:30-10:45", // BREAK
+        "10:45-11:35",
+        "11:35-12:25",
+        "12:25-01:15",
+        "LUNCH_BREAK",
+        "02:05-02:55",
+        "02:55-03:45",
+        "03:45-04:35"
+    ];
 
     useEffect(() => {
         const fetchSchedule = async () => {
@@ -29,7 +45,7 @@ const FacultySchedule = () => {
                     console.log("DEBUG [FacultySchedule]: Fetching for", user.name);
                     const data = await getFacultyTimetable(user.name);
                     console.log("DEBUG [FacultySchedule]: Fetched entries", data);
-                    setEntries(data);
+                    setEntries(data || []);
                 } catch (error) {
                     console.error("Failed to fetch faculty schedule", error);
                     toast.error("Failed to load schedule.");
@@ -53,19 +69,6 @@ const FacultySchedule = () => {
         console.log("DEBUG [FacultySchedule]: Matrix built", matrix);
         return matrix;
     }, [entries]);
-
-    const addToOutlook = () => {
-        const event = {
-            subject: "Academic Schedule Sync",
-            startdt: new Date().toISOString(),
-            enddt: new Date().toISOString(),
-            location: "Academic Block",
-            body: "Weekly Academic Schedule Sync from AcadSchedule Portal"
-        };
-        const outlookUrl = `https://outlook.office.com/calendar/0/deeplink/compose?path=/calendar/action/compose&rru=addevent&subject=${encodeURIComponent(event.subject)}&startdt=${event.startdt}&enddt=${event.enddt}&body=${encodeURIComponent(event.body)}&location=${encodeURIComponent(event.location)}`;
-        window.open(outlookUrl, '_blank');
-        toast.success("Opening Outlook Web Calendar...");
-    };
 
     const handleDownloadICS = () => {
         if (entries.length === 0) {
@@ -95,7 +98,7 @@ const FacultySchedule = () => {
         toast.success("Schedule downloaded as ICS!");
     };
 
-    const busiestDay = React.useMemo(() => {
+    const busiestDay = useMemo(() => {
         const counts: Record<string, number> = {};
         entries.forEach(e => {
             counts[e.day] = (counts[e.day] || 0) + 1;
@@ -104,7 +107,7 @@ const FacultySchedule = () => {
         return { day: maxDay, count: counts[maxDay] || 0 };
     }, [entries]);
 
-    const commonRoom = React.useMemo(() => {
+    const commonRoom = useMemo(() => {
         const counts: Record<string, number> = {};
         entries.forEach(e => {
             if (e.roomNumber) counts[e.roomNumber] = (counts[e.roomNumber] || 0) + 1;
@@ -113,15 +116,87 @@ const FacultySchedule = () => {
         return maxRoom;
     }, [entries]);
 
+    const renderDayView = () => {
+        return (
+            <div className="space-y-6">
+                <div className="flex items-center gap-4 mb-6">
+                    <span className="text-sm font-bold text-slate-500 uppercase tracking-widest">Select Day:</span>
+                    <div className="flex gap-2 bg-slate-50 p-1 rounded-xl border border-slate-100">
+                        {DAYS_LIST.map(day => (
+                            <button
+                                key={day}
+                                onClick={() => setSelectedDay(day)}
+                                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${selectedDay === day ? 'bg-slate-900 text-white shadow-md' : 'text-slate-400 hover:bg-slate-100'}`}
+                            >
+                                {day.charAt(0) + day.slice(1).toLowerCase().substring(0, 2)}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="space-y-4">
+                    {TIME_SLOTS.map(slot => {
+                        const entry = entries.find(e => e.day.toUpperCase() === selectedDay && e.timeSlot === slot);
+                        const isSpecial = slot === "10:30-10:45" || slot === "LUNCH_BREAK";
+                        const label = slot === "10:30-10:45" ? "Morning Break" : "Lunch Break";
+
+                        if (isSpecial) {
+                            return (
+                                <div key={slot} className="flex items-center gap-6 p-4 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200 opacity-60">
+                                    <div className="w-24 text-[10px] font-black text-slate-400 uppercase tracking-widest">{slot}</div>
+                                    <div className="flex items-center gap-2 text-xs font-bold text-slate-400 italic">
+                                        <span className="material-symbols-outlined text-sm">{label === "Lunch Break" ? 'restaurant' : 'coffee'}</span>
+                                        {label}
+                                    </div>
+                                </div>
+                            );
+                        }
+
+                        return (
+                            <div key={slot} className={`flex items-center gap-6 p-5 rounded-2xl border transition-all ${entry ? 'bg-white border-slate-200 shadow-md translate-x-1' : 'bg-slate-50/30 border-transparent opacity-40'}`}>
+                                <div className="w-24 text-[10px] font-black text-slate-500 uppercase tracking-widest">{slot}</div>
+                                {entry ? (
+                                    <div className="flex-1 flex items-center justify-between">
+                                        <div className="flex items-center gap-4">
+                                            <div className={`w-1 h-10 rounded-full ${entry.type === 'LAB' ? 'bg-purple-500' : 'bg-sky-500'}`}></div>
+                                            <div>
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">{entry.subjectCode}</span>
+                                                    <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase ${entry.type === 'LAB' ? 'bg-purple-100 text-purple-600' : 'bg-sky-100 text-sky-600'}`}>{entry.type}</span>
+                                                </div>
+                                                <h4 className="text-sm font-bold text-slate-800">{entry.subjectName}</h4>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-4">
+                                            <div className="text-right">
+                                                <div className="flex items-center gap-1 text-[10px] font-bold text-slate-400 mb-1 justify-end">
+                                                    <span className="material-symbols-outlined text-xs">location_on</span>
+                                                    {entry.roomNumber}
+                                                </div>
+                                                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Section {entry.sectionId || 'A'}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="text-xs font-medium text-slate-300 italic tracking-wide">No session scheduled</div>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+        );
+    };
+
     return (
         <div className="flex min-h-screen bg-[#f1f5f9]">
             <Sidebar />
             <main className="flex-1 flex flex-col min-w-0">
-                <header className="h-20 flex items-center justify-between px-8 bg-white border-b border-slate-200 sticky top-0 z-10 text-slate-900 shadow-sm">
+                <header className="h-20 flex items-center justify-between px-8 bg-white border-b border-slate-200 sticky top-0 z-10 text-slate-900 shadow-sm transition-all">
                     <div>
                         <h2 className="text-xl font-bold text-slate-900 tracking-tight">My Schedule</h2>
                         <p className="text-xs text-slate-500 font-medium tracking-tight">
-                            Class timetable for <span className="text-[#10b981] font-bold">{user?.name}</span>
+                            Viewing <span className="text-[#10b981] font-bold">{view}</span> schedule for <span className="text-slate-800 font-bold">{user?.name}</span>
                         </p>
                     </div>
                     <button
@@ -133,38 +208,51 @@ const FacultySchedule = () => {
                 </header>
 
                 <div className="p-8 space-y-8 overflow-y-auto">
-                    <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-2xl overflow-hidden">
-                        <div className="flex items-center justify-between mb-8">
+                    <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-xl overflow-hidden transition-all hover:shadow-2xl">
+                        <div className="flex items-center justify-between mb-8 pb-6 border-b border-slate-100">
                             <div className="flex gap-2 bg-slate-100 p-1.5 rounded-2xl">
                                 {['Weekly', 'Day'].map((tab) => (
                                     <button
                                         key={tab}
                                         onClick={() => setView(tab)}
-                                        className={`px-6 py-2 rounded-xl text-xs font-bold transition-all ${view === tab ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                        className={`px-6 py-2 rounded-xl text-xs font-bold transition-all duration-300 ${view === tab ? 'bg-white text-slate-900 shadow-sm scale-105' : 'text-slate-500 hover:text-slate-700'}`}
                                     >
                                         {tab} View
                                     </button>
                                 ))}
                             </div>
-                            <div className="flex items-center gap-2 text-slate-400 text-xs">
-                                <span className="w-3 h-3 rounded-full bg-sky-400"></span> Theory
-                                <span className="w-3 h-3 rounded-full bg-purple-400 ml-4"></span> Lab
+
+                            <div className="flex items-center gap-4">
+                                <button
+                                    onClick={handleDownloadICS}
+                                    className="flex items-center gap-2 px-4 py-2 bg-slate-50 text-slate-600 rounded-xl text-xs font-bold border border-slate-200 hover:bg-white hover:shadow-md transition-all active:scale-95"
+                                >
+                                    <span className="material-symbols-outlined text-sm">download</span>
+                                    Sync Calendar
+                                </button>
                             </div>
                         </div>
 
                         {loading ? (
                             <div className="flex flex-col items-center justify-center p-20 text-slate-400 gap-4">
-                                <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full"></div>
-                                <p className="font-medium">Syncing with timetable database...</p>
+                                <div className="animate-spin w-8 h-8 border-2 border-[#10b981] border-t-transparent rounded-full font-black"></div>
+                                <p className="font-bold text-sm tracking-tight">Accessing timetable database...</p>
                             </div>
                         ) : entries.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center p-20 text-slate-400 gap-4 border-2 border-dashed rounded-3xl">
-                                <span className="material-symbols-outlined text-6xl opacity-20">calendar_today</span>
-                                <p className="font-bold text-lg">No classes found in the timetable</p>
-                                <p className="text-sm">The admin hasn't generated your schedule yet, or you have no duties assigned.</p>
+                            <div className="flex flex-col items-center justify-center p-20 text-slate-400 gap-4 border-2 border-dashed border-slate-100 rounded-3xl">
+                                <span className="material-symbols-outlined text-6xl opacity-10">calendar_today</span>
+                                <p className="font-bold text-lg text-slate-300">No classes found in the record</p>
+                                <p className="text-xs max-w-xs text-center leading-relaxed">The admin hasn't finalized your schedule yet. Please coordinate with the department coordinator.</p>
                             </div>
                         ) : (
-                            <TimetableGrid timetable={timetableMatrix} />
+                            <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                                {view === 'Weekly' ? (
+                                    <>
+                                        <TimetableGrid timetable={timetableMatrix} />
+                                        <TimetableLegend entries={entries} />
+                                    </>
+                                ) : renderDayView()}
+                            </div>
                         )}
                     </div>
 
