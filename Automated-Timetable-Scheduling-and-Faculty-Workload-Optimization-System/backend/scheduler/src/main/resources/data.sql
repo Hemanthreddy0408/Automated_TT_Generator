@@ -1,0 +1,24 @@
+-- Sample data for development
+
+-- Insert Rooms
+INSERT INTO rooms (name, code, building, floor, type, capacity, status, active, wheelchair_accessible) VALUES
+('Lecture Hall 101', 'LH101', 'Main Building', '1st Floor', 'LECTURE', 100, 'PUBLISHED', true, true),
+('Computer Lab 1', 'CL101', 'CS Building', 'Ground Floor', 'LAB', 30, 'PUBLISHED', true, false),
+('Seminar Room A', 'SR-A', 'Admin Building', '2nd Floor', 'SEMINAR', 20, 'PUBLISHED', true, true),
+('Lecture Hall 102', 'LH102', 'Main Building', '1st Floor', 'LECTURE', 80, 'PUBLISHED', true, false),
+('Physics Lab', 'PL101', 'Science Building', '1st Floor', 'LAB', 25, 'PUBLISHED', true, false);
+
+-- Insert Subjects
+INSERT INTO subjects (code, name, department, credits, faculty_count, lecture_hours_per_week, tutorial_hours_per_week, lab_hours_per_week, elective) VALUES
+('CS101', 'Introduction to Programming', 'Computer Science', 4, 2, 3, 1, 2, false),
+('CS201', 'Data Structures', 'Computer Science', 4, 2, 3, 1, 2, false),
+('CS301', 'Algorithms', 'Computer Science', 4, 2, 3, 1, 0, false),
+('MATH101', 'Calculus I', 'Mathematics', 4, 1, 4, 0, 0, false),
+('PHYS101', 'Physics I', 'Physics', 4, 1, 3, 1, 2, false);
+
+-- Insert Faculty
+INSERT INTO faculty (name, email, department, designation, employee_id, max_hours_per_day, max_hours_per_week, specialization, active) VALUES
+('Dr. John Smith', 'john.smith@university.edu', 'Computer Science', 'Professor', 'CS001', 6, 30, 'Machine Learning', true),
+('Dr. Jane Doe', 'jane.doe@university.edu', 'Computer Science', 'Associate Professor', 'CS002', 6, 30, 'Data Structures', true),
+('Prof. Bob Wilson', 'bob.wilson@university.edu', 'Mathematics', 'Professor', 'MATH001', 6, 30, 'Calculus', true),
+('Dr. Alice Brown', 'alice.brown@university.edu', 'Physics', 'Assistant Professor', 'PHYS001', 6, 30, 'Quantum Physics', true);
