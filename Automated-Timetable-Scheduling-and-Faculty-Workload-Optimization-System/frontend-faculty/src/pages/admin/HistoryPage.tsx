@@ -12,6 +12,9 @@ import {
   Zap,
   Edit,
   History,
+  FileSpreadsheet,
+  FileText,
+  ChevronDown,
 } from 'lucide-react';
 
 import {
@@ -26,10 +29,19 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 type HistoryType = 'MANUAL' | 'SYSTEM' | 'EXPORT';
 
@@ -43,7 +55,7 @@ type HistoryEntry = {
   timestamp: string;
   date: string;
   rollback: boolean;
-  avatar?: string; 
+  avatar?: string;
 };
 
 const DATA: HistoryEntry[] = [
@@ -97,9 +109,9 @@ export default function HistoryPage() {
   const [pageSize, setPageSize] = useState(5);
   const [page, setPage] = useState(1);
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
-  from: new Date(2024, 7, 1),
-  to: new Date(2024, 7, 30),
-});
+    from: new Date(2024, 7, 1),
+    to: new Date(2024, 7, 30),
+  });
 
 
   /* ---------- FILTER LOGIC ---------- */
@@ -123,174 +135,235 @@ export default function HistoryPage() {
     page * pageSize
   );
 
+  /* ---------- EXPORT LOGIC ---------- */
+  const getExportData = () => filtered.map(row => ({
+    User: row.user,
+    Role: row.role,
+    Action: row.action,
+    Description: row.description,
+    Type: row.type,
+    Timestamp: row.timestamp,
+    Date: row.date,
+  }));
+
+  const exportToCSV = () => {
+    const ws = XLSX.utils.json_to_sheet(getExportData());
+    const csv = XLSX.utils.sheet_to_csv(ws);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'AuditLog_History.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const exportToExcel = () => {
+    const ws = XLSX.utils.json_to_sheet(getExportData());
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Audit Log');
+    XLSX.writeFile(wb, 'AuditLog_History.xlsx');
+  };
+
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    doc.text('History & Audit Log', 14, 15);
+    autoTable(doc, {
+      head: [['User', 'Role', 'Action', 'Description', 'Type', 'Timestamp', 'Date']],
+      body: filtered.map(row => [
+        row.user, row.role, row.action, row.description, row.type, row.timestamp, row.date
+      ]),
+      startY: 20,
+      styles: { fontSize: 8 },
+    });
+    doc.save('AuditLog_History.pdf');
+  };
+
   return (
     <AdminLayout
       title="History & Audit Log"
       subtitle="Track all scheduling actions and system changes"
     >
       <div className="space-y-8 p-6">
-      {/* STATS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {/* Total Actions */}
-        <Card className="rounded-xl shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-8 flex justify-between items-start">
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-muted-foreground">Total Actions</p>
-              <p className="text-3xl font-bold mt-2">1,284</p>
-              <p className="text-xs text-green-600 font-medium">↗ +12% this week</p>
-            </div>
-            <div className="bg-blue-100 text-blue-600 p-4 rounded-xl">
-              <List className="h-6 w-6" />
-            </div>
-          </CardContent>
-        </Card>
+        {/* STATS */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {/* Total Actions */}
+          <Card className="rounded-xl shadow-sm hover:shadow-md transition-shadow">
+            <CardContent className="p-8 flex justify-between items-start">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-muted-foreground">Total Actions</p>
+                <p className="text-3xl font-bold mt-2">1,284</p>
+                <p className="text-xs text-green-600 font-medium">↗ +12% this week</p>
+              </div>
+              <div className="bg-blue-100 text-blue-600 p-4 rounded-xl">
+                <List className="h-6 w-6" />
+              </div>
+            </CardContent>
+          </Card>
 
-        {/* Automated */}
-        <Card className="rounded-xl shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-8 flex justify-between items-start">
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-muted-foreground">Automated</p>
-              <p className="text-3xl font-bold mt-2">452</p>
-              <p className="text-xs text-muted-foreground font-medium">
-                Generated versions
-              </p>
-            </div>
-            <div className="bg-purple-100 text-purple-600 p-4 rounded-xl">
-              <Zap className="h-6 w-6" />
-            </div>
-          </CardContent>
-        </Card>
+          {/* Automated */}
+          <Card className="rounded-xl shadow-sm hover:shadow-md transition-shadow">
+            <CardContent className="p-8 flex justify-between items-start">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-muted-foreground">Automated</p>
+                <p className="text-3xl font-bold mt-2">452</p>
+                <p className="text-xs text-muted-foreground font-medium">
+                  Generated versions
+                </p>
+              </div>
+              <div className="bg-purple-100 text-purple-600 p-4 rounded-xl">
+                <Zap className="h-6 w-6" />
+              </div>
+            </CardContent>
+          </Card>
 
-        {/* Manual Edits */}
-        <Card className="rounded-xl shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-8 flex justify-between items-start">
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-muted-foreground">Manual Edits</p>
-              <p className="text-3xl font-bold mt-2">832</p>
-              <p className="text-xs text-muted-foreground font-medium">
-                Direct adjustments
-              </p>
-            </div>
-            <div className="bg-amber-100 text-amber-600 p-4 rounded-xl">
-              <Edit className="h-6 w-6" />
-            </div>
-          </CardContent>
-        </Card>
+          {/* Manual Edits */}
+          <Card className="rounded-xl shadow-sm hover:shadow-md transition-shadow">
+            <CardContent className="p-8 flex justify-between items-start">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-muted-foreground">Manual Edits</p>
+                <p className="text-3xl font-bold mt-2">832</p>
+                <p className="text-xs text-muted-foreground font-medium">
+                  Direct adjustments
+                </p>
+              </div>
+              <div className="bg-amber-100 text-amber-600 p-4 rounded-xl">
+                <Edit className="h-6 w-6" />
+              </div>
+            </CardContent>
+          </Card>
 
-        {/* Rollbacks */}
-        <Card className="rounded-xl shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-8 flex justify-between items-start">
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-muted-foreground">Rollbacks</p>
-              <p className="text-3xl font-bold mt-2">24</p>
-              <p className="text-xs text-muted-foreground font-medium">
-                Changes reverted
-              </p>
-            </div>
-            <div className="bg-red-100 text-red-600 p-4 rounded-xl">
-              <History className="h-6 w-6" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          {/* Rollbacks */}
+          <Card className="rounded-xl shadow-sm hover:shadow-md transition-shadow">
+            <CardContent className="p-8 flex justify-between items-start">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-muted-foreground">Rollbacks</p>
+                <p className="text-3xl font-bold mt-2">24</p>
+                <p className="text-xs text-muted-foreground font-medium">
+                  Changes reverted
+                </p>
+              </div>
+              <div className="bg-red-100 text-red-600 p-4 rounded-xl">
+                <History className="h-6 w-6" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-      {/* FILTER BAR */}
-      <Card className="rounded-xl shadow-sm mb-8">
-        <CardContent className="px-8 py-6">
-          <div className="flex flex-wrap items-center gap-4">
+        {/* FILTER BAR */}
+        <Card className="rounded-xl shadow-sm mb-8">
+          <CardContent className="px-8 py-6">
+            <div className="flex flex-wrap items-center gap-4">
 
-            {/* Filters label */}
-            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <Filter className="h-4 w-4" />
-              <span>Filters:</span>
-            </div>
+              {/* Filters label */}
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <Filter className="h-4 w-4" />
+                <span>Filters:</span>
+              </div>
 
-            {/* Action Type */}
-            <Select
-              value={typeFilter}
-              onValueChange={(v) => setTypeFilter(v as 'ALL' | HistoryType)}
-            >
-              <SelectTrigger className="w-[190px] rounded-full border bg-background px-5 py-3 text-sm font-medium">
-                <SelectValue placeholder="All Action Types" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">All Action Types</SelectItem>
-                <SelectItem value="MANUAL">Manual</SelectItem>
-                <SelectItem value="SYSTEM">System</SelectItem>
-                <SelectItem value="EXPORT">Export</SelectItem>
-              </SelectContent>
-            </Select>
+              {/* Action Type */}
+              <Select
+                value={typeFilter}
+                onValueChange={(v) => setTypeFilter(v as 'ALL' | HistoryType)}
+              >
+                <SelectTrigger className="w-[190px] rounded-full border bg-background px-5 py-3 text-sm font-medium">
+                  <SelectValue placeholder="All Action Types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All Action Types</SelectItem>
+                  <SelectItem value="MANUAL">Manual</SelectItem>
+                  <SelectItem value="SYSTEM">System</SelectItem>
+                  <SelectItem value="EXPORT">Export</SelectItem>
+                </SelectContent>
+              </Select>
 
-            {/* Users */}
-            <Select disabled>
-              <SelectTrigger className="w-[150px] rounded-full border bg-background px-5 py-3 text-sm font-medium opacity-70">
-                <SelectValue placeholder="All Users" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">All Users</SelectItem>
-              </SelectContent>
-            </Select>
+              {/* Users */}
+              <Select disabled>
+                <SelectTrigger className="w-[150px] rounded-full border bg-background px-5 py-3 text-sm font-medium opacity-70">
+                  <SelectValue placeholder="All Users" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All Users</SelectItem>
+                </SelectContent>
+              </Select>
 
-            {/* Date Range */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <button className="flex items-center gap-3 rounded-full border bg-background px-5 py-3 text-sm font-medium">
-                  <span className="material-icons text-base text-muted-foreground">
-                    calendar_today
-                  </span>
-                  <span>
-                    {dateRange?.from && dateRange?.to
-                      ? `${format(dateRange.from, "MMM d, yyyy")} - ${format(
+              {/* Date Range */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className="flex items-center gap-3 rounded-full border bg-background px-5 py-3 text-sm font-medium">
+                    <span className="material-icons text-base text-muted-foreground">
+                      calendar_today
+                    </span>
+                    <span>
+                      {dateRange?.from && dateRange?.to
+                        ? `${format(dateRange.from, "MMM d, yyyy")} - ${format(
                           dateRange.to,
                           "MMM d, yyyy"
                         )}`
-                      : "Select date range"}
-                  </span>
-                </button>
-              </PopoverTrigger>
+                        : "Select date range"}
+                    </span>
+                  </button>
+                </PopoverTrigger>
 
-              <PopoverContent className="p-2" align="start">
-                <Calendar
-                  mode="range"
-                  selected={dateRange}
-                  onSelect={setDateRange}
-                  numberOfMonths={2}
-                />
-              </PopoverContent>
-            </Popover>
+                <PopoverContent className="p-2" align="start">
+                  <Calendar
+                    mode="range"
+                    selected={dateRange}
+                    onSelect={setDateRange}
+                    numberOfMonths={2}
+                  />
+                </PopoverContent>
+              </Popover>
 
-            {/* Show entries */}
-            <Select
-              value={String(pageSize)}
-              onValueChange={(v) => {
-                setPageSize(Number(v));
-                setPage(1);
-              }}
-            >
-              <SelectTrigger className="w-[130px] rounded-full border bg-background px-5 py-3 text-sm font-medium">
-                <SelectValue placeholder="Show 5" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="3">Show 3</SelectItem>
-                <SelectItem value="5">Show 5</SelectItem>
-                <SelectItem value="10">Show 10</SelectItem>
-                <SelectItem value="25">Show 25</SelectItem>
-              </SelectContent>
-            </Select>
+              {/* Show entries */}
+              <Select
+                value={String(pageSize)}
+                onValueChange={(v) => {
+                  setPageSize(Number(v));
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger className="w-[130px] rounded-full border bg-background px-5 py-3 text-sm font-medium">
+                  <SelectValue placeholder="Show 5" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="3">Show 3</SelectItem>
+                  <SelectItem value="5">Show 5</SelectItem>
+                  <SelectItem value="10">Show 10</SelectItem>
+                  <SelectItem value="25">Show 25</SelectItem>
+                </SelectContent>
+              </Select>
 
-            {/* Export */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="ml-auto gap-2 rounded-full px-4 py-3 text-muted-foreground hover:bg-muted/50"
-            >
-              <Download className="h-4 w-4" />
-              Export CSV
-            </Button>
+              {/* Export Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="ml-auto gap-2 rounded-full px-4 py-3 text-muted-foreground hover:bg-muted/50"
+                  >
+                    <Download className="h-4 w-4" />
+                    Export
+                    <ChevronDown className="h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={exportToCSV} className="gap-2">
+                    <FileText className="h-4 w-4" /> CSV
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={exportToExcel} className="gap-2">
+                    <FileSpreadsheet className="h-4 w-4" /> Excel
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={exportToPDF} className="gap-2">
+                    <FileText className="h-4 w-4" /> PDF
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
-          </div>
-        </CardContent>
-      </Card>
+            </div>
+          </CardContent>
+        </Card>
 
 
         {/* TABLE */}
@@ -406,7 +479,7 @@ export default function HistoryPage() {
         </Card>
 
 
-        </div>
+      </div>
     </AdminLayout>
   );
 }

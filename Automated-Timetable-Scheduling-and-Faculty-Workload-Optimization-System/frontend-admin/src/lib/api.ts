@@ -231,6 +231,40 @@ export const getAuditLogs = async (): Promise<AuditLog[]> => {
   }
 };
 
+export interface UpdateAuditLogRequest {
+  id: number;
+  description: string;
+  lastModifiedTimestamp: string;
+}
+
+export interface UpdateAuditLogResponse {
+  success: boolean;
+  hasConflict: boolean;
+  message: string;
+  data?: AuditLog;
+  currentData?: AuditLog;
+}
+
+export const updateAuditLog = async (payload: UpdateAuditLogRequest): Promise<UpdateAuditLogResponse> => {
+  try {
+    const res = await API.put(`/audit-logs/${payload.id}`, {
+      description: payload.description,
+      lastModifiedTimestamp: payload.lastModifiedTimestamp,
+    });
+    return res.data;
+  } catch (error: any) {
+    if (error.response && error.response.status === 409) {
+      // Conflict detected
+      return error.response.data;
+    }
+    return {
+      success: false,
+      hasConflict: false,
+      message: error.response?.data?.error || "Failed to update audit log",
+    };
+  }
+};
+
 /* ===========================
    AUTHENTICATION API
    =========================== */

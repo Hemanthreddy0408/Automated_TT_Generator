@@ -12,6 +12,9 @@ import {
   Zap,
   Edit,
   History,
+  FileSpreadsheet,
+  FileText,
+  ChevronDown,
 } from 'lucide-react';
 
 import {
@@ -26,11 +29,20 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { getAuditLogs, AuditLog } from "@/lib/api";
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 type HistoryType = 'MANUAL' | 'SYSTEM' | 'EXPORT';
 
@@ -45,6 +57,7 @@ type HistoryEntry = {
   date: string;
   rollback: boolean;
   avatar?: string;
+  dbTimestamp: string; // Store the DB timestamp for conflict detection
 };
 
 const badgeStyle: Record<HistoryType, string> = {
@@ -59,27 +72,30 @@ export default function HistoryPage() {
   const [pageSize, setPageSize] = useState(5);
   const [page, setPage] = useState(1);
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: new Date(2024, 0, 1), // Start from Jan 2024
-    to: new Date(2027, 0, 1), // To Jan 2027
+    from: new Date(2024, 0, 1),
+    to: new Date(2027, 0, 1),
   });
 
   const [logs, setLogs] = useState<HistoryEntry[]>([]);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedEntry, setSelectedEntry] = useState<HistoryEntry | null>(null);
+  const [editedDescription, setEditedDescription] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [conflictError, setConflictError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   /**
    * Fetch audit logs from the backend on component mount.
-   * Cleans and maps the database records into a format suitable for the UI table.
    */
   useEffect(() => {
     getAuditLogs().then(data => {
       if (!Array.isArray(data)) return;
 
       const mapped: HistoryEntry[] = data.map(log => {
-        // Robustness: Handle potential null/undefined fields from API
         const rawTime = log.timestamp || new Date().toISOString();
         const cleanDesc = log.description || "No description provided";
         const cleanUser = log.userEmail || "Unknown User";
 
-        // Convert Postgres/Jackson timestamp -> Standard ISO for Date object
         const isoTime = rawTime.includes('T') ? rawTime : rawTime.replace(' ', 'T');
         const dateObj = new Date(isoTime);
 
@@ -93,7 +109,16 @@ export default function HistoryPage() {
           timestamp: isNaN(dateObj.getTime()) ? "00:00" : dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           date: isNaN(dateObj.getTime()) ? "Long ago" : dateObj.toLocaleDateString(),
           rollback: false,
-          avatar: undefined
+          avatar: undefined,
+          dbTimestamp: isNaN(dateObj.getTime()) ? "" : dateObj.toLocaleString('en-US', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+          }).replace(/(\d+)\/(\d+)\/(\d+),\s(\d+):(\d+):(\d+)/, '$3-$1-$2 $4:$5:$6'),
         };
       });
       setLogs(mapped);
@@ -122,6 +147,51 @@ export default function HistoryPage() {
     (page - 1) * pageSize,
     page * pageSize
   );
+
+  /* ---------- EXPORT LOGIC ---------- */
+  const getExportData = () => filtered.map(row => ({
+    User: row.user,
+    Role: row.role,
+    Action: row.action,
+    Description: row.description,
+    Type: row.type,
+    Timestamp: row.timestamp,
+    Date: row.date,
+  }));
+
+  const exportToCSV = () => {
+    const ws = XLSX.utils.json_to_sheet(getExportData());
+    const csv = XLSX.utils.sheet_to_csv(ws);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'AuditLog_History.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const exportToExcel = () => {
+    const ws = XLSX.utils.json_to_sheet(getExportData());
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Audit Log');
+    XLSX.writeFile(wb, 'AuditLog_History.xlsx');
+  };
+
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    doc.text('History & Audit Log', 14, 15);
+    autoTable(doc, {
+      head: [['User', 'Role', 'Action', 'Description', 'Type', 'Timestamp', 'Date']],
+      body: filtered.map(row => [
+        row.user, row.role, row.action, row.description, row.type, row.timestamp, row.date
+      ]),
+      startY: 20,
+      styles: { fontSize: 8 },
+    });
+    doc.save('AuditLog_History.pdf');
+  };
 
   return (
     <AdminLayout
@@ -278,15 +348,31 @@ export default function HistoryPage() {
                 </SelectContent>
               </Select>
 
-              {/* Export */}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="ml-auto gap-2 rounded-full px-4 py-3 text-muted-foreground hover:bg-muted/50"
-              >
-                <Download className="h-4 w-4" />
-                Export CSV
-              </Button>
+              {/* Export Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="ml-auto gap-2 rounded-full px-4 py-3 text-muted-foreground hover:bg-muted/50"
+                  >
+                    <Download className="h-4 w-4" />
+                    Export
+                    <ChevronDown className="h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={exportToCSV} className="gap-2">
+                    <FileText className="h-4 w-4" /> CSV
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={exportToExcel} className="gap-2">
+                    <FileSpreadsheet className="h-4 w-4" /> Excel
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={exportToPDF} className="gap-2">
+                    <FileText className="h-4 w-4" /> PDF
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
             </div>
           </CardContent>
@@ -366,20 +452,27 @@ export default function HistoryPage() {
 
                     {/* ACTION */}
                     <td className="px-8 py-6 text-right">
-                      {row.rollback ? (
+                      <div className="flex items-center gap-2 justify-end">
                         <Button
                           variant="outline"
                           size="sm"
                           className="rounded-full gap-2 px-4 py-2 font-medium hover:bg-primary hover:text-primary-foreground transition-colors"
+                          onClick={() => handleEditClick(row)}
                         >
-                          <RotateCcw className="h-4 w-4" />
-                          Rollback
+                          <Edit className="h-4 w-4" />
+                          Edit
                         </Button>
-                      ) : (
-                        <span className="text-xs italic text-muted-foreground font-medium">
-                          No rollback available
-                        </span>
-                      )}
+                        {row.rollback && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="rounded-full gap-2 px-4 py-2 font-medium hover:bg-primary hover:text-primary-foreground transition-colors"
+                          >
+                            <RotateCcw className="h-4 w-4" />
+                            Rollback
+                          </Button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -394,18 +487,127 @@ export default function HistoryPage() {
               </span>
 
               <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" className="h-9 w-9 p-0 rounded-full hover:bg-muted">‹</Button>
-                <Button className="rounded-full h-9 w-9 p-0 bg-primary text-primary-foreground hover:bg-primary/90">1</Button>
-                <Button variant="ghost" className="rounded-full h-9 w-9 p-0 hover:bg-muted">2</Button>
-                <Button variant="ghost" className="rounded-full h-9 w-9 p-0 hover:bg-muted">3</Button>
-                <span className="px-2">…</span>
-                <Button variant="ghost" size="sm" className="h-9 w-9 p-0 rounded-full hover:bg-muted">›</Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-9 w-9 p-0 rounded-full hover:bg-muted"
+                  onClick={() => setPage(Math.max(1, page - 1))}
+                  disabled={page === 1}
+                >
+                  ‹
+                </Button>
+                {Array.from({ length: Math.min(3, totalPages) }, (_, i) => (
+                  <Button
+                    key={i + 1}
+                    variant={page === i + 1 ? "default" : "ghost"}
+                    size="sm"
+                    className="rounded-full h-9 w-9 p-0"
+                    onClick={() => setPage(i + 1)}
+                  >
+                    {i + 1}
+                  </Button>
+                ))}
+                {totalPages > 3 && <span className="px-2">…</span>}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-9 w-9 p-0 rounded-full hover:bg-muted"
+                  onClick={() => setPage(Math.min(totalPages, page + 1))}
+                  disabled={page === totalPages}
+                >
+                  ›
+                </Button>
               </div>
             </div>
           </CardContent>
         </Card>
 
+        {/* EDIT MODAL DIALOG */}
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Edit History Entry</DialogTitle>
+              <DialogDescription>
+                Modify the description for this audit log entry. Changes will be recorded with a new timestamp.
+              </DialogDescription>
+            </DialogHeader>
 
+            {selectedEntry && (
+              <div className="space-y-6 py-4">
+                {/* Display Entry Info */}
+                <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
+                  <div>
+                    <p className="text-xs text-muted-foreground font-medium">User</p>
+                    <p className="font-semibold text-sm">{selectedEntry.user}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground font-medium">Action</p>
+                    <p className="font-semibold text-sm">{selectedEntry.action}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground font-medium">Type</p>
+                    <Badge
+                      variant="outline"
+                      className={`${badgeStyle[selectedEntry.type]} rounded-full px-4 py-1 text-xs font-semibold border-0 w-fit`}
+                    >
+                      {selectedEntry.type}
+                    </Badge>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground font-medium">Date</p>
+                    <p className="font-semibold text-sm">{selectedEntry.date} {selectedEntry.timestamp}</p>
+                  </div>
+                </div>
+
+                {/* Conflict Alert */}
+                {conflictError && (
+                  <Alert className="border-red-200 bg-red-50">
+                    <AlertTriangle className="h-4 w-4 text-red-600" />
+                    <AlertDescription className="text-red-800 ml-2">
+                      {conflictError}
+                      <p className="text-xs mt-2 font-semibold">Please refresh and try again with the latest version.</p>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {/* Description Input */}
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold">Description *</label>
+                  <Textarea
+                    placeholder="Enter updated description..."
+                    value={editedDescription}
+                    onChange={(e) => setEditedDescription(e.target.value)}
+                    className="min-h-[120px] resize-none rounded-lg"
+                    disabled={!!conflictError || isSubmitting}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {editedDescription.length} characters
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <DialogFooter className="flex gap-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setEditDialogOpen(false);
+                  setConflictError(null);
+                }}
+                disabled={isSubmitting || !!conflictError}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSaveEdit}
+                disabled={isSubmitting || !editedDescription.trim() || !!conflictError}
+                className="gap-2"
+              >
+                {isSubmitting ? "Saving..." : "Save Changes"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminLayout>
   );
