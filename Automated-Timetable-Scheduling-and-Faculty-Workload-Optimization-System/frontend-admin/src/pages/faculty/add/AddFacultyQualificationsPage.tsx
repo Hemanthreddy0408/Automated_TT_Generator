@@ -30,8 +30,8 @@ const AddFacultyQualificationsPage = () => {
 
   // 3. Initialize State
   const [selectedQualifications, setSelectedQualifications] = useState<string[]>(
-    basicInfo?.qualifications && basicInfo.qualifications.length > 0 
-      ? basicInfo.qualifications 
+    basicInfo?.qualifications && basicInfo.qualifications.length > 0
+      ? basicInfo.qualifications
       : ["Master’s"]
   );
 
@@ -72,7 +72,7 @@ const AddFacultyQualificationsPage = () => {
 
     // Save to LocalStorage
     localStorage.setItem("faculty_draft", JSON.stringify(draftData));
-    
+
     // Show confirmation and go back to list
     alert("Draft saved successfully!");
     navigate("/admin/faculty");
@@ -92,12 +92,12 @@ const AddFacultyQualificationsPage = () => {
   if (!basicInfo) return null;
 
   return (
-    <AdminLayout 
-      title="Faculty Management" 
+    <AdminLayout
+      title="Faculty Management"
       subtitle={basicInfo.id ? "Edit Qualifications" : "Add Qualifications"}
     >
       <div className="max-w-5xl mx-auto space-y-8">
-        
+
         {/* HEADER */}
         <div>
           <h2 className="text-2xl font-bold">
@@ -130,7 +130,7 @@ const AddFacultyQualificationsPage = () => {
 
         {/* CARD */}
         <div className="bg-card border rounded-xl shadow-sm overflow-hidden p-8 space-y-8">
-          
+
           {/* QUALIFICATIONS */}
           <div>
             <h3 className="font-semibold text-foreground mb-3">Academic Qualifications</h3>
@@ -214,7 +214,7 @@ const AddFacultyQualificationsPage = () => {
           {/* ACTIONS */}
           <div className="flex justify-between pt-6 border-t mt-4">
             <button
-              onClick={() => navigate(-1)} 
+              onClick={() => navigate(-1)}
               className="px-6 py-2 rounded-lg border text-muted-foreground font-semibold hover:bg-muted"
             >
               Back
@@ -222,7 +222,7 @@ const AddFacultyQualificationsPage = () => {
 
             <div className="flex gap-3">
               {/* ✅ Save Draft Button */}
-              <button 
+              <button
                 onClick={handleSaveDraft}
                 className="px-6 py-2 rounded-lg text-primary border border-primary/20 bg-primary/5 font-semibold hover:bg-primary/10"
               >

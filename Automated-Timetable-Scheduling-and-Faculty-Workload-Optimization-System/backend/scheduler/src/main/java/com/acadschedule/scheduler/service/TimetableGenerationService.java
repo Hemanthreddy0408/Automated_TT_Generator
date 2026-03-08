@@ -166,7 +166,7 @@ public class TimetableGenerationService {
 
         List<Subject> subjects = subjectRepo.findByDepartmentAndYear(section.getDepartment(), section.getYear());
 
-        List<Faculty> faculties = facultyRepo.findAll().stream().filter(Faculty::isActive).toList();
+        List<Faculty> faculties = facultyRepo.findByActiveTrue();
 
         List<Room> rooms = roomRepo.findAll().stream().filter(Room::isActive).toList();
 
@@ -587,7 +587,7 @@ public class TimetableGenerationService {
                             "TIMETABLE_MASTER_GENERATED");
 
                     // Notify all faculty about the new timetable
-                    List<Faculty> activeFaculties = facultyRepo.findAll().stream().filter(Faculty::isActive).toList();
+                    List<Faculty> activeFaculties = facultyRepo.findByActiveTrue();
                     for (Faculty f : activeFaculties) {
                         notificationService.createFacultyNotification(
                                 f.getId(),

@@ -101,12 +101,12 @@ export function FacultyTable({
                   variant="outline"
                   className={cn(
                     'font-medium',
-                    member.isActive
+                    (member.isActive || (member as any).active)
                       ? 'status-active'
                       : 'status-inactive'
                   )}
                 >
-                  {member.isActive ? 'Active' : 'Inactive'}
+                  {(member.isActive || (member as any).active) ? 'Active' : 'Inactive'}
                 </Badge>
               </TableCell>
               <TableCell>

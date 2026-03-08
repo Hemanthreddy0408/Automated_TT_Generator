@@ -29,7 +29,11 @@ export default function AddFacultyPage() {
   }, [editData, navigate]);
 
   // 2. Initialize State (Now including Setters for Workload)
-  const [isActive, setIsActive] = useState(editData?.isActive ?? true);
+  const [isActive, setIsActive] = useState(
+    editData?.isActive !== undefined
+      ? editData.isActive
+      : (editData?.active !== undefined ? editData.active : true)
+  );
   const [name, setName] = useState(editData?.name || "");
   const [email, setEmail] = useState(editData?.email || "");
   const [department, setDepartment] = useState(editData?.department || "");

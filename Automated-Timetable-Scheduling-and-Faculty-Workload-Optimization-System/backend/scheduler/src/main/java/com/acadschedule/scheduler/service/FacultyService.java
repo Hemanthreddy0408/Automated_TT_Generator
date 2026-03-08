@@ -1,8 +1,10 @@
 package com.acadschedule.scheduler.service;
 
 import com.acadschedule.scheduler.entity.Faculty;
-import com.acadschedule.scheduler.repository.FacultyRepository;
+import com.acadschedule.scheduler.repository.*;
 import org.springframework.stereotype.Service;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -11,14 +13,29 @@ public class FacultyService {
 
     private final FacultyRepository facultyRepository;
     private final AuditLogService auditLogService;
-    private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
+    private final SectionRepository sectionRepository;
+    private final LeaveRepository leaveRepository;
+    private final SubjectRepository subjectRepository;
+    private final TimetableRepository timetableRepository;
+    private final NotificationRepository notificationRepository;
 
     public FacultyService(FacultyRepository facultyRepository,
             AuditLogService auditLogService,
-            org.springframework.security.crypto.password.PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder,
+            SectionRepository sectionRepository,
+            LeaveRepository leaveRepository,
+            SubjectRepository subjectRepository,
+            TimetableRepository timetableRepository,
+            NotificationRepository notificationRepository) {
         this.facultyRepository = facultyRepository;
         this.auditLogService = auditLogService;
         this.passwordEncoder = passwordEncoder;
+        this.sectionRepository = sectionRepository;
+        this.leaveRepository = leaveRepository;
+        this.subjectRepository = subjectRepository;
+        this.timetableRepository = timetableRepository;
+        this.notificationRepository = notificationRepository;
     }
 
     /**
@@ -116,9 +133,38 @@ public class FacultyService {
     /**
      * Delete a faculty member and log the action.
      */
+    @Transactional
     public void deleteFaculty(Long id) {
         Faculty faculty = getFacultyById(id);
         
+        // 1. CLEAR SECTION MENTORSHIP
+        sectionRepository.findAll().stream()
+                .filter(s -> id.equals(s.getMentorId()))
+                .forEach(s -> {
+                    s.setMentorId(null);
+                    sectionRepository.save(s);
+                });
+
+        // 2. DELETE RELATED DATA VIA REPOS
+        timetableRepository.deleteByFacultyName(faculty.getName());
+        leaveRepository.deleteByFacultyId(id);
+
+        // 3. REMOVE FROM SUBJECT ELIGIBILITY
+        subjectRepository.findAll().forEach(subject -> {
+            boolean modified = subject.getEligibleFaculty().removeIf(fId -> 
+                fId.equals(String.valueOf(id)) || fId.equals(faculty.getEmployeeId())
+            );
+            if (modified) {
+                subjectRepository.save(subject);
+            }
+        });
+
+        // 4. DELETE NOTIFICATIONS
+        notificationRepository.findAll().stream()
+                .filter(n -> n.getFaculty() != null && id.equals(n.getFaculty().getId()))
+                .forEach(notificationRepository::delete);
+
+        // 5. FINALLY DELETE THE FACULTY
         facultyRepository.delete(faculty);
         
         auditLogService.logAction("FACULTY", "DELETE",

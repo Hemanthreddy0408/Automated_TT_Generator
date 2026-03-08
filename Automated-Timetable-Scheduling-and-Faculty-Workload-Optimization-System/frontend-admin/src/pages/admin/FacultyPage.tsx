@@ -30,8 +30,9 @@ import {
 } from 'lucide-react';
 
 // API & Types
-import { getFaculty, deleteFaculty } from '@/lib/api';
+import { getFaculty, deleteFaculty, updateFaculty } from '@/lib/api';
 import { Faculty } from '@/types/timetable';
+import { toast } from 'sonner';
 
 // Export Libraries
 import * as XLSX from 'xlsx';
@@ -59,6 +60,7 @@ export default function FacultyPage() {
         const formattedData: Faculty[] = (Array.isArray(data) ? data : []).map((f: any) => ({
           ...f,
           id: f.id || 0,
+          isActive: f.isActive !== undefined ? f.isActive : (f.active !== undefined ? f.active : true),
           qualifications: f.qualifications || [],
           specialization: f.specialization || '',
           eligibleSubjects: f.eligibleSubjects || [],
@@ -179,11 +181,13 @@ export default function FacultyPage() {
       try {
         await deleteFaculty(facultyMember.id);
         setFaculty((prev) => prev.filter((f) => f.id !== facultyMember.id));
+        toast.success("Faculty deleted successfully");
       } catch (error) {
-        alert("Failed to delete faculty member.");
+        toast.error("Failed to delete faculty member.");
       }
     }
   };
+
 
   if (loading) return <AdminLayout title="Faculty"><p>Loading...</p></AdminLayout>;
 
@@ -206,7 +210,8 @@ export default function FacultyPage() {
   });
 
   const activeFacultyCount = faculty.filter((f) => f.isActive || (f as any).active).length;
-  const avgSessionsPerFaculty = activeFacultyCount === 0 ? '0.0' : (0 / activeFacultyCount).toFixed(1);
+  const totalSessions = faculty.reduce((sum, f) => sum + (f.facultyCount || 0), 0);
+  const avgSessionsPerFaculty = activeFacultyCount === 0 ? '0.0' : (totalSessions / activeFacultyCount).toFixed(1);
 
   // ---------------- UI ----------------
   return (

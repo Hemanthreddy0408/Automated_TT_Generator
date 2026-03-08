@@ -2,12 +2,15 @@ import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { useNavigate, useLocation } from "react-router-dom";
 import { createFaculty, updateFaculty } from "@/lib/api";
+import { Switch } from "@/components/ui/switch";
+import { useState } from "react";
 
 export default function AddFacultyReviewPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
   const finalData = location.state;
+  const [isActive, setIsActive] = useState(finalData?.isActive ?? true);
 
   if (!finalData) {
     return (
@@ -22,17 +25,19 @@ export default function AddFacultyReviewPage() {
 
   const handleConfirmRegistration = async () => {
     try {
-      const payload = { ...finalData };
+      const payload = { ...finalData, isActive };
 
-      // Always remove ID for new registration
-      delete payload.id;
-
-      console.log("Creating New Faculty:", payload);
-
-      await createFaculty(payload);
+      if (finalData.id) {
+        console.log("Updating Existing Faculty:", payload);
+        await updateFaculty(finalData.id, payload);
+      } else {
+        // Always remove ID for new registration if it's 0 or null
+        if (!payload.id) delete payload.id;
+        console.log("Creating New Faculty:", payload);
+        await createFaculty(payload);
+      }
 
       localStorage.removeItem("faculty_draft");
-
       navigate("/admin/faculty");
     } catch (error) {
       console.error("Failed to save faculty:", error);
@@ -43,6 +48,7 @@ export default function AddFacultyReviewPage() {
   const handleSaveDraft = () => {
     const payload = {
       ...finalData,
+      isActive,
       id: undefined,   // 🔥 important
       savedAt: new Date().toLocaleString()
     };
@@ -97,14 +103,20 @@ export default function AddFacultyReviewPage() {
                   <p><b>Department:</b> {finalData.department}</p>
                   <p><b>Designation:</b> {finalData.designation}</p>
 
-                  <div className="flex items-center gap-2">
-                    <b>Status:</b>
-                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${finalData.isActive
-                      ? "bg-green-100 text-green-700 border border-green-200"
-                      : "bg-gray-100 text-gray-600 border border-gray-200"
-                      }`}>
-                      {finalData.isActive ? "Active" : "Inactive"}
-                    </span>
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-100 mt-4">
+                    <div>
+                      <p className="text-xs font-bold text-slate-900">Active Status</p>
+                      <p className="text-[10px] text-muted-foreground">Enabled for scheduling</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-tighter ${isActive
+                        ? "bg-green-100 text-green-700 border border-green-200"
+                        : "bg-gray-100 text-gray-600 border border-gray-200"
+                        }`}>
+                        {isActive ? "Active" : "Inactive"}
+                      </span>
+                      <Switch checked={isActive} onCheckedChange={setIsActive} />
+                    </div>
                   </div>
                 </div>
               </section>

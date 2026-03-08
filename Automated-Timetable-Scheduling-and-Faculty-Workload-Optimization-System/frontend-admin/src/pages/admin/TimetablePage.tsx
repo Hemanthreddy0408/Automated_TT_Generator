@@ -6,7 +6,7 @@ import { TimetableEntry } from "@/components/timetable/TimetableGrid";
 import { TimetableView } from "@/components/timetable/TimetableView";
 import { generateTimetable, generateAllTimetables, getTimetable, getSections, updateTimetableEntry } from "@/lib/api";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { Loader2, Users, School, Calendar, Coffee, Utensils } from "lucide-react";
+import { Loader2, Users, School, Calendar, Coffee, Utensils, Sparkles } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Section } from "@/types/timetable";
 import { EditEntryModal } from "@/components/timetable/EditEntryModal";
@@ -239,9 +239,13 @@ export default function TimetablePage() {
             Generate Section
           </Button>
 
-          <Button onClick={handleGenerateAll} disabled={loading} className="bg-purple-600 hover:bg-purple-700">
-            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Calendar className="mr-2 h-4 w-4" />}
-            Generate All
+          <Button
+            onClick={handleGenerateAll}
+            disabled={loading}
+            className="gap-2 bg-[#0F1B2D] hover:bg-[#1B2A41] text-white shadow-md"
+          >
+            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+            Optimize Timetable
           </Button>
         </div>
       }
