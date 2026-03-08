@@ -34,10 +34,10 @@ public class SecurityConfig {
         // ✅ Spring Boot 3 / Spring Security 6 REQUIRED
         configuration.setAllowedOriginPatterns(List.of(
                 "http://localhost:3000",
-                "http://localhost:5173", // Frontend Vite dev server
                 "http://localhost:8080",
                 "http://localhost:8081",
-                "http://localhost:8082"));
+                "http://localhost:8082"
+        ));
 
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowedMethods(List.of("*"));
@@ -53,10 +53,11 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
         http
-                .csrf(csrf -> csrf.disable())
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .authorizeHttpRequests(auth -> auth
-                        .anyRequest().permitAll());
+            .csrf(csrf -> csrf.disable())
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .authorizeHttpRequests(auth -> auth
+                    .anyRequest().permitAll()
+            );
 
         return http.build();
     }
