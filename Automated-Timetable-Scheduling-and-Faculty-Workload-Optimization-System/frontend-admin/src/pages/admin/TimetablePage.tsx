@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { TimetableEntry } from "@/components/timetable/TimetableGrid";
 import { TimetableView } from "@/components/timetable/TimetableView";
 import { generateTimetable, generateAllTimetables, getTimetable, getSections, updateTimetableEntry } from "@/lib/api";
-import { useSearchParams, useNavigate } from "react-router-dom";
-import { Loader2, Users, School, Calendar, Coffee, Utensils, Sparkles } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
+import { Loader2, Users, School, Calendar, Coffee, Utensils, Sparkles, MapPin, GraduationCap } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Section } from "@/types/timetable";
 import { EditEntryModal } from "@/components/timetable/EditEntryModal";
@@ -34,7 +34,6 @@ import autoTable from 'jspdf-autotable';
 
 export default function TimetablePage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
   // ✅ MUST MATCH DB UUID (COPY FROM pgAdmin)
   const sectionId = searchParams.get("sectionId") || "583cb115-a010-4ce9-bb42-83092a820e";
 
@@ -45,6 +44,14 @@ export default function TimetablePage() {
   const [loading, setLoading] = useState(false);
   const [editingEntry, setEditingEntry] = useState<TimetableEntry | null>(null);
   const [isEditModalOpen, setEditModalOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'weekly' | 'day'>('weekly');
+  const [selectedDay, setSelectedDay] = useState('MONDAY');
+  const DAYS_LIST = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'];
+  const TIME_SLOTS = [
+    '09:00-09:40', '09:40-10:30', '10:30-10:45',
+    '10:45-11:35', '11:35-12:25', '12:25-01:15',
+    'LUNCH_BREAK', '02:05-02:55', '02:55-03:45', '03:45-04:35'
+  ];
 
   // 1. Helper to transform flat array to Day -> TimeSlot matrix
   const transformTimetable = (data: any[]) => {
@@ -245,7 +252,7 @@ export default function TimetablePage() {
             className="gap-2 bg-[#0F1B2D] hover:bg-[#1B2A41] text-white shadow-md"
           >
             {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-            Optimize Timetable
+            Generate All Sections
           </Button>
         </div>
       }
@@ -299,8 +306,104 @@ export default function TimetablePage() {
               </Card>
             </div>
 
-            {/* TIMETABLE VIEW (Grid + Legends) */}
-            <TimetableView entries={entries} onEdit={handleEdit} sectionId={sectionId} />
+            {/* VIEW TOGGLE */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-4 flex items-center gap-4">
+              <div className="flex gap-1 bg-slate-100 p-1 rounded-xl">
+                {(['weekly', 'day'] as const).map(mode => (
+                  <button
+                    key={mode}
+                    onClick={() => setViewMode(mode)}
+                    className={`px-5 py-2 rounded-lg text-xs font-bold transition-all ${viewMode === mode ? 'bg-white shadow-sm text-slate-900 scale-105' : 'text-slate-500 hover:text-slate-700'}`}
+                  >
+                    {mode === 'weekly' ? 'Weekly View' : 'Day View'}
+                  </button>
+                ))}
+              </div>
+              {viewMode === 'day' && (
+                <div className="flex gap-1.5">
+                  {DAYS_LIST.map(day => (
+                    <button
+                      key={day}
+                      onClick={() => setSelectedDay(day)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${selectedDay === day ? 'bg-slate-900 text-white shadow' : 'bg-slate-50 text-slate-500 hover:bg-slate-100 border border-slate-200'
+                        }`}
+                    >
+                      {day.charAt(0) + day.slice(1).toLowerCase().substring(0, 2)}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* TIMETABLE VIEW */}
+            {viewMode === 'weekly' ? (
+              <TimetableView entries={entries} onEdit={handleEdit} sectionId={sectionId} />
+            ) : (
+              /* DAY VIEW */
+              <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+                <div className="px-6 py-4 border-b bg-slate-50 flex items-center gap-3">
+                  <Calendar className="h-5 w-5 text-slate-400" />
+                  <h3 className="font-bold text-slate-800">
+                    {selectedDay.charAt(0) + selectedDay.slice(1).toLowerCase()} Schedule
+                  </h3>
+                  <span className="ml-auto text-xs text-slate-400 font-medium">
+                    {entries.filter(e => e.day === selectedDay && e.type !== 'BREAK' && e.type !== 'LUNCH').length} classes
+                  </span>
+                </div>
+                <div className="divide-y divide-slate-50">
+                  {TIME_SLOTS.map(slot => {
+                    const entry = entries.find(e => e.day === selectedDay && e.timeSlot === slot);
+                    const isBreak = slot === '10:30-10:45' || slot === 'LUNCH_BREAK';
+                    const breakLabel = slot === '10:30-10:45' ? 'Morning Break' : 'Lunch Break';
+                    if (isBreak) return (
+                      <div key={slot} className="px-6 py-3 flex items-center gap-4 bg-slate-50/70">
+                        <div className="w-28 text-[10px] font-black text-slate-300 uppercase tracking-widest">{slot === 'LUNCH_BREAK' ? '12:25 - 02:05' : slot}</div>
+                        <div className="flex items-center gap-2 text-xs text-slate-400 font-bold italic">
+                          {slot === 'LUNCH_BREAK' ? <Utensils className="h-3 w-3" /> : <Coffee className="h-3 w-3" />}
+                          {breakLabel}
+                        </div>
+                      </div>
+                    );
+                    if (!entry) return (
+                      <div key={slot} className="px-6 py-5 flex items-center gap-4 opacity-30">
+                        <div className="w-28 text-[10px] font-black text-slate-400 uppercase tracking-widest">{slot}</div>
+                        <div className="text-xs text-slate-300 italic">Free slot</div>
+                      </div>
+                    );
+                    const isLab = entry.type === 'LAB';
+                    return (
+                      <div
+                        key={slot}
+                        onClick={() => handleEdit(entry)}
+                        className="px-6 py-5 flex items-center gap-5 hover:bg-slate-50 transition-colors cursor-pointer group"
+                      >
+                        <div className="w-28 text-[10px] font-black text-slate-500 uppercase tracking-widest shrink-0">{slot}</div>
+                        <div className={`w-1.5 h-12 rounded-full shrink-0 ${isLab ? 'bg-purple-500' : 'bg-sky-500'}`} />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">{entry.subjectCode}</span>
+                            <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase ${isLab ? 'bg-purple-100 text-purple-600' : 'bg-sky-100 text-sky-600'}`}>
+                              {entry.type}
+                            </span>
+                          </div>
+                          <h4 className="text-sm font-bold text-slate-800 truncate">{entry.subjectName}</h4>
+                        </div>
+                        <div className="flex items-center gap-5 ml-auto">
+                          <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                            <GraduationCap className="h-3.5 w-3.5 opacity-50" />
+                            {entry.facultyName || 'TBA'}
+                          </div>
+                          <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                            <MapPin className="h-3.5 w-3.5 opacity-50" />
+                            {entry.roomNumber || 'TBA'}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             <EditEntryModal
               entry={editingEntry}

@@ -17,6 +17,7 @@ import RoomsPage from "./pages/admin/RoomsPage";
 import SubjectsPage from "./pages/admin/SubjectsPage";
 import ConstraintsPage from "./pages/admin/ConstraintsPage";
 import HistoryPage from "./pages/admin/HistoryPage";
+import AnalyticsPage from "./pages/admin/AnalyticsPage";
 
 
 // Add/Edit Sub-pages
@@ -236,6 +237,14 @@ const App = () => {
                   element={
                     <ProtectedRoute requiredRole="admin">
                       <HistoryPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/analytics"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <AnalyticsPage />
                     </ProtectedRoute>
                   }
                 />

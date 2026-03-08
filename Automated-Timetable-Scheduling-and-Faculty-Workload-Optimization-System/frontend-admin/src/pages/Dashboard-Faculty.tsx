@@ -1,13 +1,16 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Sidebar from '../components/layout/Sidebar';
-import { TimetableGrid, TimetableEntry } from '../components/timetable/TimetableGrid';
-import StatCard from '../components/dashboard/StatCard';
+import { TimetableGrid } from '../components/timetable/TimetableGrid';
 import { useUser } from '../context/UserContext';
-import { getFacultyTimetable } from '../lib/api';
-import { buildTimetableMatrix } from '../utils/timetableMapper';
+import { generateICS } from '../lib/icsUtils';
 import { toast } from 'sonner';
+import { getFacultyTimetable, getNotifications, markNotificationsRead } from '../lib/api';
+import { TimetableEntry } from '../components/timetable/TimetableGrid';
+import { buildTimetableMatrix } from '../utils/timetableMapper';
 import PasswordModal from '../components/auth/PasswordModal';
 import { TimetableLegend } from '../components/timetable/TimetableLegend';
+import { Bell, BellOff, CheckCheck } from 'lucide-react';
+import StatCard from '../components/dashboard/StatCard';
 
 /**
  * Faculty Dashboard Component
@@ -19,6 +22,8 @@ const Dashboard = ({ onApplyLeave }: { onApplyLeave: () => void }) => {
   const [entries, setEntries] = useState<TimetableEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [isPasswordModalOpen, setPasswordModalOpen] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     const fetchSchedule = async () => {
@@ -39,6 +44,26 @@ const Dashboard = ({ onApplyLeave }: { onApplyLeave: () => void }) => {
     };
     fetchSchedule();
   }, [user?.name]);
+
+  // Fetch notifications
+  useEffect(() => {
+    const fetchNotifs = async () => {
+      if (user?.id) {
+        const notifs = await getNotifications(user.id);
+        setNotifications(notifs);
+        setUnreadCount(notifs.filter((n: any) => !n.read).length);
+      }
+    };
+    fetchNotifs();
+  }, [user?.id]);
+
+  const handleMarkAllRead = async () => {
+    if (user?.id) {
+      await markNotificationsRead(user.id);
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      setUnreadCount(0);
+    }
+  };
 
   const timetableMatrix = useMemo(() => {
     if (!entries.length) return {};
@@ -148,18 +173,65 @@ const Dashboard = ({ onApplyLeave }: { onApplyLeave: () => void }) => {
               <TimetableLegend entries={entries} />
             </div>
 
-            <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-lg flex flex-col">
-              <h4 className="text-lg font-bold mb-8 flex items-center gap-2 text-slate-800">
-                <span className="material-symbols-outlined text-[#10b981]">analytics</span> My Workload
-              </h4>
-              <div className="space-y-2 flex-1">
-                <WorkloadProgress label="Total Hours" current={weeklyLoad} max={(user as any)?.maxHoursPerWeek || 20} color="bg-[#10b981]" />
-                <WorkloadProgress label="Theory Load" current={theoryLoad} max={(user as any)?.maxHoursPerWeek || 20} color="bg-sky-500" />
-                <WorkloadProgress label="Lab Load" current={labLoad} max={(user as any)?.maxHoursPerWeek || 20} color="bg-purple-500" />
+            <div className="flex flex-col gap-6">
+              {/* WORKLOAD PANEL */}
+              <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-lg flex flex-col">
+                <h4 className="text-lg font-bold mb-8 flex items-center gap-2 text-slate-800">
+                  <span className="material-symbols-outlined text-[#10b981]">analytics</span> My Workload
+                </h4>
+                <div className="space-y-2 flex-1">
+                  <WorkloadProgress label="Total Hours" current={weeklyLoad} max={(user as any)?.maxHoursPerWeek || 20} color="bg-[#10b981]" />
+                  <WorkloadProgress label="Theory Load" current={theoryLoad} max={(user as any)?.maxHoursPerWeek || 20} color="bg-sky-500" />
+                  <WorkloadProgress label="Lab Load" current={labLoad} max={(user as any)?.maxHoursPerWeek || 20} color="bg-purple-500" />
+                </div>
+                <div className="mt-8 p-4 bg-slate-50 rounded-2xl border border-slate-100 italic text-[11px] text-slate-400 leading-relaxed">
+                  Workload is calculated based on assigned sessions in the master timetable. Max hours are set by admin policies.
+                </div>
               </div>
 
-              <div className="mt-8 p-4 bg-slate-50 rounded-2xl border border-slate-100 italic text-[11px] text-slate-400 leading-relaxed">
-                Workload is calculated based on assigned sessions in the master timetable. Max hours are set by admin policies.
+              {/* NOTIFICATIONS PANEL */}
+              <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-lg flex flex-col">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                    <Bell className="h-4 w-4 text-[#10b981]" />
+                    Notifications
+                    {unreadCount > 0 && (
+                      <span className="bg-red-500 text-white text-[9px] font-black rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </h4>
+                  {unreadCount > 0 && (
+                    <button
+                      onClick={handleMarkAllRead}
+                      className="flex items-center gap-1 text-[10px] font-bold text-slate-400 hover:text-slate-600 transition-colors"
+                    >
+                      <CheckCheck className="h-3 w-3" /> Mark all read
+                    </button>
+                  )}
+                </div>
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                  {notifications.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-6 text-slate-300 gap-2">
+                      <BellOff className="h-6 w-6" />
+                      <p className="text-[11px] font-medium">No notifications yet</p>
+                    </div>
+                  ) : (
+                    notifications.map((n: any) => (
+                      <div
+                        key={n.id}
+                        className={`p-3 rounded-xl border text-[11px] leading-snug transition-colors ${n.read ? 'bg-slate-50 border-slate-100 text-slate-500' : 'bg-[#10b981]/5 border-[#10b981]/20 text-slate-700'
+                          }`}
+                      >
+                        <p className="font-bold mb-0.5">{n.title}</p>
+                        <p className="opacity-70 line-clamp-2">{n.message}</p>
+                        {n.createdAt && (
+                          <p className="opacity-40 text-[9px] mt-1">{new Date(n.createdAt).toLocaleString()}</p>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
             </div>
           </div>

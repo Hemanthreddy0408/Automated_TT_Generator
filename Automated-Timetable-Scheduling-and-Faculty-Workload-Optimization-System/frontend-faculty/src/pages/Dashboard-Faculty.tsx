@@ -3,6 +3,7 @@ import Sidebar from '../components/layout/Sidebar';
 import ScheduleGrid from '../components/dashboard/ScheduleGrid';
 import StatCard from '../components/dashboard/StatCard';
 import axios from 'axios';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Faculty {
   id: number;
@@ -14,6 +15,7 @@ interface Faculty {
 }
 
 const Dashboard = ({ onApplyLeave }: { onApplyLeave: () => void }) => {
+  const { user } = useAuth();
   const [faculty, setFaculty] = useState<Faculty | null>(null);
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,13 +23,16 @@ const Dashboard = ({ onApplyLeave }: { onApplyLeave: () => void }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get('http://localhost:8083/api/faculty/1', { timeout: 5000 });
+        if (!user) return;
+
+        // Fetch detailed faculty data using authenticated user's ID
+        const response = await axios.get(`http://localhost:8083/api/faculty/${user.id}`, { timeout: 5000 });
         const fData = response.data;
         setFaculty(fData);
 
         // Fetch sessions using the faculty name
         if (fData.name) {
-          const scheduleRes = await axios.get(`http://localhost:8083/api/timetable/faculty/${fData.name}`);
+          const scheduleRes = await axios.get(`http://localhost:8083/api/timetable/faculty/${encodeURIComponent(fData.name)}`);
           setSessions(scheduleRes.data);
         }
       } catch (error) {
@@ -36,8 +41,10 @@ const Dashboard = ({ onApplyLeave }: { onApplyLeave: () => void }) => {
         setLoading(false);
       }
     };
-    fetchData();
-  }, []);
+    if (user) {
+      fetchData();
+    }
+  }, [user]);
 
   const theorySessions = sessions.filter((s: any) => s.type?.toLowerCase().includes('theory')).length;
   const labSessions = sessions.filter((s: any) => s.type?.toLowerCase().includes('lab')).length;

@@ -1,7 +1,15 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Sidebar = () => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
   const navItems = [
     { icon: 'dashboard', label: 'My Dashboard', path: '/faculty/dashboard' },
     { icon: 'event_available', label: 'My Schedule', path: '/faculty/schedule' },
@@ -36,13 +44,23 @@ const Sidebar = () => {
         ))}
       </nav>
       <div className="p-4 mt-auto border-t border-slate-800 bg-slate-900/40">
-        <div className="flex items-center gap-3 p-2 bg-slate-800/30 rounded-xl">
-          <div className="w-10 h-10 rounded-lg bg-[#10b981]/20 flex items-center justify-center text-[#10b981] font-bold">SM</div>
-          <div className="overflow-hidden">
-            <p className="text-sm font-semibold truncate">Dr. Sarah Mitchell</p>
-            <p className="text-[10px] text-slate-500 truncate uppercase font-bold tracking-tight">Associate Professor</p>
+        <div className="flex items-center gap-3 p-2 bg-slate-800/30 rounded-xl mb-4">
+          <div className="w-10 h-10 rounded-lg bg-[#10b981]/20 flex items-center justify-center text-[#10b981] font-bold">
+            {user?.name?.substring(0, 2).toUpperCase() || 'FM'}
+          </div>
+          <div className="overflow-hidden flex-1">
+            <p className="text-sm font-semibold truncate hover:text-white transition-colors cursor-pointer">{user?.name || 'Faculty Member'}</p>
+            <p className="text-[10px] text-slate-500 truncate uppercase font-bold tracking-tight">{user?.department || 'Department'}</p>
           </div>
         </div>
+
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-xl text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-colors text-sm font-bold border border-transparent hover:border-red-500/20"
+        >
+          <span className="material-symbols-outlined text-[18px]">logout</span>
+          Sign Out
+        </button>
       </div>
     </aside>
   );

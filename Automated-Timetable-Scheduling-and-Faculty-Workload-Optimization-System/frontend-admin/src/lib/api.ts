@@ -348,3 +348,63 @@ export const verifyOtp = async (request: OtpVerifyRequest): Promise<LoginRespons
 export const logout = async (): Promise<void> => {
   await API.post("/auth/logout");
 };
+
+/* ===========================
+   FACULTY WORKLOAD API
+   =========================== */
+export const getFacultyWorkloadSummary = async (): Promise<any[]> => {
+  try {
+    const res = await API.get("/faculty/workload-summary");
+    return Array.isArray(res.data) ? res.data : [];
+  } catch (e) {
+    console.error("Failed to fetch faculty workload summary", e);
+    return [];
+  }
+};
+
+/* ===========================
+   LEAVE OPTIMIZATION API
+   =========================== */
+export const optimizeForLeave = async (leaveId: number): Promise<any> => {
+  const res = await API.post(`/leaves/${leaveId}/optimize`);
+  return res.data;
+};
+
+export const getNotifications = async (facultyId: number): Promise<any[]> => {
+  try {
+    const res = await API.get(`/notifications/faculty/${facultyId}?page=0&size=10`);
+    return res.data?.content ?? [];
+  } catch (e) {
+    console.error("Failed to fetch notifications", e);
+    return [];
+  }
+};
+
+export const markNotificationsRead = async (facultyId: number): Promise<void> => {
+  try {
+    await API.put(`/notifications/faculty/${facultyId}/read-all`);
+  } catch (e) {
+    console.error("Failed to mark notifications read", e);
+  }
+};
+
+/* ===========================
+   ELECTIVES API
+   =========================== */
+export const getElectives = async (): Promise<Record<string, any[]>> => {
+  try {
+    const res = await API.get('/timetable/electives');
+    return res.data ?? {};
+  } catch (e) {
+    console.error("Failed to fetch electives", e);
+    return {};
+  }
+};
+
+/* ===========================
+   CONFLICTS API
+   =========================== */
+export const resolveConflict = async (entryId: number): Promise<any> => {
+  const res = await API.post(`/timetable/resolve-conflict/${entryId}`);
+  return res.data;
+};

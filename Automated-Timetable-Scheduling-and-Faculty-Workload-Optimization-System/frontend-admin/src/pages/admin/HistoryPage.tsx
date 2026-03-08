@@ -376,12 +376,14 @@ export default function HistoryPage() {
             </CardContent>
           </Card>
 
-          {/* Rollbacks (Currently hardcoded as backend doesn't support them yet) */}
+          {/* Rollbacks — computed dynamically from audit logs */}
           <Card className="rounded-xl shadow-sm hover:shadow-md transition-shadow border-l-4 border-red-500">
             <CardContent className="p-8 flex justify-between items-start">
               <div className="space-y-2">
                 <p className="text-sm font-medium text-muted-foreground">Rollbacks</p>
-                <p className="text-3xl font-bold mt-2">0</p>
+                <p className="text-3xl font-bold mt-2">
+                  {logs.filter(l => (l as any).isRollbackLog).length.toLocaleString()}
+                </p>
                 <p className="text-xs text-muted-foreground font-medium">
                   Changes reverted
                 </p>

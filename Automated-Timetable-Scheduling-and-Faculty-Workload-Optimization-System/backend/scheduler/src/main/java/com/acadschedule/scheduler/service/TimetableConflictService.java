@@ -33,27 +33,89 @@ public class TimetableConflictService {
 
             // Check if it's the same day and time slot
             if (Objects.equals(existing.getDay(), entry.getDay()) &&
-                Objects.equals(existing.getTimeSlot(), entry.getTimeSlot())) {
+                    Objects.equals(existing.getTimeSlot(), entry.getTimeSlot())) {
 
                 // 1. Faculty Conflict
                 if (entry.getFacultyName() != null && !entry.getFacultyName().equals("TBA") &&
-                    Objects.equals(existing.getFacultyName(), entry.getFacultyName())) {
-                    conflicts.add("Faculty " + entry.getFacultyName() + " is already teaching Section " + existing.getSectionId() + " at this time.");
+                        Objects.equals(existing.getFacultyName(), entry.getFacultyName())) {
+                    conflicts.add("Faculty " + entry.getFacultyName() + " is already teaching Section "
+                            + existing.getSectionId() + " at this time.");
                 }
 
                 // 2. Room Conflict
                 if (entry.getRoomNumber() != null && !entry.getRoomNumber().equals("TBA") &&
-                    Objects.equals(existing.getRoomNumber(), entry.getRoomNumber())) {
-                    conflicts.add("Room " + entry.getRoomNumber() + " is already occupied by Section " + existing.getSectionId() + " at this time.");
+                        Objects.equals(existing.getRoomNumber(), entry.getRoomNumber())) {
+                    conflicts.add("Room " + entry.getRoomNumber() + " is already occupied by Section "
+                            + existing.getSectionId() + " at this time.");
                 }
 
                 // 3. Section Conflict (shouldn't happen in a well-managed UI, but safety first)
                 if (Objects.equals(existing.getSectionId(), entry.getSectionId())) {
-                    conflicts.add("Section " + entry.getSectionId() + " already has a " + existing.getType() + " at this time.");
+                    conflicts.add("Section " + entry.getSectionId() + " already has a " + existing.getType()
+                            + " at this time.");
                 }
             }
         }
 
         return conflicts;
+    }
+
+    /**
+     * Auto-resolves a conflict for a specific TimetableEntry by finding the first
+     * completely free slot.
+     */
+    public TimetableEntry autoResolveConflict(Long entryId) {
+        TimetableEntry conflictingEntry = timetableRepo.findById(entryId)
+                .orElseThrow(() -> new RuntimeException("Entry not found"));
+
+        List<TimetableEntry> allEntries = timetableRepo.findAll();
+        allEntries.removeIf(e -> Objects.equals(e.getId(), entryId));
+
+        List<String> days = List.of("MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY");
+        List<String> timeSlots = List.of(
+                "09:00-09:40", "09:40-10:30", "10:45-11:35", "11:35-12:25",
+                "12:25-01:15", "02:05-02:55", "02:55-03:45", "03:45-04:35" // Skipped breaks
+        );
+
+        for (String day : days) {
+            for (String slot : timeSlots) {
+                // Check if slot is free for Section, Faculty, and Room
+                boolean isFree = true;
+                for (TimetableEntry existing : allEntries) {
+                    if (Objects.equals(existing.getDay(), day) && Objects.equals(existing.getTimeSlot(), slot)) {
+
+                        // Check Faculty Overlap
+                        if (conflictingEntry.getFacultyName() != null
+                                && !conflictingEntry.getFacultyName().equals("TBA") &&
+                                Objects.equals(existing.getFacultyName(), conflictingEntry.getFacultyName())) {
+                            isFree = false;
+                            break;
+                        }
+
+                        // Check Room Overlap
+                        if (conflictingEntry.getRoomNumber() != null && !conflictingEntry.getRoomNumber().equals("TBA")
+                                &&
+                                Objects.equals(existing.getRoomNumber(), conflictingEntry.getRoomNumber())) {
+                            isFree = false;
+                            break;
+                        }
+
+                        // Check Section Overlap
+                        if (Objects.equals(existing.getSectionId(), conflictingEntry.getSectionId())) {
+                            isFree = false;
+                            break;
+                        }
+                    }
+                }
+
+                if (isFree) {
+                    conflictingEntry.setDay(day);
+                    conflictingEntry.setTimeSlot(slot);
+                    return timetableRepo.save(conflictingEntry);
+                }
+            }
+        }
+
+        throw new RuntimeException("Could not find any free slot to resolve the conflict.");
     }
 }

@@ -15,7 +15,8 @@ public class FacultyController {
     private final com.acadschedule.scheduler.repository.FacultyRepository facultyRepository;
     private final FacultyService facultyService;
 
-    public FacultyController(com.acadschedule.scheduler.repository.FacultyRepository facultyRepository, FacultyService facultyService) {
+    public FacultyController(com.acadschedule.scheduler.repository.FacultyRepository facultyRepository,
+            FacultyService facultyService) {
         this.facultyRepository = facultyRepository;
         this.facultyService = facultyService;
     }
@@ -80,5 +81,14 @@ public class FacultyController {
         } else {
             return ResponseEntity.badRequest().body("Invalid old password");
         }
+    }
+
+    /**
+     * GET /api/faculty/workload-summary
+     * Returns live faculty workload data computed from the current timetable.
+     */
+    @GetMapping("/workload-summary")
+    public ResponseEntity<?> getWorkloadSummary() {
+        return ResponseEntity.ok(facultyService.getWorkloadSummary());
     }
 }

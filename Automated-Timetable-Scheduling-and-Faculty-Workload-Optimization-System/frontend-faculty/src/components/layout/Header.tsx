@@ -1,4 +1,5 @@
 import React from 'react';
+import { NotificationBell } from './NotificationBell';
 
 interface HeaderProps {
   title: string;
@@ -13,9 +14,10 @@ const Header = ({ title, subtitle, actions }: HeaderProps) => {
         <h2 className="text-xl font-bold text-slate-800 dark:text-white">{title}</h2>
         <p className="text-xs text-slate-500 font-medium">{subtitle}</p>
       </div>
-      
-      <div className="flex items-center gap-3">
+
+      <div className="flex items-center gap-4">
         {actions}
+        <NotificationBell />
       </div>
     </header>
   );

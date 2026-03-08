@@ -1,12 +1,14 @@
 package com.acadschedule.scheduler.service;
 
 import com.acadschedule.scheduler.entity.Faculty;
+import com.acadschedule.scheduler.entity.TimetableEntry;
 import com.acadschedule.scheduler.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class FacultyService {
@@ -136,7 +138,7 @@ public class FacultyService {
     @Transactional
     public void deleteFaculty(Long id) {
         Faculty faculty = getFacultyById(id);
-        
+
         // 1. CLEAR SECTION MENTORSHIP
         sectionRepository.findAll().stream()
                 .filter(s -> id.equals(s.getMentorId()))
@@ -151,9 +153,8 @@ public class FacultyService {
 
         // 3. REMOVE FROM SUBJECT ELIGIBILITY
         subjectRepository.findAll().forEach(subject -> {
-            boolean modified = subject.getEligibleFaculty().removeIf(fId -> 
-                fId.equals(String.valueOf(id)) || fId.equals(faculty.getEmployeeId())
-            );
+            boolean modified = subject.getEligibleFaculty()
+                    .removeIf(fId -> fId.equals(String.valueOf(id)) || fId.equals(faculty.getEmployeeId()));
             if (modified) {
                 subjectRepository.save(subject);
             }
@@ -166,8 +167,65 @@ public class FacultyService {
 
         // 5. FINALLY DELETE THE FACULTY
         facultyRepository.delete(faculty);
-        
+
         auditLogService.logAction("FACULTY", "DELETE",
                 "Deleted faculty: " + faculty.getName() + " (" + faculty.getEmployeeId() + ")", "Admin", id);
+    }
+
+    /**
+     * Compute workload summary for all active faculty based on live timetable.
+     * Returns list of maps with: facultyName, weeklyHours, lectureHours, labHours,
+     * dailyBreakdown
+     */
+    public List<Map<String, Object>> getWorkloadSummary() {
+        List<Faculty> allFaculty = facultyRepository.findByActiveTrue();
+        List<TimetableEntry> allEntries = timetableRepository.findAll();
+
+        List<Map<String, Object>> result = new ArrayList<>();
+
+        for (Faculty faculty : allFaculty) {
+            List<TimetableEntry> facultyEntries = allEntries.stream()
+                    .filter(e -> faculty.getName().equals(e.getFacultyName()))
+                    .collect(Collectors.toList());
+
+            // Deduplicate entries by day+timeSlot to account for combined elective sections
+            Map<String, TimetableEntry> deduplicatedEntries = new HashMap<>();
+            for (TimetableEntry e : facultyEntries) {
+                String uniqueSlot = e.getDay() + "|" + e.getTimeSlot();
+                deduplicatedEntries.putIfAbsent(uniqueSlot, e);
+            }
+
+            Collection<TimetableEntry> uniqueFacultyEntries = deduplicatedEntries.values();
+
+            Map<String, Object> summary = new LinkedHashMap<>();
+            summary.put("facultyId", faculty.getId());
+            summary.put("facultyName", faculty.getName());
+            summary.put("department", faculty.getDepartment());
+            summary.put("designation", faculty.getDesignation());
+            summary.put("maxHoursPerWeek", faculty.getMaxHoursPerWeek() > 0 ? faculty.getMaxHoursPerWeek() : 20);
+            summary.put("weeklyHours", uniqueFacultyEntries.size());
+            summary.put("lectureHours",
+                    uniqueFacultyEntries.stream().filter(e -> "LECTURE".equalsIgnoreCase(e.getType())).count());
+            summary.put("labHours",
+                    uniqueFacultyEntries.stream().filter(e -> "LAB".equalsIgnoreCase(e.getType())).count());
+
+            // Daily breakdown
+            Map<String, Long> daily = new LinkedHashMap<>();
+            List<String> days = List.of("MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY");
+            for (String day : days) {
+                long count = uniqueFacultyEntries.stream().filter(e -> day.equals(e.getDay())).count();
+                daily.put(day, count);
+            }
+            summary.put("dailyBreakdown", daily);
+
+            result.add(summary);
+        }
+
+        // Sort by weekly hours descending
+        result.sort((a, b) -> Integer.compare(
+                (int) b.get("weeklyHours"),
+                (int) a.get("weeklyHours")));
+
+        return result;
     }
 }

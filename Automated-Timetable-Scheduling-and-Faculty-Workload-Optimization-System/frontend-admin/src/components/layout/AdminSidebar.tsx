@@ -39,6 +39,7 @@ const managementItems = [
   { name: 'Constraints', href: '/admin/constraints', icon: Shield },
   { name: 'Leave Requests', href: '/admin/leaves', icon: FileText },
   { name: 'History', href: '/admin/history', icon: History },
+  { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
 ];
 
 export function AdminSidebar() {

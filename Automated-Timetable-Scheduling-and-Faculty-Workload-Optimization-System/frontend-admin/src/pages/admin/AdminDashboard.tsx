@@ -114,11 +114,22 @@ export default function AdminDashboard() {
   // Derived: Active Conflicts (Simple client-side check)
   // We check for Faculty Double Booking or Room Double Booking
   const conflicts = useMemo(() => {
-    const conflictsList: { id: string; subject: string; reason: string }[] = [];
+    const conflictsList: { id: string; entryId: number; subject: string; reason: string }[] = [];
 
     // Group by Day+Slot
     const slotMap = new Map<string, TimetableEntry[]>();
+
+    // Deduplicate identical physical sessions before counting conflicts (e.g. 7 sections taking the same Elective room/faculty)
+    const uniqueEntries = new Map<string, TimetableEntry>();
     allEntries.forEach(e => {
+      // Electives are exactly identical in Room, TimeSlot, Day, and Faculty
+      const physicalKey = `${e.day}-${e.timeSlot}-${e.facultyName}-${e.roomNumber}`;
+      if (!uniqueEntries.has(physicalKey)) {
+        uniqueEntries.set(physicalKey, e);
+      }
+    });
+
+    uniqueEntries.forEach(e => {
       const key = `${e.day}-${e.timeSlot}`;
       if (!slotMap.has(key)) slotMap.set(key, []);
       slotMap.get(key)?.push(e);
@@ -126,35 +137,43 @@ export default function AdminDashboard() {
 
     slotMap.forEach((entries) => {
       // Check Faculty Overlap
-      const facultyCounts = new Map<string, number>();
+      const facultyEntries = new Map<string, TimetableEntry[]>();
       entries.forEach(e => {
         if (e.facultyName && e.facultyName !== "TBA") {
-          facultyCounts.set(e.facultyName, (facultyCounts.get(e.facultyName) || 0) + 1);
+          if (!facultyEntries.has(e.facultyName)) facultyEntries.set(e.facultyName, []);
+          facultyEntries.get(e.facultyName)?.push(e);
         }
       });
-      facultyCounts.forEach((count, faculty) => {
-        if (count > 1) {
+
+      facultyEntries.forEach((clashes, faculty) => {
+        if (clashes.length > 1) {
+          // The second one is the conflict
+          const conflictingEntry = clashes[1];
           conflictsList.push({
             id: crypto.randomUUID(),
+            entryId: conflictingEntry.id,
             subject: `Faculty: ${faculty}`,
-            reason: `Double booked on ${entries[0].day} at ${entries[0].timeSlot}`
+            reason: `Double booked on ${clashes[0].day} at ${clashes[0].timeSlot}`
           });
         }
       });
 
       // Check Room Overlap
-      const roomCounts = new Map<string, number>();
+      const roomEntries = new Map<string, TimetableEntry[]>();
       entries.forEach(e => {
         if (e.roomNumber && e.roomNumber !== "TBA") {
-          roomCounts.set(e.roomNumber, (roomCounts.get(e.roomNumber) || 0) + 1);
+          if (!roomEntries.has(e.roomNumber)) roomEntries.set(e.roomNumber, []);
+          roomEntries.get(e.roomNumber)?.push(e);
         }
       });
-      roomCounts.forEach((count, room) => {
-        if (count > 1) {
+      roomEntries.forEach((clashes, room) => {
+        if (clashes.length > 1) {
+          const conflictingEntry = clashes[1];
           conflictsList.push({
             id: crypto.randomUUID(),
+            entryId: conflictingEntry.id,
             subject: `Room: ${room}`,
-            reason: `Double booked on ${entries[0].day} at ${entries[0].timeSlot}`
+            reason: `Double booked on ${clashes[0].day} at ${clashes[0].timeSlot}`
           });
         }
       });
@@ -175,9 +194,7 @@ export default function AdminDashboard() {
     }).sort((a, b) => b.sessions - a.sessions).slice(0, 5); // Top 5
   }, [facultyList, allEntries]);
 
-
   const selectedSectionName = sections.find(s => String(s.id) === selectedSectionId)?.name || "Unknown Section";
-
   return (
     <AdminLayout
       title="Dashboard"
@@ -307,12 +324,29 @@ export default function AdminDashboard() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
                           <p className="font-medium text-sm">{conflict.subject}</p>
-                          <Link
-                            to={`/admin/timetable?sectionId=${selectedSectionId}`}
-                            className="text-[10px] font-bold text-primary hover:underline"
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2 text-[10px] font-bold text-primary hover:text-primary hover:bg-primary/10"
+                            onClick={async () => {
+                              try {
+                                setLoading(true);
+                                const { resolveConflict } = await import('@/lib/api');
+                                await resolveConflict(conflict.entryId);
+                                // Refresh entries
+                                const { getAllTimetableEntries } = await import('@/lib/api');
+                                const newEntries = await getAllTimetableEntries();
+                                setAllEntries(newEntries);
+                              } catch (e) {
+                                console.error('Failed to resolve conflict automatically', e);
+                                alert('Could not find a free slot to automatically resolve this conflict.');
+                              } finally {
+                                setLoading(false);
+                              }
+                            }}
                           >
-                            Resolve
-                          </Link>
+                            Auto-Resolve
+                          </Button>
                         </div>
                         <p className="text-xs text-muted-foreground truncate">
                           {conflict.reason}

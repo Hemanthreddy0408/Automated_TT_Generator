@@ -2,7 +2,7 @@
 import { Fragment } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, MapPin, Coffee, Utensils, Info, Clock, GraduationCap } from "lucide-react";
+import { Users, MapPin, Coffee, Utensils, Info, Clock, GraduationCap, Star } from "lucide-react";
 import {
   HoverCard,
   HoverCardContent,
@@ -18,7 +18,7 @@ export type TimetableEntry = {
   subjectName?: string;
   facultyName?: string;
   roomNumber?: string;
-  type: "LECTURE" | "LAB" | "BREAK" | "LUNCH";
+  type: "LECTURE" | "LAB" | "BREAK" | "LUNCH" | "ELECTIVE";
   hasConflict?: boolean;
 };
 
@@ -26,38 +26,29 @@ type Props = {
   timetable?: any; // Day -> TimeSlot matrix
   entries?: TimetableEntry[]; // Flat array of entries
   onEdit?: (entry: TimetableEntry) => void;
+  onElectiveClick?: (slotKey: string) => void;
   sectionId?: string;
 };
 
-// Pastel color palette for subjects
-const COLORS = [
-  "bg-red-50 border-red-200 text-red-900 border-l-red-500",
-  "bg-orange-50 border-orange-200 text-orange-900 border-l-orange-500",
-  "bg-amber-50 border-amber-200 text-amber-900 border-l-amber-500",
-  "bg-green-50 border-green-200 text-green-900 border-l-green-500",
-  "bg-emerald-50 border-emerald-200 text-emerald-900 border-l-emerald-500",
-  "bg-teal-50 border-teal-200 text-teal-900 border-l-teal-500",
-  "bg-cyan-50 border-cyan-200 text-cyan-900 border-l-cyan-500",
-  "bg-sky-50 border-sky-200 text-sky-900 border-l-sky-500",
-  "bg-blue-50 border-blue-200 text-blue-900 border-l-blue-500",
-  "bg-indigo-50 border-indigo-200 text-indigo-900 border-l-indigo-500",
-  "bg-violet-50 border-violet-200 text-violet-900 border-l-violet-500",
-  "bg-purple-50 border-purple-200 text-purple-900 border-l-purple-500",
-  "bg-fuchsia-50 border-fuchsia-200 text-fuchsia-900 border-l-fuchsia-500",
-  "bg-pink-50 border-pink-200 text-pink-900 border-l-pink-500",
-  "bg-rose-50 border-rose-200 text-rose-900 border-l-rose-500",
-];
-
-export const getColorForSubject = (subjectCode?: string) => {
-  if (!subjectCode) return "bg-gray-50 border-gray-100";
-  let hash = 0;
-  for (let i = 0; i < subjectCode.length; i++) {
-    hash = subjectCode.charCodeAt(i) + ((hash << 5) - hash);
+// Fixed, semantic color palette for subjects based on their type
+export const getColorForSubject = (type?: string) => {
+  switch (type) {
+    case 'LECTURE':
+      return "bg-blue-50 border-blue-200 text-blue-900 border-l-blue-500 hover:bg-blue-100/50";
+    case 'LAB':
+      return "bg-green-50 border-green-200 text-green-900 border-l-green-500 hover:bg-green-100/50";
+    case 'BREAK':
+      return "bg-gray-50 border-gray-200 text-gray-900 border-l-gray-400";
+    case 'LUNCH':
+      return "bg-yellow-50 border-yellow-200 text-yellow-900 border-l-yellow-400";
+    case 'ELECTIVE':
+      return "bg-purple-50 border-purple-200 text-purple-900 border-l-purple-500 hover:bg-purple-100/50";
+    default:
+      return "bg-slate-50 border-slate-200 text-slate-900 border-l-slate-400";
   }
-  return COLORS[Math.abs(hash) % COLORS.length];
 };
 
-export function TimetableGrid({ timetable = {}, onEdit, sectionId }: Props) {
+export function TimetableGrid({ timetable = {}, entries = [], onEdit, onElectiveClick, sectionId }: Props) {
   const DAYS = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"];
 
   const TIME_SLOTS = [
@@ -114,7 +105,7 @@ export function TimetableGrid({ timetable = {}, onEdit, sectionId }: Props) {
                 );
               }
 
-              const colorClass = getColorForSubject(entry?.subjectCode);
+              const colorClass = getColorForSubject(entry?.type);
 
               return (
                 <div key={`${day}-${slot}`} className="bg-white p-2 min-h-[120px]">
@@ -122,14 +113,20 @@ export function TimetableGrid({ timetable = {}, onEdit, sectionId }: Props) {
                     <HoverCard openDelay={100} closeDelay={100}>
                       <HoverCardTrigger asChild>
                         <Card
-                          onClick={() => onEdit?.(entry)}
+                          onClick={() => {
+                            if (entry.type === 'ELECTIVE') {
+                              onElectiveClick?.(`${day}|${slot}`);
+                            } else {
+                              onEdit?.(entry);
+                            }
+                          }}
                           className={`group h-full p-3 flex flex-col gap-2 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border-l-4 cursor-pointer ${colorClass} ${entry.hasConflict ? 'ring-2 ring-destructive ring-offset-2' : ''}`}
                         >
                           <div className="flex justify-between items-start">
-                            <Badge variant="outline" className="bg-white/80 backdrop-blur-sm border-black/5 text-[9px] h-5 px-2 font-black tracking-tighter uppercase">
-                              {entry.type === "LAB" ? "Laboratory" : "Lecture"}
+                            <Badge variant="outline" className={`bg-white/80 backdrop-blur-sm border-black/5 text-[9px] h-5 px-2 font-black tracking-tighter uppercase ${entry.type === 'ELECTIVE' && 'text-amber-700'}`}>
+                              {entry.type === "LAB" ? "Laboratory" : entry.type === "ELECTIVE" ? "Elective" : "Lecture"}
                             </Badge>
-                            {entry.roomNumber && (
+                            {entry.roomNumber && entry.type !== 'ELECTIVE' && (
                               <div className="flex items-center text-[10px] font-bold text-slate-600 bg-white/60 px-1.5 py-0.5 rounded-md border border-white/20 shadow-inner">
                                 <MapPin className="h-3 w-3 mr-1 opacity-50" />
                                 {entry.roomNumber}
@@ -137,15 +134,28 @@ export function TimetableGrid({ timetable = {}, onEdit, sectionId }: Props) {
                             )}
                           </div>
 
-                          <div className="font-black text-sm leading-tight line-clamp-2 tracking-tight">
-                            {entry.subjectCode}
-                          </div>
-
-                          {entry.facultyName && (
-                            <div className="flex items-center text-[11px] font-semibold text-slate-600 mt-auto pt-2 border-t border-black/5">
-                              <Users className="h-3 w-3 mr-2 flex-shrink-0 opacity-40" />
-                              <span className="truncate">{entry.facultyName}</span>
+                          {entry.type === 'ELECTIVE' ? (
+                            <div className="flex flex-col items-center justify-center flex-1 text-center py-2 h-full">
+                              <div className="font-black text-[15px] leading-tight text-purple-900 tracking-tight">
+                                Elective
+                              </div>
+                              <span className="text-[9px] font-bold text-purple-700 opacity-80 mt-1 uppercase tracking-widest text-center px-1">
+                                Options Available
+                              </span>
                             </div>
+                          ) : (
+                            <>
+                              <div className="font-black text-sm leading-tight line-clamp-2 tracking-tight">
+                                {entry.subjectCode}
+                              </div>
+
+                              {entry.facultyName && (
+                                <div className="flex items-center text-[11px] font-semibold text-slate-600 mt-auto pt-2 border-t border-black/5">
+                                  <Users className="h-3 w-3 mr-2 flex-shrink-0 opacity-40" />
+                                  <span className="truncate">{entry.facultyName}</span>
+                                </div>
+                              )}
+                            </>
                           )}
                         </Card>
                       </HoverCardTrigger>

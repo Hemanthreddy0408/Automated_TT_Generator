@@ -40,7 +40,7 @@ export function EditEntryModal({ entry, open, onClose, onSave, selectedSection }
     const [selectedSubject, setSelectedSubject] = useState("");
     const [selectedDay, setSelectedDay] = useState("");
     const [selectedTimeSlot, setSelectedTimeSlot] = useState("");
-    const [type, setType] = useState<"LECTURE" | "LAB">("LECTURE");
+    const [type, setType] = useState<"LECTURE" | "LAB" | "ELECTIVE">("LECTURE");
 
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -55,7 +55,7 @@ export function EditEntryModal({ entry, open, onClose, onSave, selectedSection }
                 setSelectedSubject(entry.subjectCode || "");
                 setSelectedDay(entry.day || "");
                 setSelectedTimeSlot(entry.timeSlot || "");
-                setType(entry.type === "LAB" ? "LAB" : "LECTURE");
+                setType(entry.type === "LAB" ? "LAB" : entry.type === "ELECTIVE" ? "ELECTIVE" : "LECTURE");
                 setConflicts([]);
             }
         }
@@ -238,6 +238,15 @@ export function EditEntryModal({ entry, open, onClose, onSave, selectedSection }
                                         onChange={() => setType('LAB')}
                                     />
                                     Lab
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="type"
+                                        checked={type === 'ELECTIVE'}
+                                        onChange={() => setType('ELECTIVE')}
+                                    />
+                                    Elective
                                 </label>
                             </div>
                         </div>

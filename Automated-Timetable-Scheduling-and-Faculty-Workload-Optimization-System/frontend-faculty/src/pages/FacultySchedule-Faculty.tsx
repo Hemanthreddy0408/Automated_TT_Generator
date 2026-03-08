@@ -3,22 +3,23 @@ import Sidebar from '../components/layout/Sidebar';
 import ScheduleGrid from '../components/dashboard/ScheduleGrid';
 import { getFacultySchedule } from "@/lib/api";
 import axios from 'axios';
+import { useAuth } from '@/contexts/AuthContext';
 
 const FacultySchedule = () => {
+    const { user } = useAuth();
     const [sessions, setSessions] = useState([]);
-    const [facultyName, setFacultyName] = useState("Dr. Ramya G R");
+    const [facultyName, setFacultyName] = useState(user?.name || "Loading...");
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchData = async () => {
+            if (!user) return;
             try {
-                // 1. Get current faculty (In a real app, this would come from auth context)
-                // For now, mirroring Dashboard's approach but using port 8083
-                const facultyRes = await axios.get('http://localhost:8083/api/faculty/1');
-                const name = facultyRes.data.name;
+                // Real app: from auth context
+                const name = user.name;
                 setFacultyName(name);
 
-                // 2. Get schedule for this faculty
+                // Get schedule for this faculty
                 const scheduleData = await getFacultySchedule(name);
                 setSessions(scheduleData);
             } catch (err) {
@@ -28,8 +29,10 @@ const FacultySchedule = () => {
             }
         };
 
-        fetchData();
-    }, []);
+        if (user) {
+            fetchData();
+        }
+    }, [user]);
 
     return (
         <div className="flex min-h-screen bg-[#f1f5f9]">

@@ -8,6 +8,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/timetable")
@@ -17,7 +19,8 @@ public class TimetableController {
     private final TimetableGenerationService timetableGenerationService;
     private final TimetableConflictService conflictService;
 
-    public TimetableController(TimetableRepository repo, TimetableGenerationService timetableGenerationService, TimetableConflictService conflictService) {
+    public TimetableController(TimetableRepository repo, TimetableGenerationService timetableGenerationService,
+            TimetableConflictService conflictService) {
         this.repo = repo;
         this.timetableGenerationService = timetableGenerationService;
         this.conflictService = conflictService;
@@ -32,14 +35,15 @@ public class TimetableController {
     public List<TimetableEntry> getBySection(@PathVariable String sectionId) {
         return repo.findBySectionId(sectionId);
     }
-    
+
     @GetMapping("/faculty/{facultyName}")
     public List<TimetableEntry> getByFaculty(@PathVariable String facultyName) {
         return repo.findByFacultyName(facultyName);
     }
 
     @PutMapping("/update")
-    public ResponseEntity<?> updateEntry(@RequestBody TimetableEntry entry, @RequestParam(defaultValue = "false") boolean force) {
+    public ResponseEntity<?> updateEntry(@RequestBody TimetableEntry entry,
+            @RequestParam(defaultValue = "false") boolean force) {
         if (!force) {
             List<String> conflicts = conflictService.checkConflicts(entry);
             if (!conflicts.isEmpty()) {
@@ -64,12 +68,39 @@ public class TimetableController {
     @PostMapping("/generate/{sectionId}")
     public ResponseEntity<?> generateForSection(@PathVariable String sectionId) {
         try {
-            // Example generation for a single section if supported, else general fallback or method
-            // In absence of generateForSection(sectionId), you could just throw unsupported or implement if it exists.
             List<TimetableEntry> generatedTimetable = timetableGenerationService.generateForSection(sectionId, true);
             return ResponseEntity.ok(generatedTimetable);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Failed to generate timetable for section " + sectionId + ": " + e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body("Failed to generate timetable for section " + sectionId + ": " + e.getMessage());
+        }
+    }
+
+    /**
+     * Returns all timetable entries where type = ELECTIVE,
+     * grouped by day+timeSlot for the UI elective panel.
+     */
+    @GetMapping("/electives")
+    public ResponseEntity<?> getElectives() {
+        List<TimetableEntry> electives = repo.findAll().stream()
+                .filter(e -> "ELECTIVE".equalsIgnoreCase(e.getType()))
+                .collect(Collectors.toList());
+
+        // Group by "DAY|TIMESLOT" for easier frontend consumption
+        Map<String, List<TimetableEntry>> grouped = electives.stream()
+                .collect(Collectors.groupingBy(
+                        e -> e.getDay() + "|" + e.getTimeSlot()));
+
+        return ResponseEntity.ok(grouped);
+    }
+
+    @PostMapping("/resolve-conflict/{entryId}")
+    public ResponseEntity<?> autoResolveConflict(@PathVariable Long entryId) {
+        try {
+            TimetableEntry resolved = conflictService.autoResolveConflict(entryId);
+            return ResponseEntity.ok(resolved);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Failed to auto-resolve conflict: " + e.getMessage());
         }
     }
 }

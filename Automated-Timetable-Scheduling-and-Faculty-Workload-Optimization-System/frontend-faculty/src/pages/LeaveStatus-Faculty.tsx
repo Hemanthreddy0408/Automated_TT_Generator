@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Sidebar from '../components/layout/Sidebar';
 import axios from 'axios';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface LeaveRequest {
   id: number;
@@ -13,12 +14,14 @@ interface LeaveRequest {
 }
 
 const LeaveStatus = ({ onApplyLeave }: { onApplyLeave: () => void }) => {
+  const { user } = useAuth();
   const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchLeaves = async () => {
+    if (!user) return;
     try {
-      const response = await axios.get('http://localhost:8082/api/leaves/faculty/1', { timeout: 5000 });
+      const response = await axios.get(`http://localhost:8082/api/leaves/faculty/${user.id}`, { timeout: 5000 });
       setLeaves(response.data);
     } catch (error) {
       console.error('Error fetching leaves:', error);
@@ -29,8 +32,10 @@ const LeaveStatus = ({ onApplyLeave }: { onApplyLeave: () => void }) => {
   };
 
   useEffect(() => {
-    fetchLeaves();
-  }, []);
+    if (user) {
+      fetchLeaves();
+    }
+  }, [user]);
 
   const handleDelete = async (id: number) => {
     if (!confirm('Are you sure you want to cancel this leave request?')) return;

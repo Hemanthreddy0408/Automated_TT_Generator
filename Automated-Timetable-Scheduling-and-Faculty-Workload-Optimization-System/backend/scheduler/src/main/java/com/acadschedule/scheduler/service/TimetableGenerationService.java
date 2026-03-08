@@ -84,8 +84,8 @@ public class TimetableGenerationService {
 
     private static final Set<Integer> AFTERNOON = Set.of(6, 7, 8);
     private static final Set<Integer> MORNING_LAB_TIME_SLOTS = Set.of(2); // Only slot 2 for morning labs
-    private static final int DEFAULT_DAILY = 8;
-    private static final int DEFAULT_WEEKLY = 45;
+    private static final int DEFAULT_DAILY = 5;
+    private static final int DEFAULT_WEEKLY = 20;
 
     /* ================== PUBLIC ================== */
 
@@ -99,19 +99,26 @@ public class TimetableGenerationService {
         int MAX_ATTEMPTS = 50;
         RuntimeException lastError = null;
 
-        // ✅ PRIME GLOBAL STATE: Gather all existing entries from OTHER sections 
+        // ✅ PRIME GLOBAL STATE: Gather all existing entries from OTHER sections
         // to prevent collisions when generating just one section.
         Map<Long, Integer> globalFacultyLoad = new HashMap<>();
         Occupancy globalOcc = new Occupancy();
-        
+
+        Map<String, TimetableEntry> globalElectives = new HashMap<>();
+
         Map<String, Faculty> facultyMap = new HashMap<>();
         facultyRepo.findAll().forEach(f -> facultyMap.put(f.getName(), f));
 
         timetableRepo.findAll().stream()
                 .filter(e -> !sectionId.equals(e.getSectionId()))
                 .forEach(e -> {
-                    globalOcc.mark(e.getSectionId(), e.getFacultyName(), e.getRoomNumber(), e.getDay(), e.getTimeSlot());
-                    
+                    globalOcc.mark(e.getSectionId(), e.getFacultyName(), e.getRoomNumber(), e.getDay(),
+                            e.getTimeSlot());
+
+                    if ("ELECTIVE".equalsIgnoreCase(e.getType())) {
+                        globalElectives.putIfAbsent(e.getSubjectCode(), e);
+                    }
+
                     Faculty f = facultyMap.get(e.getFacultyName());
                     if (f != null) {
                         globalFacultyLoad.put(f.getId(), globalFacultyLoad.getOrDefault(f.getId(), 0) + 1);
@@ -122,7 +129,8 @@ public class TimetableGenerationService {
             try {
                 System.out.println("Attempt " + attempt + " for section " + sectionId);
                 // Pass the pre-filled global state
-                List<TimetableEntry> result = generateForSection(sectionId, commit, globalFacultyLoad, globalOcc, new HashMap<>());
+                List<TimetableEntry> result = generateForSection(sectionId, commit, globalFacultyLoad, globalOcc,
+                        new HashMap<>(), globalElectives, null, new HashMap<>());
 
                 if (commit) {
                     auditLogService.logAction("TIMETABLE", "GENERATE",
@@ -148,15 +156,18 @@ public class TimetableGenerationService {
     /**
      * Generate timetable for a section with optional existing faculty load
      * tracking.
-     * This overload is used by generateForAllSections() to track workload globally.
-     * UPDATED: Added subject-to-faculty mapping for consistency
+     * KEY CHANGE: subjectToFacultyMap is now keyed by "sectionId|subjectCode"
+     * so each section keeps its own consistent faculty-per-subject assignment.
      */
     public List<TimetableEntry> generateForSection(
             String sectionId,
             boolean commit,
             Map<Long, Integer> existingFacultyLoad,
             Occupancy globalOcc,
-            Map<String, Long> subjectToFacultyMap) {
+            Map<String, Long> subjectToFacultyMap,
+            Map<String, TimetableEntry> globalElectives,
+            List<String> globalElectiveSlots,
+            Map<String, Map<Long, Integer>> globalDailyWorkloads) {
 
         Section section = sectionRepo.findById(Long.parseLong(sectionId))
                 .orElseThrow();
@@ -165,38 +176,57 @@ public class TimetableGenerationService {
             timetableRepo.deleteBySectionId(sectionId);
 
         List<Subject> subjects = subjectRepo.findByDepartmentAndYear(section.getDepartment(), section.getYear());
-
         List<Faculty> faculties = facultyRepo.findByActiveTrue();
-
         List<Room> rooms = roomRepo.findAll().stream().filter(Room::isActive).toList();
 
-        // Initialize with existing load if provided (for global tracking across
-        // sections)
-        Map<Long, Integer> weeklyLoad = new HashMap<>(
-                existingFacultyLoad != null ? existingFacultyLoad : new HashMap<>());
+        // ✅ Pre-populate faculty-subject map from EXISTING timetable entries
+        // This ensures consistency when regenerating a single section
+        Map<String, Faculty> facultyByName = new HashMap<>();
+        faculties.forEach(f -> facultyByName.put(f.getName(), f));
+
+        timetableRepo.findBySectionId(sectionId).forEach(existing -> {
+            String key = sectionId + "|" + existing.getSubjectCode();
+            if (!subjectToFacultyMap.containsKey(key)) {
+                Faculty f = facultyByName.get(existing.getFacultyName());
+                if (f != null)
+                    subjectToFacultyMap.put(key, f.getId());
+            }
+        });
+
+        // Use reference to modify and persist global faculty load continuously across
+        // section iterations
+        Map<Long, Integer> weeklyLoad = existingFacultyLoad != null ? existingFacultyLoad : new HashMap<>();
 
         /* ========= STEP 2: EXPAND ALL REQUIRED SESSIONS ========= */
-
         List<Session> sessions = new ArrayList<>();
+        List<Session> electiveSessions = new ArrayList<>();
 
         for (Subject s : subjects) {
             int lectureHours = lectureHours(s);
             int labSessions = labSessions(s);
 
-            // Create lecture sessions
-            for (int i = 0; i < lectureHours; i++) {
-                Session lec = new Session();
-                lec.subject = s;
-                lec.length = 1;
-                sessions.add(lec);
-            }
-
-            // Create lab sessions (2 consecutive TIME_SLOTS)
-            for (int i = 0; i < labSessions; i++) {
-                Session lab = new Session();
-                lab.subject = s;
-                lab.length = 2;
-                sessions.add(lab);
+            if (s.isElective()) {
+                // Elective: create a session for each lecture hour (requires multiple
+                // synchronized slots)
+                for (int i = 0; i < lectureHours; i++) {
+                    Session elec = new Session();
+                    elec.subject = s;
+                    elec.length = 1;
+                    electiveSessions.add(elec);
+                }
+            } else {
+                for (int i = 0; i < lectureHours; i++) {
+                    Session lec = new Session();
+                    lec.subject = s;
+                    lec.length = 1;
+                    sessions.add(lec);
+                }
+                for (int i = 0; i < labSessions; i++) {
+                    Session lab = new Session();
+                    lab.subject = s;
+                    lab.length = 2;
+                    sessions.add(lab);
+                }
             }
         }
 
@@ -208,14 +238,149 @@ public class TimetableGenerationService {
         List<TimetableEntry> result = new ArrayList<>();
         List<Session> failedSessions = new ArrayList<>();
 
-        // Track state across days for this section
-        Map<String, Map<Long, Integer>> dailyWorkloads = new HashMap<>();
+        Map<String, Map<Long, Integer>> dailyWorkloads = globalDailyWorkloads != null ? globalDailyWorkloads
+                : new HashMap<>();
         Map<String, Integer> morningLabCounts = new HashMap<>();
         Map<String, Integer> sectionDailyLoad = new HashMap<>();
         for (String d : DAYS) {
-            dailyWorkloads.put(d, new HashMap<>());
+            dailyWorkloads.putIfAbsent(d, new HashMap<>());
             morningLabCounts.put(d, 0);
             sectionDailyLoad.put(d, 0);
+        }
+
+        // ✅ ELECTIVE PRE-PASS: Force all elective sessions into the dynamically
+        // selected global slots, combining sections!
+        Iterator<String> electiveSlotIterator = globalElectiveSlots != null ? globalElectiveSlots.iterator()
+                : Collections.<String>emptyIterator();
+        Map<String, Integer> electiveSubjectAllocations = new HashMap<>();
+
+        for (Session es : electiveSessions) {
+            String subjectCode = es.subject.getCode();
+            int currentSubjectAllocation = electiveSubjectAllocations.getOrDefault(subjectCode, 0);
+
+            // Fetch the assigned slot for this specific iteration of this elective subject
+            String globalSlotKey;
+            if (globalElectiveSlots != null && currentSubjectAllocation < globalElectiveSlots.size()) {
+                globalSlotKey = globalElectiveSlots.get(currentSubjectAllocation);
+            } else {
+                continue; // Not enough global slots selected for this elective's required hours (should
+                          // not happen if maxElectiveHours is right)
+            }
+
+            String[] slotParts = globalSlotKey.split("\\|");
+            String elecDay = slotParts[0];
+            String elecTime = slotParts[1];
+            String uniqueGlobalElectiveKey = subjectCode + "|" + globalSlotKey; // Distinguish between multiple slots of
+                                                                                // same elective
+
+            currentSubjectAllocation++;
+            electiveSubjectAllocations.put(subjectCode, currentSubjectAllocation);
+
+            // If this exact elective slot was ALREADY scheduled by another section
+            // globally, JOIN the combined class!
+            if (globalElectives != null && globalElectives.containsKey(uniqueGlobalElectiveKey)) {
+                TimetableEntry existing = globalElectives.get(uniqueGlobalElectiveKey);
+
+                TimetableEntry e = new TimetableEntry();
+                e.setSectionId(sectionId);
+                e.setDay(elecDay);
+                e.setTimeSlot(elecTime);
+                e.setSubjectCode(subjectCode);
+                e.setSubjectName(es.subject.getName());
+                e.setFacultyName(existing.getFacultyName());
+                e.setRoomNumber(existing.getRoomNumber());
+                e.setType("ELECTIVE");
+
+                result.add(e);
+                if (commit)
+                    timetableRepo.save(e);
+
+                // Track occupancy to prevent regular classes from overwriting
+                occ.used.add(sectionId + "|" + elecDay + "|" + elecTime);
+                continue; // Skip new allocation, faculty workload is already accounted for
+            }
+
+            // Otherwise, allocate a new faculty and room for this elective subject slot
+            String consistencyKey = sectionId + "|" + subjectCode;
+            Long lockedFacultyId = subjectToFacultyMap.get(consistencyKey);
+
+            // Find eligible faculty, preferring the locked one if it exists
+            Faculty chosen = null;
+            for (Faculty f : faculties) {
+                if (lockedFacultyId != null && !f.getId().equals(lockedFacultyId))
+                    continue;
+                if (occ.blocked(null, f.getName(), elecDay, elecTime)) // Check faculty only (null section)
+                    continue;
+                int wLoad = weeklyLoad.getOrDefault(f.getId(), 0);
+                int dLoad = dailyWorkloads.get(elecDay) != null ? dailyWorkloads.get(elecDay).getOrDefault(f.getId(), 0)
+                        : 0;
+                int wLimit = f.getMaxHoursPerWeek() > 0 ? f.getMaxHoursPerWeek() : DEFAULT_WEEKLY;
+                int dLimit = f.getMaxHoursPerDay() > 0 ? f.getMaxHoursPerDay() : DEFAULT_DAILY;
+                if (wLoad >= wLimit || dLoad >= dLimit)
+                    continue;
+                chosen = f;
+                break;
+            }
+            // If locked faculty not available, pick any eligible
+            if (chosen == null && lockedFacultyId != null) {
+                for (Faculty f : faculties) {
+                    if (occ.blocked(null, f.getName(), elecDay, elecTime))
+                        continue;
+                    int wLoad = weeklyLoad.getOrDefault(f.getId(), 0);
+                    int dLoad = dailyWorkloads.get(elecDay) != null
+                            ? dailyWorkloads.get(elecDay).getOrDefault(f.getId(), 0)
+                            : 0;
+                    int wLimit = f.getMaxHoursPerWeek() > 0 ? f.getMaxHoursPerWeek() : DEFAULT_WEEKLY;
+                    int dLimit = f.getMaxHoursPerDay() > 0 ? f.getMaxHoursPerDay() : DEFAULT_DAILY;
+                    if (wLoad >= wLimit || dLoad >= dLimit)
+                        continue;
+                    chosen = f;
+                    break;
+                }
+            }
+            if (chosen == null)
+                continue;
+
+            // Find a room
+            Room room = rooms.stream()
+                    .filter(r -> r.getCapacity() >= section.getCapacity()) // Electives might need bigger rooms for
+                                                                           // combined sections in real world
+                    .filter(r -> !occ.roomBlocked(r.getName(), elecDay, elecTime))
+                    .findFirst().orElse(null);
+            if (room == null)
+                continue;
+
+            TimetableEntry e = new TimetableEntry();
+            e.setSectionId(sectionId);
+            e.setDay(elecDay);
+            e.setTimeSlot(elecTime);
+            e.setSubjectCode(es.subject.getCode());
+            e.setSubjectName(es.subject.getName());
+            e.setFacultyName(chosen.getName());
+            e.setRoomNumber(room.getName());
+            e.setType("ELECTIVE");
+
+            result.add(e);
+            if (commit)
+                timetableRepo.save(e);
+
+            // Mark ONLY faculty and room as used (so other electives can still be scheduled
+            // for this section)
+            occ.used.add(chosen.getName() + "|" + elecDay + "|" + elecTime);
+            occ.used.add(room.getName() + "|" + elecDay + "|" + elecTime);
+            occ.used.add(sectionId + "|" + elecDay + "|" + elecTime); // Mark branch slot as taken
+
+            weeklyLoad.put(chosen.getId(), weeklyLoad.getOrDefault(chosen.getId(), 0) + 1);
+            sectionDailyLoad.put(elecDay, sectionDailyLoad.getOrDefault(elecDay, 0) + 1);
+            dailyWorkloads.get(elecDay).put(chosen.getId(),
+                    dailyWorkloads.get(elecDay).getOrDefault(chosen.getId(), 0) + 1);
+
+            // Lock faculty-subject consistency
+            subjectToFacultyMap.putIfAbsent(consistencyKey, chosen.getId());
+
+            if (globalElectives != null) {
+                globalElectives.put(uniqueGlobalElectiveKey, e);
+            }
         }
 
         // PASS 1: Place all LAB sessions (most constrained)
@@ -270,9 +435,9 @@ public class TimetableGenerationService {
     }
 
     /**
-     * Try to place a session in a specific day
-     * Returns true if successfully placed, false otherwise
-     * UPDATED: Now enforces faculty-subject consistency using subjectToFacultyMap
+     * Try to place a session in a specific day.
+     * UPDATED: Faculty consistency enforced at section level via
+     * "sectionId|subjectCode" key.
      */
     private boolean tryPlaceSession(Session s, String sectionId, String day,
             Occupancy occ, Map<Long, Integer> dailyLoad,
@@ -282,51 +447,47 @@ public class TimetableGenerationService {
             Map<String, Integer> sectionDailyLoad,
             Map<String, Long> subjectToFacultyMap) {
 
-        // ✅ NEW: Check if subject already has an assigned faculty
         String subjectCode = s.subject.getCode();
-        Long preferredFacultyId = subjectToFacultyMap.get(subjectCode);
-        final Faculty preferredFaculty;
+        // ✅ Section-level key: one faculty per (section, subject) pair
+        String consistencyKey = sectionId + "|" + subjectCode;
+        Long lockedFacultyId = subjectToFacultyMap.get(consistencyKey);
 
-        if (preferredFacultyId != null) {
-            // Try to use the same faculty that's already teaching this subject
-            preferredFaculty = faculties.stream()
-                    .filter(f -> f.getId().equals(preferredFacultyId))
-                    .findFirst()
-                    .orElse(null);
+        // Build candidate list: locked faculty comes first, then others sorted by load
+        List<Faculty> candidateFaculty;
+        if (lockedFacultyId != null) {
+            // Hard-lock: only use the locked faculty for this section+subject
+            Faculty locked = faculties.stream()
+                    .filter(f -> f.getId().equals(lockedFacultyId))
+                    .findFirst().orElse(null);
+            if (locked == null)
+                return false; // locked faculty no longer active
+
+            int dLoad = dailyLoad.getOrDefault(locked.getId(), 0);
+            int wLoad = weeklyLoad.getOrDefault(locked.getId(), 0);
+            int dLimit = locked.getMaxHoursPerDay() > 0 ? locked.getMaxHoursPerDay() : DEFAULT_DAILY;
+            int wLimit = locked.getMaxHoursPerWeek() > 0 ? locked.getMaxHoursPerWeek() : DEFAULT_WEEKLY;
+            if (dLoad + s.length > dLimit || wLoad + s.length > wLimit)
+                return false;
+            candidateFaculty = List.of(locked);
         } else {
-            preferredFaculty = null;
+            // No lock yet — pick from all eligible, sorted by least-loaded first
+            candidateFaculty = faculties.stream()
+                    .filter(x -> {
+                        int dLoadX = dailyLoad.getOrDefault(x.getId(), 0);
+                        int wLoadX = weeklyLoad.getOrDefault(x.getId(), 0);
+                        int dLimitX = x.getMaxHoursPerDay() > 0 ? x.getMaxHoursPerDay() : DEFAULT_DAILY;
+                        int wLimitX = x.getMaxHoursPerWeek() > 0 ? x.getMaxHoursPerWeek() : DEFAULT_WEEKLY;
+                        return (dLoadX + s.length <= dLimitX) && (wLoadX + s.length <= wLimitX);
+                    })
+                    .sorted(Comparator
+                            .comparingInt((Faculty x) -> weeklyLoad.getOrDefault(x.getId(), 0))
+                            .thenComparingInt(x -> -specializationScore(x, s.subject))
+                            .thenComparing(Faculty::getName))
+                    .collect(java.util.stream.Collectors.toCollection(ArrayList::new));
         }
 
-        // ✅ REMOVED: Subject-consistency preference (was causing workload
-        // concentration)
-        // ✅ NEW STRATEGY: Distribute workload EVENLY across ALL qualified faculty
-        // Subject-consistency will happen NATURALLY when same faculty is least loaded
-
-        // Get ALL possible faculty who still have capacity
-        List<Faculty> sortedCandidates = faculties.stream()
-                .filter(x -> {
-                    int dLoadX = dailyLoad.getOrDefault(x.getId(), 0);
-                    int wLoadX = weeklyLoad.getOrDefault(x.getId(), 0);
-
-                    int dLimitX = x.getMaxHoursPerDay() > 0 ? x.getMaxHoursPerDay() : DEFAULT_DAILY;
-                    int wLimitX = x.getMaxHoursPerWeek() > 0 ? x.getMaxHoursPerWeek() : DEFAULT_WEEKLY;
-
-                    return (dLoadX + s.length <= dLimitX) &&
-                            (wLoadX + s.length <= wLimitX);
-                })
-                .sorted(Comparator
-                        // ✅ PRIMARY: Prefer faculty with LOWEST weekly workload (balance load)
-                        .comparingInt((Faculty x) -> weeklyLoad.getOrDefault(x.getId(), 0))
-                        // ✅ SECONDARY: Among equal workload, prefer higher specialization match
-                        .thenComparingInt(x -> -specializationScore(x, s.subject))
-                        .thenComparing(Faculty::getName))
-                .toList();
-
-        if (sortedCandidates.isEmpty())
+        if (candidateFaculty.isEmpty())
             return false;
-
-        // ⭐ STRATEGY: Shuffle top candidates with similar workload to avoid clustering
-        List<Faculty> candidateFaculty = new ArrayList<>(sortedCandidates);
 
         // TRY EACH FACULTY until placement succeeds
         for (Faculty f : candidateFaculty) {
@@ -454,12 +615,8 @@ public class TimetableGenerationService {
                 dailyLoad.put(f.getId(), dLoad + s.length);
                 weeklyLoad.put(f.getId(), wLoad + s.length);
 
-                // ✅ NEW: Record this faculty-subject assignment globally
-                if (!subjectToFacultyMap.containsKey(subjectCode)) {
-                    subjectToFacultyMap.put(subjectCode, f.getId());
-                    System.out.println("📚 Assigned " + f.getName() + " to teach " + subjectCode
-                            + " (will be consistent across sections)");
-                }
+                // ✅ Record this faculty-subject assignment for THIS SECTION (section-level key)
+                subjectToFacultyMap.putIfAbsent(consistencyKey, f.getId());
 
                 // Track morning lab if placed in morning
                 if (s.length == 2 && MORNING_LAB_TIME_SLOTS.contains(si)) {
@@ -564,15 +721,45 @@ public class TimetableGenerationService {
 
                 List<TimetableEntry> all = new ArrayList<>();
                 Map<Long, Integer> globalFacultyLoad = new HashMap<>();
+                Map<String, Map<Long, Integer>> globalDailyWorkloads = new HashMap<>();
+                for (String d : DAYS) {
+                    globalDailyWorkloads.put(d, new HashMap<>());
+                }
                 Occupancy globalOcc = new Occupancy();
 
                 // ✅ NEW: Track which faculty teaches which subject globally
                 Map<String, Long> subjectToFacultyMap = new HashMap<>();
                 // Key: subjectCode (e.g., "CSE314"), Value: facultyId
 
+                Map<String, TimetableEntry> globalElectives = new HashMap<>();
+
+                // ✅ NEW: Calculate Max Elective Hours needed
+                int maxElectiveHours = 0;
+                for (Subject sub : subjectRepo.findAll()) {
+                    if (sub.isElective()) {
+                        int hours = lectureHours(sub);
+                        if (hours > maxElectiveHours)
+                            maxElectiveHours = hours;
+                    }
+                }
+
+                // Pick N random unique global slots for these electives
+                List<String> allPossibleSlots = new ArrayList<>();
+                for (String d : DAYS) {
+                    for (int i = 1; i < TIME_SLOTS.size(); i++) {
+                        if (i == 5 || i == 2)
+                            continue; // Skip lunch (5) and lab start (2)
+                        allPossibleSlots.add(d + "|" + TIME_SLOTS.get(i));
+                    }
+                }
+                Collections.shuffle(allPossibleSlots);
+                List<String> globalElectiveSlots = allPossibleSlots.subList(0,
+                        Math.min(maxElectiveHours, allPossibleSlots.size()));
+
                 for (Section s : sectionRepo.findAll()) {
                     List<TimetableEntry> sectionTT = generateForSection(
-                            String.valueOf(s.getId()), commit, globalFacultyLoad, globalOcc, subjectToFacultyMap);
+                            String.valueOf(s.getId()), commit, globalFacultyLoad, globalOcc, subjectToFacultyMap,
+                            globalElectives, globalElectiveSlots, globalDailyWorkloads);
                     all.addAll(sectionTT);
                 }
 
@@ -605,6 +792,139 @@ public class TimetableGenerationService {
         }
 
         throw new RuntimeException("Global timetable generation failed after retries", lastError);
+    }
+
+    /**
+     * Leave-aware optimization: Reassigns sessions of an on-leave faculty
+     * to other eligible faculty members while keeping the schedule conflict-free.
+     *
+     * @param facultyName Name of the faculty on leave
+     * @param leaveDays   Set of DAYS (e.g. "MONDAY") the faculty will be absent
+     * @return List of maps describing each reassigned entry
+     */
+    @Transactional
+    public List<Map<String, Object>> optimizeForLeave(String facultyName, Set<String> leaveDays) {
+        // 1. Identify which (sectionId + subjectCode) pairs are affected by the leave
+        Set<String> affectedSectionSubjects = timetableRepo.findByFacultyName(facultyName).stream()
+                .filter(e -> leaveDays.contains(e.getDay().toUpperCase()))
+                .map(e -> e.getSectionId() + "|" + e.getSubjectCode())
+                .collect(java.util.stream.Collectors.toSet());
+
+        if (affectedSectionSubjects.isEmpty()) {
+            return List.of();
+        }
+
+        // 2. Fetch ALL timetable entries for the affected (sectionId + subjectCode)
+        // pairs across the ENTIRE week
+        List<TimetableEntry> allEntriesForAffectedSubjects = timetableRepo.findByFacultyName(facultyName).stream()
+                .filter(e -> affectedSectionSubjects.contains(e.getSectionId() + "|" + e.getSubjectCode()))
+                .collect(java.util.stream.Collectors.toList());
+
+        // Group them by the (sectionId + subjectCode) pair so we reassign them together
+        Map<String, List<TimetableEntry>> groupedEntries = allEntriesForAffectedSubjects.stream()
+                .collect(java.util.stream.Collectors.groupingBy(e -> e.getSectionId() + "|" + e.getSubjectCode()));
+
+        List<Faculty> allFaculty = facultyRepo.findByActiveTrue();
+
+        // Build current occupancy from all existing entries (excluding the ones we are
+        // about to reassign)
+        Occupancy occ = new Occupancy();
+        Map<Long, Integer> weeklyLoad = new HashMap<>();
+
+        timetableRepo.findAll().stream()
+                .filter(e -> !allEntriesForAffectedSubjects.contains(e))
+                .forEach(e -> {
+                    occ.mark(e.getSectionId(), e.getFacultyName(), e.getRoomNumber(), e.getDay(), e.getTimeSlot());
+                    Faculty f = allFaculty.stream()
+                            .filter(x -> x.getName().equals(e.getFacultyName()))
+                            .findFirst().orElse(null);
+                    if (f != null) {
+                        weeklyLoad.put(f.getId(), weeklyLoad.getOrDefault(f.getId(), 0) + 1);
+                    }
+                });
+
+        List<Map<String, Object>> reassigned = new ArrayList<>();
+        Map<Long, StringBuilder> notificationBuilder = new HashMap<>();
+
+        for (Map.Entry<String, List<TimetableEntry>> group : groupedEntries.entrySet()) {
+            List<TimetableEntry> entriesToReassign = group.getValue();
+            int requiredHours = entriesToReassign.size();
+
+            // Find a replacement faculty capable of taking ALL iterations of this
+            // subject-section pair
+            Faculty replacement = allFaculty.stream()
+                    .filter(f -> !f.getName().equals(facultyName))
+                    .filter(f -> {
+                        int wLoad = weeklyLoad.getOrDefault(f.getId(), 0);
+                        int wLimit = f.getMaxHoursPerWeek() > 0 ? f.getMaxHoursPerWeek() : DEFAULT_WEEKLY;
+                        return (wLoad + requiredHours) <= wLimit; // Must have capacity for ALL hours
+                    })
+                    .filter(f -> {
+                        // Check occupancy for ALL slots of this subject
+                        return entriesToReassign.stream().noneMatch(entry -> occ.blocked(entry.getSectionId(),
+                                f.getName(), entry.getDay(), entry.getTimeSlot()));
+                    })
+                    .min(Comparator.comparingInt(f -> weeklyLoad.getOrDefault(f.getId(), 0)))
+                    .orElse(null);
+
+            if (replacement != null) {
+                // We found a replacement! Reassign ALL entries in the group to them
+                String oldFaculty = facultyName;
+                String subjectCode = entriesToReassign.get(0).getSubjectCode();
+                String sectionId = entriesToReassign.get(0).getSectionId();
+
+                for (TimetableEntry entry : entriesToReassign) {
+                    entry.setFacultyName(replacement.getName());
+                    timetableRepo.save(entry);
+
+                    // Mark new occupancy
+                    occ.mark(entry.getSectionId(), replacement.getName(), entry.getRoomNumber(), entry.getDay(),
+                            entry.getTimeSlot());
+                    weeklyLoad.put(replacement.getId(), weeklyLoad.getOrDefault(replacement.getId(), 0) + 1);
+
+                    Map<String, Object> info = new LinkedHashMap<>();
+                    info.put("entryId", entry.getId());
+                    info.put("day", entry.getDay());
+                    info.put("timeSlot", entry.getTimeSlot());
+                    info.put("subjectCode", entry.getSubjectCode());
+                    info.put("sectionId", entry.getSectionId());
+                    info.put("oldFaculty", oldFaculty);
+                    info.put("newFaculty", replacement.getName());
+                    info.put("room", entry.getRoomNumber());
+                    reassigned.add(info);
+                }
+
+                // Batch up the notification details for this replacement faculty
+                StringBuilder sb = notificationBuilder.computeIfAbsent(replacement.getId(),
+                        k -> new StringBuilder("You have been reassigned to take over: "));
+                sb.append(subjectCode).append(" (Section ").append(sectionId).append(") for ").append(requiredHours)
+                        .append(" classes. ");
+            }
+        }
+
+        // Send out notifications to all faculty who received new assignments
+        for (Map.Entry<Long, StringBuilder> entry : notificationBuilder.entrySet()) {
+            notificationService.createFacultyNotification(
+                    entry.getKey(),
+                    "New Classes Assigned (Leave Substitution)",
+                    entry.getValue().toString().trim(),
+                    "TIMETABLE_REASSIGNED");
+        }
+
+        if (!reassigned.isEmpty()) {
+            auditLogService.logAction("TIMETABLE", "LEAVE_OPTIMIZE",
+                    "Reassigned " + reassigned.size()
+                            + " total sessions (maintaining section-subject consistency) from " + facultyName
+                            + " due to approved leave.",
+                    "Admin", null);
+            notificationService.createAdminNotification(
+                    "Timetable Optimized for Leave",
+                    "Consistency rule enforced: Reassigned " + reassigned.size() + " total session(s) from "
+                            + facultyName + " to cover approved leave across the entire week.",
+                    "TIMETABLE_LEAVE_OPTIMIZED");
+        }
+
+        return reassigned;
     }
 
     /* ================== OCCUPANCY ================== */
