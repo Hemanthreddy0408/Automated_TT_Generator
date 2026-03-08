@@ -18,7 +18,7 @@ import jakarta.persistence.Table;
  * Stores system notifications after optimization.
  * ---------------------------------------------------------
  */
->>>>>>> origin/historylogs-calender
+
 @Entity
 @Table(name = "notifications")
 public class Notification {
