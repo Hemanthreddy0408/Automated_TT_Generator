@@ -10,7 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "audit_logs")
+@Table(name = "audit_log_entries")
 public class AuditLog {
 
     @Id
@@ -28,6 +28,26 @@ public class AuditLog {
 
     @Column(name = "timestamp")
     private LocalDateTime timestamp;
+
+    @Column(name = "user_email")
+    private String userEmail;
+
+    @Column(name = "status")
+    private String status = "ACTIVE";
+
+    @Column(name = "entity_id")
+    private Long entityId;
+
+    public AuditLog() {} // Make sure default constructor is intact
+
+    public AuditLog(String entityType, String actionType, String description, String userEmail) {
+        this.entityType = entityType;
+        this.actionType = actionType;
+        this.description = description;
+        this.userEmail = userEmail;
+        this.timestamp = LocalDateTime.now();
+        this.status = "ACTIVE";
+    }
 
     // ---------------- GETTERS & SETTERS ----------------
     public Long getId() {
@@ -64,5 +84,29 @@ public class AuditLog {
 
     public void setTimestamp(LocalDateTime timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public String getUserEmail() {
+        return userEmail;
+    }
+
+    public void setUserEmail(String userEmail) {
+        this.userEmail = userEmail;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public Long getEntityId() {
+        return entityId;
+    }
+
+    public void setEntityId(Long entityId) {
+        this.entityId = entityId;
     }
 }

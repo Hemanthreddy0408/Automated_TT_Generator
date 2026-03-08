@@ -56,7 +56,15 @@ export default function FacultyPage() {
     const fetchFaculty = async () => {
       try {
         const data = await getFaculty();
-        setFaculty(Array.isArray(data) ? data : []);
+        const formattedData: Faculty[] = (Array.isArray(data) ? data : []).map((f: any) => ({
+          ...f,
+          id: f.id || 0,
+          qualifications: f.qualifications || [],
+          specialization: f.specialization || '',
+          eligibleSubjects: f.eligibleSubjects || [],
+          facultyCount: f.facultyCount || 0,
+        }));
+        setFaculty(formattedData);
       } catch (err) {
         console.error('Failed to fetch faculty', err);
         setFaculty([]);

@@ -24,6 +24,11 @@ public class HistoryController {
     @Autowired
     private AuditLogRepository auditLogRepository;
 
+    @GetMapping
+    public List<AuditLog> getAllLogs() {
+        return auditLogRepository.findAll();
+    }
+
     @GetMapping("/{date}")
     public List<AuditLog> getLogsByDate(@PathVariable String date) {
 

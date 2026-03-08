@@ -35,7 +35,7 @@ public class FacultyService {
 
         Faculty saved = facultyRepository.save(faculty);
         auditLogService.logAction("FACULTY", "CREATE",
-                "Created new faculty: " + saved.getName() + " (" + saved.getEmployeeId() + ")", "Admin");
+                "Created new faculty: " + saved.getName() + " (" + saved.getEmployeeId() + ")", "Admin", saved.getId());
         return saved;
     }
 
@@ -70,7 +70,7 @@ public class FacultyService {
 
         Faculty updated = facultyRepository.save(faculty);
         auditLogService.logAction("FACULTY", "UPDATE",
-                "Updated faculty details for: " + updated.getName(), "Admin");
+                "Updated faculty details for: " + updated.getName(), "Admin", updated.getId());
         return updated;
     }
 
@@ -108,7 +108,7 @@ public class FacultyService {
         facultyRepository.save(faculty);
 
         auditLogService.logAction("FACULTY", "PASSWORD_UPDATE",
-                "Password changed for: " + faculty.getName(), faculty.getEmployeeId());
+                "Password changed for: " + faculty.getName(), faculty.getEmployeeId(), faculty.getId());
 
         return true;
     }
@@ -118,8 +118,10 @@ public class FacultyService {
      */
     public void deleteFaculty(Long id) {
         Faculty faculty = getFacultyById(id);
-        facultyRepository.deleteById(id);
+        
+        facultyRepository.delete(faculty);
+        
         auditLogService.logAction("FACULTY", "DELETE",
-                "Deleted faculty: " + faculty.getName() + " (" + faculty.getEmployeeId() + ")", "Admin");
+                "Deleted faculty: " + faculty.getName() + " (" + faculty.getEmployeeId() + ")", "Admin", id);
     }
 }

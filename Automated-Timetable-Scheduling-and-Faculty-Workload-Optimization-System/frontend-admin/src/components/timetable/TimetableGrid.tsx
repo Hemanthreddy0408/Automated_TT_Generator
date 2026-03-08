@@ -46,7 +46,7 @@ const COLORS = [
   "bg-rose-50 border-rose-200 text-rose-900 border-l-rose-500",
 ];
 
-const getColorForSubject = (subjectCode?: string) => {
+export const getColorForSubject = (subjectCode?: string) => {
   if (!subjectCode) return "bg-gray-50 border-gray-100";
   let hash = 0;
   for (let i = 0; i < subjectCode.length; i++) {

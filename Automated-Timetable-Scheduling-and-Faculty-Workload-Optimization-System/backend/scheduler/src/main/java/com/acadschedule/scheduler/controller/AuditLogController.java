@@ -20,12 +20,15 @@ public class AuditLogController {
     }
 
     @GetMapping
-    public List<AuditLog> getLogs() {
+    public ResponseEntity<?> getLogs() {
         try {
-            return service.getAllLogs();
+            return ResponseEntity.ok(service.getAllLogs());
         } catch (Exception e) {
             e.printStackTrace();
-            throw e;
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            error.put("trace", java.util.Arrays.toString(e.getStackTrace()));
+            return ResponseEntity.status(500).body(error);
         }
     }
 
@@ -57,5 +60,25 @@ public class AuditLogController {
             error.put("error", e.getMessage());
             return ResponseEntity.badRequest().body(error);
         }
+    }
+
+    @PostMapping("/rollback/{id}")
+    public ResponseEntity<?> rollback(@PathVariable Long id) {
+        service.rollbackAction(id);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/undo-rollback/{id}")
+    public ResponseEntity<?> undoRollback(@PathVariable Long id) {
+        service.undoRollback(id);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+
+        return ResponseEntity.ok(response);
     }
 }

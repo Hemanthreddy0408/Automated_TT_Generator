@@ -42,7 +42,7 @@ public class LeaveService {
         LeaveRequest saved = leaveRepo.save(request);
         auditLogService.logAction("LEAVE", "CREATE",
                 "Submitted leave request for: " + saved.getFacultyName() + " (" + saved.getLeaveType() + ")",
-                saved.getFacultyName());
+                saved.getFacultyName(), saved.getId());
 
         notificationService.createAdminNotification(
                 "New Leave Request",
@@ -60,7 +60,7 @@ public class LeaveService {
             request.setStatus(status);
             LeaveRequest updated = leaveRepo.save(request);
             auditLogService.logAction("LEAVE", "STATUS_CHANGE",
-                    "Updated leave status to " + status + " for: " + updated.getFacultyName(), "Admin");
+                    "Updated leave status to " + status + " for: " + updated.getFacultyName(), "Admin", updated.getId());
 
             if (updated.getFacultyId() != null) {
                 notificationService.createFacultyNotification(
@@ -83,6 +83,6 @@ public class LeaveService {
                 .orElseThrow(() -> new RuntimeException("Leave Request not found"));
         leaveRepo.deleteById(id);
         auditLogService.logAction("LEAVE", "DELETE",
-                "Cancelled/Deleted leave request for: " + request.getFacultyName(), request.getFacultyName());
+                "Cancelled/Deleted leave request for: " + request.getFacultyName(), request.getFacultyName(), id);
     }
 }

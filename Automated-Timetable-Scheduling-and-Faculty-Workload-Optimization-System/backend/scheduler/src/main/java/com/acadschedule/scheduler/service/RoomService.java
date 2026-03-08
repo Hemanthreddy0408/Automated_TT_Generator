@@ -31,7 +31,7 @@ public class RoomService {
     public Room save(Room room) {
         Room saved = roomRepository.save(room);
         auditLogService.logAction("ROOM", "SAVE", 
-            "Saved/Updated room: " + saved.getName() + " (Capacity: " + saved.getCapacity() + ")", "Admin");
+            "Saved/Updated room: " + saved.getName() + " (Capacity: " + saved.getCapacity() + ")", "Admin", saved.getId());
         return saved;
     }
 
@@ -42,6 +42,6 @@ public class RoomService {
         Room room = findById(id);
         roomRepository.deleteById(id);
         auditLogService.logAction("ROOM", "DELETE", 
-            "Deleted room: " + room.getName(), "Admin");
+            "Deleted room: " + room.getName(), "Admin", id);
     }
 }

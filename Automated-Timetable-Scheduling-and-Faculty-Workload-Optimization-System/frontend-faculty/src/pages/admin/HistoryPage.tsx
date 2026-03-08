@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -15,6 +15,7 @@ import {
   FileSpreadsheet,
   FileText,
   ChevronDown,
+  Calendar as CalendarIcon,
 } from 'lucide-react';
 
 import {
@@ -42,6 +43,7 @@ import { DateRange } from "react-day-picker";
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { getAuditLogs } from "@/lib/api";
 
 type HistoryType = 'MANUAL' | 'SYSTEM' | 'EXPORT';
 
@@ -108,25 +110,53 @@ export default function HistoryPage() {
   const [typeFilter, setTypeFilter] = useState<'ALL' | HistoryType>('ALL');
   const [pageSize, setPageSize] = useState(5);
   const [page, setPage] = useState(1);
-  const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: new Date(2024, 7, 1),
-    to: new Date(2024, 7, 30),
-  });
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [logs, setLogs] = useState<HistoryEntry[]>([]);
+
+  useEffect(() => {
+    const fetchLogs = async () => {
+      try {
+        const data = await getAuditLogs();
+        const mappedLogs = data.map((log: any) => ({
+          id: String(log.id),
+          user: log.userEmail ?? "Admin",
+          role: log.userEmail === "admin@system" ? "System" : "Admin",
+          action: log.actionType ?? "UNKNOWN",
+          description: log.description ?? "",
+          type: "SYSTEM", // keep consistent for filtering
+          timestamp: log.timestamp
+            ? format(new Date(log.timestamp), "HH:mm")
+            : "--",
+          date: log.timestamp
+            ? format(new Date(log.timestamp), "MMM dd, yyyy")
+            : "--",
+          rollback: log.actionType === "UPDATE" || log.actionType === "CREATE",
+        }));
+        setLogs(mappedLogs);
+      } catch (err) {
+        console.error("Failed to load audit logs", err);
+      }
+    };
+
+    fetchLogs();
+  }, []);
+
 
 
   /* ---------- FILTER LOGIC ---------- */
   const filtered = useMemo(() => {
-    return DATA.filter((row) => {
+    return logs.filter((row) => {
       const matchesSearch =
         row.action.toLowerCase().includes(search.toLowerCase()) ||
-        row.user.toLowerCase().includes(search.toLowerCase());
+        row.user.toLowerCase().includes(search.toLowerCase()) ||
+        row.description.toLowerCase().includes(search.toLowerCase());
 
       const matchesType =
         typeFilter === 'ALL' || row.type === typeFilter;
 
       return matchesSearch && matchesType;
     });
-  }, [search, typeFilter]);
+  }, [search, typeFilter, logs]);
 
   /* ---------- PAGINATION ---------- */
   const totalPages = Math.ceil(filtered.length / pageSize);
@@ -134,6 +164,14 @@ export default function HistoryPage() {
     (page - 1) * pageSize,
     page * pageSize
   );
+
+  console.log("HistoryPage Rendered");
+  console.log("Filtered:", filtered);
+  console.log("Paginated:", paginated);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, typeFilter, pageSize]);
 
   /* ---------- EXPORT LOGIC ---------- */
   const getExportData = () => filtered.map(row => ({
@@ -292,9 +330,7 @@ export default function HistoryPage() {
               <Popover>
                 <PopoverTrigger asChild>
                   <button className="flex items-center gap-3 rounded-full border bg-background px-5 py-3 text-sm font-medium">
-                    <span className="material-icons text-base text-muted-foreground">
-                      calendar_today
-                    </span>
+                    <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                     <span>
                       {dateRange?.from && dateRange?.to
                         ? `${format(dateRange.from, "MMM d, yyyy")} - ${format(
@@ -381,81 +417,93 @@ export default function HistoryPage() {
               </thead>
 
               <tbody>
-                {paginated.map((row) => (
-                  <tr
-                    key={row.id}
-                    className="border-b border-muted/30 last:border-0 hover:bg-muted/20 transition-colors"
-                  >
-                    {/* USER */}
-                    <td className="px-8 py-6">
-                      <div className="flex items-center gap-4">
-                        {/* Avatar */}
-                        {row.avatar ? (
-                          <img
-                            src={row.avatar}
-                            alt={row.user}
-                            className="h-10 w-10 rounded-full object-cover ring-2 ring-muted/20"
-                          />
-                        ) : (
-                          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center font-semibold text-primary ring-2 ring-muted/20">
-                            {row.user.charAt(0)}
-                          </div>
-                        )}
-
-                        <div className="space-y-1">
-                          <p className="font-semibold leading-tight">{row.user}</p>
-                          <p className="text-xs text-muted-foreground font-medium">{row.role}</p>
-                        </div>
+                {paginated.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="text-center py-20 text-muted-foreground">
+                      <div className="flex flex-col items-center gap-2">
+                        <Search className="h-8 w-8 opacity-20" />
+                        <p className="font-medium">No history records found</p>
+                        <p className="text-xs">Try adjusting your filters or search term</p>
                       </div>
-                    </td>
-
-                    {/* ACTION */}
-                    <td className="px-8 py-6">
-                      <div className="space-y-1">
-                        <p className="font-semibold">{row.action}</p>
-                        <p className="text-xs text-muted-foreground font-medium">
-                          {row.description}
-                        </p>
-                      </div>
-                    </td>
-
-                    {/* TYPE */}
-                    <td className="px-8 py-6">
-                      <Badge
-                        variant="outline"
-                        className={`${badgeStyle[row.type]} rounded-full px-4 py-2 text-xs font-semibold border-0`}
-                      >
-                        {row.type}
-                      </Badge>
-                    </td>
-
-                    {/* TIMESTAMP */}
-                    <td className="px-8 py-6">
-                      <div className="space-y-1">
-                        <p className="font-semibold">{row.timestamp}</p>
-                        <p className="text-xs text-muted-foreground font-medium">{row.date}</p>
-                      </div>
-                    </td>
-
-                    {/* ACTION */}
-                    <td className="px-8 py-6 text-right">
-                      {row.rollback ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="rounded-full gap-2 px-4 py-2 font-medium hover:bg-primary hover:text-primary-foreground transition-colors"
-                        >
-                          <RotateCcw className="h-4 w-4" />
-                          Rollback
-                        </Button>
-                      ) : (
-                        <span className="text-xs italic text-muted-foreground font-medium">
-                          No rollback available
-                        </span>
-                      )}
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  paginated.map((row) => (
+                    <tr
+                      key={row.id}
+                      className="border-b border-muted/30 last:border-0 hover:bg-muted/20 transition-colors"
+                    >
+                      {/* USER */}
+                      <td className="px-8 py-6">
+                        <div className="flex items-center gap-4">
+                          {/* Avatar */}
+                          {row.avatar ? (
+                            <img
+                              src={row.avatar}
+                              alt={row.user}
+                              className="h-10 w-10 rounded-full object-cover ring-2 ring-muted/20"
+                            />
+                          ) : (
+                            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center font-semibold text-primary ring-2 ring-muted/20">
+                              {row.user.charAt(0)}
+                            </div>
+                          )}
+
+                          <div className="space-y-1">
+                            <p className="font-semibold leading-tight">{row.user}</p>
+                            <p className="text-xs text-muted-foreground font-medium">{row.role}</p>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* ACTION */}
+                      <td className="px-8 py-6">
+                        <div className="space-y-1">
+                          <p className="font-semibold">{row.action}</p>
+                          <p className="text-xs text-muted-foreground font-medium">
+                            {row.description}
+                          </p>
+                        </div>
+                      </td>
+
+                      {/* TYPE */}
+                      <td className="px-8 py-6">
+                        <Badge
+                          variant="outline"
+                          className={`${badgeStyle[row.type]} rounded-full px-4 py-2 text-xs font-semibold border-0`}
+                        >
+                          {row.type}
+                        </Badge>
+                      </td>
+
+                      {/* TIMESTAMP */}
+                      <td className="px-8 py-6">
+                        <div className="space-y-1">
+                          <p className="font-semibold">{row.timestamp}</p>
+                          <p className="text-xs text-muted-foreground font-medium">{row.date}</p>
+                        </div>
+                      </td>
+
+                      {/* ACTION */}
+                      <td className="px-8 py-6 text-right">
+                        {row.rollback ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="rounded-full gap-2 px-4 py-2 font-medium hover:bg-primary hover:text-primary-foreground transition-colors"
+                          >
+                            <RotateCcw className="h-4 w-4" />
+                            Rollback
+                          </Button>
+                        ) : (
+                          <span className="text-xs italic text-muted-foreground font-medium">
+                            No rollback available
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
 

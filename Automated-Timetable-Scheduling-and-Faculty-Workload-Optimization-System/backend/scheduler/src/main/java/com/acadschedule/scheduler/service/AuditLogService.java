@@ -14,19 +14,38 @@ import java.util.Optional;
 public class AuditLogService {
 
     private final AuditLogRepository repo;
+    private final com.acadschedule.scheduler.repository.RoomRepository roomRepo;
+    private final com.acadschedule.scheduler.repository.SubjectRepository subjectRepo;
+    private final com.acadschedule.scheduler.repository.FacultyRepository facultyRepo;
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    public AuditLogService(AuditLogRepository repo) {
+    public AuditLogService(AuditLogRepository repo,
+                           com.acadschedule.scheduler.repository.RoomRepository roomRepo,
+                           com.acadschedule.scheduler.repository.SubjectRepository subjectRepo,
+                           com.acadschedule.scheduler.repository.FacultyRepository facultyRepo) {
         this.repo = repo;
+        this.roomRepo = roomRepo;
+        this.subjectRepo = subjectRepo;
+        this.facultyRepo = facultyRepo;
     }
 
     public void logAction(String entity, String action, String description, String user) {
+        logAction(entity, action, description, user, null);
+    }
+
+    public void logAction(String entity, String action, String description, String user, Long entityId) {
         AuditLog log = new AuditLog(entity, action, description, user);
+        if (entityId != null) {
+            log.setEntityId(entityId);
+        }
         repo.save(log);
     }
 
     public List<AuditLog> getAllLogs() {
-        return repo.findAllByOrderByIdDesc();
+        return repo.findAllByOrderByIdDesc()
+                .stream()
+                .filter(log -> !"ROLLED_BACK".equals(log.getStatus()))
+                .toList();
     }
 
     /**
@@ -77,5 +96,68 @@ public class AuditLogService {
         response.put("message", "Audit log updated successfully");
         response.put("data", updated);
         return response;
+    }
+
+    public void rollbackAction(Long id) {
+        AuditLog log = repo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Log not found"));
+
+        if ("ROLLED_BACK".equals(log.getStatus())) {
+            throw new RuntimeException("Log is already rolled back");
+        }
+
+        // Physical Rollback
+        String entityType = log.getEntityType();
+        String actionType = log.getActionType();
+        Long entityId = log.getEntityId();
+
+        if (entityId != null) {
+            try {
+                if ("ROOM".equals(entityType) && (actionType.contains("CREATE") || actionType.contains("SAVE"))) {
+                    roomRepo.deleteById(entityId);
+                } else if ("SUBJECT".equals(entityType) && actionType.contains("CREATE")) {
+                    subjectRepo.deleteById(entityId);
+                } else if ("FACULTY".equals(entityType) && actionType.contains("CREATE")) {
+                    facultyRepo.deleteById(entityId);
+                }
+            } catch (Exception e) {
+                System.out.println("Could not physically revert database record: " + e.getMessage());
+            }
+        }
+
+        // Update original log status to ROLLED_BACK
+        log.setStatus("ROLLED_BACK");
+        repo.save(log);
+
+        AuditLog rollbackLog = new AuditLog(
+                log.getEntityType(),
+                "ROLLBACK",
+                "Rollback performed for log ID: " + id,
+                "admin@system"
+        );
+
+        repo.save(rollbackLog);
+    }
+
+    public void undoRollback(Long id) {
+        AuditLog log = repo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Log not found"));
+
+        // Only allow undoing if it is currently ROLLED_BACK
+        if (!"ROLLED_BACK".equals(log.getStatus())) {
+            throw new RuntimeException("Log is not rolled back, cannot undo.");
+        }
+
+        log.setStatus("ACTIVE");
+        repo.save(log);
+
+        AuditLog restoreLog = new AuditLog(
+                log.getEntityType(),
+                "UNDO_ROLLBACK",
+                "Rollback undone for log ID: " + id,
+                "admin@system"
+        );
+
+        repo.save(restoreLog);
     }
 }

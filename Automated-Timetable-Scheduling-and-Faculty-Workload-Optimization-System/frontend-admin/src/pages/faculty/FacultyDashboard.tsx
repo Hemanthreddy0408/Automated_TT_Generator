@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
-import { TimetableGrid, TimetableEntry } from '@/components/timetable/TimetableGrid';
+import { TimetableEntry } from '@/components/timetable/TimetableGrid';
+import { TimetableView } from '@/components/timetable/TimetableView';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -33,8 +34,15 @@ export default function FacultyDashboard() {
 
   useEffect(() => {
     // 1. Fetch Faculty Profile
-    // NOTE: Hardcoded ID 1 for now, in real app use auth context
-    axios.get('http://localhost:8083/api/faculty/1')
+    const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+    const facultyId = storedUser.id;
+
+    if (!facultyId) {
+      console.error("No logged in faculty found");
+      return;
+    }
+
+    axios.get(`http://localhost:8083/api/faculty/${facultyId}`)
       .then(async (res) => {
         const faculty = res.data;
         setCurrentFaculty(faculty);
@@ -240,7 +248,7 @@ export default function FacultyDashboard() {
               )}
             </div>
 
-            <TimetableGrid
+            <TimetableView
               entries={viewMode === 'week' ? timetableEntries : todaySessions}
             />
           </div>

@@ -1,7 +1,12 @@
 import axios from "axios";
 import { Subject } from "@/types/timetable";
 
-const API_BASE_URL = "http://localhost:8082";
+const API_BASE_URL = "http://localhost:8083";
+
+export const getAuditLogs = async () => {
+  const res = await axios.get(`${API_BASE_URL}/api/audit-logs`);
+  return res.data;
+};
 
 /* ===========================
    ROOMS API

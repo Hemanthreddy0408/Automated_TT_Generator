@@ -51,7 +51,7 @@ const LeaveRequestsPage = () => {
     const handleGenerateSchedule = async () => {
         try {
             toast.info("Initiating schedule optimization...");
-            await axios.post('http://localhost:8083/api/schedule/generate');
+            await axios.post('http://localhost:8083/api/timetable/generate-all');
             toast.success("Schedule optimization started successfully!");
         } catch (error) {
             console.error("Error generating schedule:", error);

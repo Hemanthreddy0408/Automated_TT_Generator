@@ -21,7 +21,7 @@ public class SubjectService {
     public Subject createSubject(Subject subject) {
         Subject saved = subjectRepository.save(subject);
         auditLogService.logAction("SUBJECT", "CREATE", 
-            "Created new subject: " + saved.getName() + " (" + saved.getCode() + ")", "Admin");
+            "Created new subject: " + saved.getName() + " (" + saved.getCode() + ")", "Admin", saved.getId());
         return saved;
     }
 
@@ -54,7 +54,7 @@ public class SubjectService {
 
         Subject updated = subjectRepository.save(subject);
         auditLogService.logAction("SUBJECT", "UPDATE", 
-            "Updated subject details for: " + updated.getCode(), "Admin");
+            "Updated subject details for: " + updated.getCode(), "Admin", updated.getId());
         return updated;
     }
 
@@ -66,6 +66,6 @@ public class SubjectService {
                 .orElseThrow(() -> new RuntimeException("Subject not found with id: " + id));
         subjectRepository.delete(subject);
         auditLogService.logAction("SUBJECT", "DELETE", 
-            "Deleted subject: " + subject.getName() + " (" + subject.getCode() + ")", "Admin");
+            "Deleted subject: " + subject.getName() + " (" + subject.getCode() + ")", "Admin", id);
     }
 }

@@ -65,9 +65,12 @@ public class ConstraintService {
         // 2️⃣ SAVE NOTIFICATION
         // -------------------------------------------------
         Notification notification = new Notification();
+        notification.setTitle("Timetable Optimized");
+        notification.setType("TIMETABLE_OPTIMIZED");
+        notification.setRecipientRole("ADMIN");
         notification.setMessage("Timetable has been optimized. Please review the changes.");
         notification.setCreatedAt(LocalDateTime.now());
-        notification.setReadStatus(false);
+        notification.setRead(false);
 
         notificationRepository.save(notification);
     }

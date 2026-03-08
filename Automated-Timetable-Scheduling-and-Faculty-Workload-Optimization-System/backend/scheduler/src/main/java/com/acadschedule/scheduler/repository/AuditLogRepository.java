@@ -12,4 +12,5 @@ import com.acadschedule.scheduler.entity.AuditLog;
 public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
 
     List<AuditLog> findByTimestampBetween(LocalDateTime start, LocalDateTime end);
+    List<AuditLog> findAllByOrderByIdDesc();
 }

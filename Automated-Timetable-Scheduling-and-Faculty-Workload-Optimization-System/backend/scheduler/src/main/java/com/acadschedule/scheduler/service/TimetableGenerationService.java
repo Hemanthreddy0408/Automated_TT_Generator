@@ -106,7 +106,7 @@ public class TimetableGenerationService {
 
                 if (commit) {
                     auditLogService.logAction("TIMETABLE", "GENERATE",
-                            "Generated timetable for Section ID: " + sectionId, "System/Admin");
+                            "Generated timetable for Section ID: " + sectionId, "System/Admin", null);
 
                     notificationService.createAdminNotification(
                             "Timetable Generated",
@@ -559,7 +559,7 @@ public class TimetableGenerationService {
                 if (commit) {
                     auditLogService.logAction("TIMETABLE", "GENERATE_ALL",
                             "Successfully generated master timetable for all sections (" + all.size() + " entries)",
-                            "System/Admin");
+                            "System/Admin", null);
 
                     notificationService.createAdminNotification(
                             "Master Timetable Generated",

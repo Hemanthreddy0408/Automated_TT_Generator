@@ -22,31 +22,28 @@ export default function AddFacultyReviewPage() {
 
   const handleConfirmRegistration = async () => {
     try {
-      console.log("Submitting Faculty Data:", finalData);
+      const payload = { ...finalData };
 
-      if (finalData.id) {
-        // UPDATE
-        console.log("Updating Faculty ID:", finalData.id);
-        await updateFaculty(finalData.id, finalData);
-      } else {
-        // CREATE
-        console.log("Creating New Faculty");
-        await createFaculty(finalData);
-      }
+      // Always remove ID for new registration
+      delete payload.id;
 
-      // ✅ NEW: Clear the draft since we successfully saved!
+      console.log("Creating New Faculty:", payload);
+
+      await createFaculty(payload);
+
       localStorage.removeItem("faculty_draft");
 
       navigate("/admin/faculty");
     } catch (error) {
       console.error("Failed to save faculty:", error);
-      alert("Error saving faculty. Check console for details.");
+      alert("Error saving faculty. Check console.");
     }
   };
 
   const handleSaveDraft = () => {
     const payload = {
       ...finalData,
+      id: undefined,   // 🔥 important
       savedAt: new Date().toLocaleString()
     };
     localStorage.setItem("faculty_draft", JSON.stringify(payload));

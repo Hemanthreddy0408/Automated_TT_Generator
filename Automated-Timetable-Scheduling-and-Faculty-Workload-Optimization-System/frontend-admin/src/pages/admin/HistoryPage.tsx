@@ -15,7 +15,28 @@ import {
   FileSpreadsheet,
   FileText,
   ChevronDown,
+  AlertTriangle,
+  Clock,
+  Calendar as CalendarIcon,
 } from 'lucide-react';
+
+import { useToast } from "@/components/ui/use-toast";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+import { Textarea } from "@/components/ui/textarea";
+
+import {
+  Alert,
+  AlertDescription,
+} from "@/components/ui/alert";
 
 import {
   Select,
@@ -37,7 +58,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
+import { format, subDays } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { getAuditLogs, AuditLog } from "@/lib/api";
 import * as XLSX from 'xlsx';
@@ -84,14 +105,100 @@ export default function HistoryPage() {
   const [conflictError, setConflictError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  /**
-   * Fetch audit logs from the backend on component mount.
-   */
+  const handleEditClick = (entry: HistoryEntry) => {
+    setSelectedEntry(entry);
+    setEditedDescription(entry.description);
+    setEditDialogOpen(true);
+    setConflictError(null);
+  };
+
+  const handleRollback = async (id: string) => {
+    try {
+      await fetch(`http://localhost:8083/api/audit-logs/rollback/${id}`, {
+        method: "POST"
+      });
+
+      toast({
+        title: "Rollback Successful",
+        description: "The action has been reverted"
+      });
+
+      loadLogs();
+    } catch (error) {
+      toast({
+        title: "Rollback Failed",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleUndoRollback = async (id: string) => {
+    try {
+      await fetch(`http://localhost:8083/api/audit-logs/undo-rollback/${id}`, {
+        method: "POST"
+      });
+
+      toast({
+        title: "Undo Successful",
+        description: "The rollback has been undone."
+      });
+
+      loadLogs();
+    } catch (error) {
+      toast({
+        title: "Undo Failed",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!selectedEntry) return;
+
+    try {
+      setIsSubmitting(true);
+
+      // simulate save (replace with API later)
+      setLogs(prev =>
+        prev.map(log =>
+          log.id === selectedEntry.id
+            ? { ...log, description: editedDescription }
+            : log
+        )
+      );
+
+      toast({
+        title: "History Updated",
+        description: "Audit log description updated successfully.",
+      });
+
+      setEditDialogOpen(false);
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: "Error",
+        description: "Failed to update history entry.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   useEffect(() => {
+    if (!editDialogOpen) {
+      setEditedDescription("");
+      setSelectedEntry(null);
+    }
+  }, [editDialogOpen]);
+
+  const loadLogs = () => {
     getAuditLogs().then(data => {
       if (!Array.isArray(data)) return;
 
-      const mapped: HistoryEntry[] = data.map(log => {
+      const activeLogs = data.filter(log => log.status !== "ROLLED_BACK");
+
+      const mapped: HistoryEntry[] = activeLogs.map(log => {
         const rawTime = log.timestamp || new Date().toISOString();
         const cleanDesc = log.description || "No description provided";
         const cleanUser = log.userEmail || "Unknown User";
@@ -104,11 +211,12 @@ export default function HistoryPage() {
           user: cleanUser,
           role: cleanUser.includes('System') ? 'System Process' : 'Admin',
           action: `${log.actionType || 'Action'} ${log.entityType || ''}`,
-          description: cleanDesc.length > 50 ? cleanDesc.substring(0, 50) + '...' : cleanDesc,
+          description: cleanDesc,
           type: cleanUser.includes('System') ? 'SYSTEM' : 'MANUAL',
-          timestamp: isNaN(dateObj.getTime()) ? "00:00" : dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          date: isNaN(dateObj.getTime()) ? "Long ago" : dateObj.toLocaleDateString(),
-          rollback: false,
+          timestamp: isNaN(dateObj.getTime()) ? "00:00" : format(dateObj, "HH:mm"),
+          date: isNaN(dateObj.getTime()) ? "Long ago" : format(dateObj, "MMM dd, yyyy"),
+          rollback: log.actionType !== "ROLLBACK" && log.actionType !== "UNDO_ROLLBACK",
+          isRollbackLog: log.actionType === "ROLLBACK",
           avatar: undefined,
           dbTimestamp: isNaN(dateObj.getTime()) ? "" : dateObj.toLocaleString('en-US', {
             year: 'numeric',
@@ -125,6 +233,13 @@ export default function HistoryPage() {
     }).catch(err => {
       console.error("Critical: Failed to map audit logs", err);
     });
+  };
+
+  /**
+   * Fetch audit logs from the backend on component mount.
+   */
+  useEffect(() => {
+    loadLogs();
   }, []);
 
   /* ---------- FILTER LOGIC ---------- */
@@ -132,14 +247,21 @@ export default function HistoryPage() {
     return logs.filter((row) => {
       const matchesSearch =
         row.action.toLowerCase().includes(search.toLowerCase()) ||
-        row.user.toLowerCase().includes(search.toLowerCase());
+        row.user.toLowerCase().includes(search.toLowerCase()) ||
+        row.description.toLowerCase().includes(search.toLowerCase());
 
       const matchesType =
         typeFilter === 'ALL' || row.type === typeFilter;
 
-      return matchesSearch && matchesType;
+      const logDate = new Date(row.dbTimestamp);
+      const matchesDate =
+        !dateRange?.from ||
+        !dateRange?.to ||
+        (logDate >= dateRange.from && logDate <= dateRange.to);
+
+      return matchesSearch && matchesType && matchesDate;
     });
-  }, [search, typeFilter, logs]);
+  }, [search, typeFilter, logs, dateRange]);
 
   /* ---------- PAGINATION ---------- */
   const totalPages = Math.ceil(filtered.length / pageSize);
@@ -202,7 +324,7 @@ export default function HistoryPage() {
         {/* STATS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {/* Total Actions */}
-          <Card className="rounded-xl shadow-sm hover:shadow-md transition-shadow focus-within:ring-2 focus-within:ring-primary">
+          <Card className="rounded-xl shadow-sm hover:shadow-md transition-shadow focus-within:ring-2 focus-within:ring-primary border-l-4 border-blue-500">
             <CardContent className="p-8 flex justify-between items-start">
               <div className="space-y-2">
                 <p className="text-sm font-medium text-muted-foreground">Total Actions</p>
@@ -216,7 +338,7 @@ export default function HistoryPage() {
           </Card>
 
           {/* Automated */}
-          <Card className="rounded-xl shadow-sm hover:shadow-md transition-shadow">
+          <Card className="rounded-xl shadow-sm hover:shadow-md transition-shadow border-l-4 border-purple-500">
             <CardContent className="p-8 flex justify-between items-start">
               <div className="space-y-2">
                 <p className="text-sm font-medium text-muted-foreground">System Actions</p>
@@ -232,7 +354,7 @@ export default function HistoryPage() {
           </Card>
 
           {/* Manual Edits */}
-          <Card className="rounded-xl shadow-sm hover:shadow-md transition-shadow">
+          <Card className="rounded-xl shadow-sm hover:shadow-md transition-shadow border-l-4 border-amber-500">
             <CardContent className="p-8 flex justify-between items-start">
               <div className="space-y-2">
                 <p className="text-sm font-medium text-muted-foreground">Admin Actions</p>
@@ -248,7 +370,7 @@ export default function HistoryPage() {
           </Card>
 
           {/* Rollbacks (Currently hardcoded as backend doesn't support them yet) */}
-          <Card className="rounded-xl shadow-sm hover:shadow-md transition-shadow">
+          <Card className="rounded-xl shadow-sm hover:shadow-md transition-shadow border-l-4 border-red-500">
             <CardContent className="p-8 flex justify-between items-start">
               <div className="space-y-2">
                 <p className="text-sm font-medium text-muted-foreground">Rollbacks</p>
@@ -269,8 +391,21 @@ export default function HistoryPage() {
           <CardContent className="px-8 py-6">
             <div className="flex flex-wrap items-center gap-4">
 
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Search actions..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-9 pr-4 py-2 border rounded-full text-sm outline-none focus:ring-2 focus:ring-primary/50"
+                  style={{ width: '220px' }}
+                />
+              </div>
+
               {/* Filters label */}
-              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground ml-2">
                 <Filter className="h-4 w-4" />
                 <span>Filters:</span>
               </div>
@@ -304,28 +439,93 @@ export default function HistoryPage() {
               {/* Date Range */}
               <Popover>
                 <PopoverTrigger asChild>
-                  <button className="flex items-center gap-3 rounded-full border bg-background px-5 py-3 text-sm font-medium">
-                    <span className="material-icons text-base text-muted-foreground">
-                      calendar_today
-                    </span>
+                  <Button
+                    variant="outline"
+                    className="flex items-center gap-3 rounded-full border bg-background px-5 py-3 text-sm font-medium text-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
+                  >
+                    <CalendarIcon className="h-4 w-4 text-foreground/70" />
                     <span>
-                      {dateRange?.from && dateRange?.to
-                        ? `${format(dateRange.from, "MMM d, yyyy")} - ${format(
-                          dateRange.to,
-                          "MMM d, yyyy"
-                        )}`
-                        : "Select date range"}
+                      {dateRange?.from ? (
+                        dateRange.to ? (
+                          <>
+                            {format(dateRange.from, "LLL dd, y")} -{" "}
+                            {format(dateRange.to, "LLL dd, y")}
+                          </>
+                        ) : (
+                          format(dateRange.from, "LLL dd, y")
+                        )
+                      ) : (
+                        "Select date range"
+                      )}
                     </span>
-                  </button>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground opacity-50" />
+                  </Button>
                 </PopoverTrigger>
 
-                <PopoverContent className="p-2" align="start">
-                  <Calendar
-                    mode="range"
-                    selected={dateRange}
-                    onSelect={setDateRange}
-                    numberOfMonths={2}
-                  />
+                <PopoverContent
+                  className="w-[380px] p-0 shadow-xl border rounded-xl bg-background"
+                  align="center"
+                  side="bottom"
+                  sideOffset={4}
+                >
+                  <div className="flex flex-col divide-y border-b">
+
+                    {/* Quick Presets Menu */}
+                    <div className="flex flex-row p-3 justify-center gap-2 bg-muted/30 flex-wrap">
+                      {[
+                        { label: "Today", days: 0 },
+                        { label: "Last 7 Days", days: 7 },
+                        { label: "Last 30 Days", days: 30 },
+                      ].map((preset) => (
+                        <Button
+                          key={preset.label}
+                          variant="ghost"
+                          size="sm"
+                          className="font-normal text-foreground hover:bg-primary/10 hover:text-primary transition-colors text-sm px-4 h-9 rounded-md"
+                          onClick={() => {
+                            const today = new Date();
+                            setDateRange({
+                              from: preset.days === 0 ? today : subDays(today, preset.days),
+                              to: today
+                            });
+                          }}
+                        >
+                          {preset.label}
+                        </Button>
+                      ))}
+                    </div>
+
+                    {/* Calendar Area */}
+                    <div className="p-4 flex justify-center max-w-[380px]">
+                      <Calendar
+                        initialFocus
+                        mode="range"
+                        defaultMonth={dateRange?.from}
+                        selected={dateRange}
+                        onSelect={setDateRange}
+                        numberOfMonths={1}
+                        classNames={{
+                          day_range_middle: "aria-selected:bg-primary/15 aria-selected:text-primary rounded-none",
+                          day_range_start: "aria-selected:bg-primary aria-selected:text-primary-foreground rounded-l-md rounded-r-none",
+                          day_range_end: "aria-selected:bg-primary aria-selected:text-primary-foreground rounded-r-md rounded-l-none",
+                          day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-muted hover:text-foreground rounded-md transition-colors flex items-center justify-center",
+                          cell: "p-0 text-center text-sm focus-within:relative focus-within:z-20",
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Footer Actions */}
+                  <div className="p-3 flex items-center justify-end gap-2 bg-muted/10 rounded-b-xl border-t">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setDateRange(undefined)}
+                      className="text-muted-foreground hover:text-foreground rounded-full"
+                    >
+                      Clear
+                    </Button>
+                  </div>
                 </PopoverContent>
               </Popover>
 
@@ -348,13 +548,29 @@ export default function HistoryPage() {
                 </SelectContent>
               </Select>
 
+              {/* Clear Filters */}
+              {(search || typeFilter !== 'ALL' || dateRange) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-full"
+                  onClick={() => {
+                    setSearch("");
+                    setTypeFilter("ALL");
+                    setDateRange(undefined);
+                  }}
+                >
+                  Clear Filters
+                </Button>
+              )}
+
               {/* Export Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="ml-auto gap-2 rounded-full px-4 py-3 text-muted-foreground hover:bg-muted/50"
+                    className="ml-auto gap-2 rounded-full px-4 py-3 text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                   >
                     <Download className="h-4 w-4" />
                     Export
@@ -362,13 +578,13 @@ export default function HistoryPage() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={exportToCSV} className="gap-2">
+                  <DropdownMenuItem onClick={exportToCSV} className="gap-2 hover:text-foreground">
                     <FileText className="h-4 w-4" /> CSV
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={exportToExcel} className="gap-2">
+                  <DropdownMenuItem onClick={exportToExcel} className="gap-2 hover:text-foreground">
                     <FileSpreadsheet className="h-4 w-4" /> Excel
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={exportToPDF} className="gap-2">
+                  <DropdownMenuItem onClick={exportToPDF} className="gap-2 hover:text-foreground">
                     <FileText className="h-4 w-4" /> PDF
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -380,16 +596,22 @@ export default function HistoryPage() {
 
 
         {/* TABLE */}
+        <div className="flex items-center justify-between mb-2 px-1">
+          <p className="text-sm font-medium text-muted-foreground">
+            {filtered.length} results found
+          </p>
+        </div>
+
         <Card className="rounded-xl shadow-sm overflow-hidden">
           <CardContent className="p-0 overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-muted/60 text-muted-foreground">
                 <tr>
-                  <th className="text-left px-8 py-5 font-semibold">USER</th>
-                  <th className="text-left px-8 py-5 font-semibold">ACTION</th>
-                  <th className="text-left px-8 py-5 font-semibold">TYPE</th>
-                  <th className="text-left px-8 py-5 font-semibold">TIMESTAMP</th>
-                  <th className="text-right px-8 py-5 font-semibold">ACTION</th>
+                  <th className="text-left px-6 py-4 font-semibold">USER</th>
+                  <th className="text-left px-6 py-4 font-semibold">ACTION</th>
+                  <th className="text-left px-6 py-4 font-semibold">TYPE</th>
+                  <th className="text-left px-6 py-4 font-semibold">TIMESTAMP</th>
+                  <th className="text-right px-6 py-4 font-semibold">ACTION</th>
                 </tr>
               </thead>
 
@@ -400,17 +622,18 @@ export default function HistoryPage() {
                     className="border-b border-muted/30 last:border-0 hover:bg-muted/20 transition-colors"
                   >
                     {/* USER */}
-                    <td className="px-8 py-6">
+                    <td className="px-6 py-4">
                       <div className="flex items-center gap-4">
+                        <div className="w-2 h-2 rounded-full bg-primary shrink-0" />
                         {/* Avatar */}
                         {row.avatar ? (
                           <img
                             src={row.avatar}
                             alt={row.user}
-                            className="h-10 w-10 rounded-full object-cover ring-2 ring-muted/20"
+                            className="h-10 w-10 shrink-0 rounded-full object-cover ring-2 ring-muted/20"
                           />
                         ) : (
-                          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center font-semibold text-primary ring-2 ring-muted/20">
+                          <div className="h-10 w-10 shrink-0 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center font-semibold text-primary shadow-sm ring-2 ring-muted/20">
                             {row.user.charAt(0)}
                           </div>
                         )}
@@ -423,17 +646,24 @@ export default function HistoryPage() {
                     </td>
 
                     {/* ACTION */}
-                    <td className="px-8 py-6">
+                    <td className="px-6 py-4">
                       <div className="space-y-1">
-                        <p className="font-semibold">{row.action}</p>
-                        <p className="text-xs text-muted-foreground font-medium">
+                        <p
+                          className={`font-semibold text-sm ${row.action.toLowerCase().includes("delete")
+                            ? "text-red-600"
+                            : "text-foreground"
+                            }`}
+                        >
+                          {row.action.replace(/_/g, " ")}
+                        </p>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
                           {row.description}
                         </p>
                       </div>
                     </td>
 
                     {/* TYPE */}
-                    <td className="px-8 py-6">
+                    <td className="px-6 py-4">
                       <Badge
                         variant="outline"
                         className={`${badgeStyle[row.type]} rounded-full px-4 py-2 text-xs font-semibold border-0`}
@@ -443,33 +673,48 @@ export default function HistoryPage() {
                     </td>
 
                     {/* TIMESTAMP */}
-                    <td className="px-8 py-6">
+                    <td className="px-6 py-4">
                       <div className="space-y-1">
-                        <p className="font-semibold">{row.timestamp}</p>
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-3 w-3 text-muted-foreground" />
+                          <span className="font-semibold text-sm">{row.timestamp}</span>
+                        </div>
                         <p className="text-xs text-muted-foreground font-medium">{row.date}</p>
                       </div>
                     </td>
 
                     {/* ACTION */}
-                    <td className="px-8 py-6 text-right">
+                    <td className="px-6 py-4 text-right">
                       <div className="flex items-center gap-2 justify-end">
                         <Button
                           variant="outline"
                           size="sm"
-                          className="rounded-full gap-2 px-4 py-2 font-medium hover:bg-primary hover:text-primary-foreground transition-colors"
+                          className="rounded-full gap-2 px-3 py-1.5 hover:bg-primary hover:text-white transition"
                           onClick={() => handleEditClick(row)}
                         >
-                          <Edit className="h-4 w-4" />
+                          <Edit className="h-3.5 w-3.5" />
                           Edit
                         </Button>
                         {row.rollback && (
                           <Button
                             variant="outline"
                             size="sm"
-                            className="rounded-full gap-2 px-4 py-2 font-medium hover:bg-primary hover:text-primary-foreground transition-colors"
+                            className="rounded-full gap-2 px-3 py-1.5 hover:bg-primary hover:text-white transition"
+                            onClick={() => handleRollback(row.id)}
                           >
-                            <RotateCcw className="h-4 w-4" />
+                            <RotateCcw className="h-3.5 w-3.5" />
                             Rollback
+                          </Button>
+                        )}
+                        {(row as any).isRollbackLog && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="rounded-full gap-2 px-3 py-1.5 hover:bg-primary hover:text-white transition"
+                            onClick={() => handleUndoRollback(row.id)}
+                          >
+                            <RotateCcw className="h-3.5 w-3.5" />
+                            Undo Undo
                           </Button>
                         )}
                       </div>
@@ -496,7 +741,7 @@ export default function HistoryPage() {
                 >
                   ‹
                 </Button>
-                {Array.from({ length: Math.min(3, totalPages) }, (_, i) => (
+                {Array.from({ length: totalPages }, (_, i) => (
                   <Button
                     key={i + 1}
                     variant={page === i + 1 ? "default" : "ghost"}
@@ -507,7 +752,6 @@ export default function HistoryPage() {
                     {i + 1}
                   </Button>
                 ))}
-                {totalPages > 3 && <span className="px-2">…</span>}
                 <Button
                   variant="ghost"
                   size="sm"

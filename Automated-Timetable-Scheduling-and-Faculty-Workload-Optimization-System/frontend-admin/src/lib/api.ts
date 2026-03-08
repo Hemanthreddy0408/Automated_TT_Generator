@@ -219,11 +219,12 @@ export interface AuditLog {
   entityType: string;
   description: string;
   timestamp: string;
+  status?: string;
 }
 
 export const getAuditLogs = async (): Promise<AuditLog[]> => {
   try {
-    const res = await API.get("/audit-logs");
+    const res = await API.get('/audit-logs');
     return Array.isArray(res.data) ? res.data : [];
   } catch (e) {
     console.error("Failed to fetch audit logs", e);
