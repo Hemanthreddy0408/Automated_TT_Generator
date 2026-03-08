@@ -3,6 +3,22 @@ package com.acadschedule.scheduler.entity;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+
+/*
+ * ---------------------------------------------------------
+ * Notification Entity
+ * ---------------------------------------------------------
+ * Stores system notifications after optimization.
+ * ---------------------------------------------------------
+ */
+>>>>>>> origin/historylogs-calender
 @Entity
 @Table(name = "notifications")
 public class Notification {
@@ -11,56 +27,38 @@ public class Notification {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private String title;
-
-    @Column(nullable = false, length = 1000)
     private String message;
 
-    @Column(nullable = false)
-    private String type; // e.g. TIMETABLE_GENERATED, LEAVE_APPROVED
+    private Boolean readStatus = false;
 
-    @Column(nullable = false)
-    private boolean isRead = false;
-
-    @Column(nullable = false)
     private LocalDateTime createdAt;
 
-    @Column(nullable = false)
-    private String recipientRole; // ADMIN, FACULTY
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "faculty_id")
-    private Faculty faculty; // null if for ADMIN
-
-    @PrePersist
-    protected void onCreate() {
-        if (createdAt == null) {
-            createdAt = LocalDateTime.now();
-        }
+    // Getters & Setters
+    public Long getId() {
+        return id;
     }
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public String getMessage() {
+        return message;
+    }
 
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
+    public void setMessage(String message) {
+        this.message = message;
+    }
 
-    public String getMessage() { return message; }
-    public void setMessage(String message) { this.message = message; }
+    public Boolean getReadStatus() {
+        return readStatus;
+    }
 
-    public String getType() { return type; }
-    public void setType(String type) { this.type = type; }
+    public void setReadStatus(Boolean readStatus) {
+        this.readStatus = readStatus;
+    }
 
-    public boolean isRead() { return isRead; }
-    public void setRead(boolean read) { isRead = read; }
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-
-    public String getRecipientRole() { return recipientRole; }
-    public void setRecipientRole(String recipientRole) { this.recipientRole = recipientRole; }
-
-    public Faculty getFaculty() { return faculty; }
-    public void setFaculty(Faculty faculty) { this.faculty = faculty; }
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
 }
