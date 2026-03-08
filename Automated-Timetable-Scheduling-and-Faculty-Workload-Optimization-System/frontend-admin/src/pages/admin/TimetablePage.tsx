@@ -4,11 +4,12 @@ import { toast } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
 import { TimetableEntry } from "@/components/timetable/TimetableGrid";
 import { TimetableView } from "@/components/timetable/TimetableView";
-import { generateTimetable, generateAllTimetables, getTimetable, getSections } from "@/lib/api";
+import { generateTimetable, generateAllTimetables, getTimetable, getSections, updateTimetableEntry } from "@/lib/api";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Loader2, Users, School, Calendar, Coffee, Utensils } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Section } from "@/types/timetable";
+import { EditEntryModal } from "@/components/timetable/EditEntryModal";
 import {
   Select,
   SelectContent,
@@ -22,6 +23,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  SelectGroup,
+  SelectLabel
+} from "@/components/ui/select";
 import { Download } from "lucide-react";
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
@@ -38,6 +43,8 @@ export default function TimetablePage() {
   const [sections, setSections] = useState<Section[]>([]);
   const [selectedSection, setSelectedSection] = useState<Section | null>(null);
   const [loading, setLoading] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<TimetableEntry | null>(null);
+  const [isEditModalOpen, setEditModalOpen] = useState(false);
 
   // 1. Helper to transform flat array to Day -> TimeSlot matrix
   const transformTimetable = (data: any[]) => {
@@ -47,6 +54,20 @@ export default function TimetablePage() {
       table[entry.day][entry.timeSlot] = entry;
     });
     return table;
+  };
+
+  const handleEdit = (entry: TimetableEntry) => {
+    setEditingEntry(entry);
+    setEditModalOpen(true);
+  };
+
+  const handleSaveEntry = async (updatedEntry: TimetableEntry, force = false) => {
+    const result = await updateTimetableEntry(updatedEntry, force);
+    if (result.success) {
+      toast.success("Timetable entry updated successfully!");
+      await fetchTimetable(); // Refresh data
+    }
+    return result;
   };
 
   // 2. Fetch All Sections on Mount
@@ -162,14 +183,40 @@ export default function TimetablePage() {
       actions={
         <div className="flex items-center gap-2">
           <Select value={sectionId || ""} onValueChange={handleSectionChange}>
-            <SelectTrigger className="w-[200px] bg-white">
-              <SelectValue placeholder="Select Section" />
+            <SelectTrigger className="w-[300px] bg-white">
+              <SelectValue placeholder="Select Section">
+                {selectedSection ? (
+                  <span className="flex items-center gap-2">
+                    <span className="font-semibold">{selectedSection.name} ({selectedSection.department})</span>
+                    <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-black uppercase">Year {selectedSection.year}</span>
+                  </span>
+                ) : "Select Section"}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
-              {sections.map(s => (
-                <SelectItem key={s.id} value={String(s.id)}>
-                  {s.name} ({s.department})
-                </SelectItem>
+              {Object.entries(
+                sections.reduce((acc: any, s) => {
+                  const key = `Year ${s.year}`;
+                  if (!acc[key]) acc[key] = [];
+                  acc[key].push(s);
+                  return acc;
+                }, {})
+              ).sort().map(([year, yearSections]: [any, any]) => (
+                <SelectGroup key={year}>
+                  <SelectLabel className="text-[10px] uppercase tracking-widest text-slate-400 font-bold px-2 py-1.5">
+                    {year}
+                  </SelectLabel>
+                  {yearSections.map((s: any) => (
+                    <SelectItem key={s.id} value={String(s.id)}>
+                      <div className="flex justify-between w-full items-center gap-8">
+                        <span className="font-medium">{s.name} ({s.department})</span>
+                        <span className="text-[9px] bg-slate-50 text-slate-400 border px-1.5 py-0.5 rounded font-bold uppercase group-hover:bg-white transition-colors">
+                          Y{s.year}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
               ))}
             </SelectContent>
           </Select>
@@ -249,7 +296,15 @@ export default function TimetablePage() {
             </div>
 
             {/* TIMETABLE VIEW (Grid + Legends) */}
-            <TimetableView entries={entries} />
+            <TimetableView entries={entries} onEdit={handleEdit} sectionId={sectionId} />
+
+            <EditEntryModal
+              entry={editingEntry}
+              open={isEditModalOpen}
+              onClose={() => setEditModalOpen(false)}
+              onSave={handleSaveEntry}
+              selectedSection={selectedSection}
+            />
           </>
         )}
       </div>

@@ -18,6 +18,7 @@ import {
   AlertTriangle,
   Clock,
   Calendar as CalendarIcon,
+  Loader2,
 } from 'lucide-react';
 
 import { useToast } from "@/components/ui/use-toast";
@@ -60,7 +61,7 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { format, subDays } from "date-fns";
 import { DateRange } from "react-day-picker";
-import { getAuditLogs, AuditLog } from "@/lib/api";
+import { getAuditLogs, updateAuditLog, AuditLog } from "@/lib/api";
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -157,27 +158,31 @@ export default function HistoryPage() {
 
     try {
       setIsSubmitting(true);
+      setConflictError(null);
 
-      // simulate save (replace with API later)
-      setLogs(prev =>
-        prev.map(log =>
-          log.id === selectedEntry.id
-            ? { ...log, description: editedDescription }
-            : log
-        )
-      );
-
-      toast({
-        title: "History Updated",
-        description: "Audit log description updated successfully.",
+      const result = await updateAuditLog({
+        id: Number(selectedEntry.id),
+        description: editedDescription,
+        lastModifiedTimestamp: selectedEntry.dbTimestamp
       });
 
-      setEditDialogOpen(false);
-    } catch (err) {
+      if (result.success) {
+        toast({
+          title: "History Updated",
+          description: "Audit log description updated successfully.",
+        });
+        setEditDialogOpen(false);
+        loadLogs(); // Refresh to show the updated entry at the top
+      } else if (result.hasConflict) {
+        setConflictError(result.message);
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (err: any) {
       console.error(err);
       toast({
         title: "Error",
-        description: "Failed to update history entry.",
+        description: err.message || "Failed to update history entry.",
         variant: "destructive",
       });
     } finally {
@@ -244,23 +249,25 @@ export default function HistoryPage() {
 
   /* ---------- FILTER LOGIC ---------- */
   const filtered = useMemo(() => {
-    return logs.filter((row) => {
-      const matchesSearch =
-        row.action.toLowerCase().includes(search.toLowerCase()) ||
-        row.user.toLowerCase().includes(search.toLowerCase()) ||
-        row.description.toLowerCase().includes(search.toLowerCase());
+    return logs
+      .filter((row) => {
+        const matchesSearch =
+          row.action.toLowerCase().includes(search.toLowerCase()) ||
+          row.user.toLowerCase().includes(search.toLowerCase()) ||
+          row.description.toLowerCase().includes(search.toLowerCase());
 
-      const matchesType =
-        typeFilter === 'ALL' || row.type === typeFilter;
+        const matchesType =
+          typeFilter === 'ALL' || row.type === typeFilter;
 
-      const logDate = new Date(row.dbTimestamp);
-      const matchesDate =
-        !dateRange?.from ||
-        !dateRange?.to ||
-        (logDate >= dateRange.from && logDate <= dateRange.to);
+        const logDate = new Date(row.dbTimestamp);
+        const matchesDate =
+          !dateRange?.from ||
+          !dateRange?.to ||
+          (logDate >= dateRange.from && logDate <= dateRange.to);
 
-      return matchesSearch && matchesType && matchesDate;
-    });
+        return matchesSearch && matchesType && matchesDate;
+      })
+      .sort((a, b) => new Date(b.dbTimestamp).getTime() - new Date(a.dbTimestamp).getTime());
   }, [search, typeFilter, logs, dateRange]);
 
   /* ---------- PAGINATION ---------- */

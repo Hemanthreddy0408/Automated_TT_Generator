@@ -99,10 +99,30 @@ public class TimetableGenerationService {
         int MAX_ATTEMPTS = 50;
         RuntimeException lastError = null;
 
+        // ✅ PRIME GLOBAL STATE: Gather all existing entries from OTHER sections 
+        // to prevent collisions when generating just one section.
+        Map<Long, Integer> globalFacultyLoad = new HashMap<>();
+        Occupancy globalOcc = new Occupancy();
+        
+        Map<String, Faculty> facultyMap = new HashMap<>();
+        facultyRepo.findAll().forEach(f -> facultyMap.put(f.getName(), f));
+
+        timetableRepo.findAll().stream()
+                .filter(e -> !sectionId.equals(e.getSectionId()))
+                .forEach(e -> {
+                    globalOcc.mark(e.getSectionId(), e.getFacultyName(), e.getRoomNumber(), e.getDay(), e.getTimeSlot());
+                    
+                    Faculty f = facultyMap.get(e.getFacultyName());
+                    if (f != null) {
+                        globalFacultyLoad.put(f.getId(), globalFacultyLoad.getOrDefault(f.getId(), 0) + 1);
+                    }
+                });
+
         for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
             try {
                 System.out.println("Attempt " + attempt + " for section " + sectionId);
-                List<TimetableEntry> result = generateForSection(sectionId, commit, null, null, new HashMap<>());
+                // Pass the pre-filled global state
+                List<TimetableEntry> result = generateForSection(sectionId, commit, globalFacultyLoad, globalOcc, new HashMap<>());
 
                 if (commit) {
                     auditLogService.logAction("TIMETABLE", "GENERATE",

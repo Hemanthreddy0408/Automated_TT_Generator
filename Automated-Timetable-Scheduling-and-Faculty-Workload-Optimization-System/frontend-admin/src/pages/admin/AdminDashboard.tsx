@@ -87,7 +87,7 @@ export default function AdminDashboard() {
           setSelectedSectionId(String(sectionWithTT.id));
         } else if (secData.length > 0) {
           setSelectedSectionId(String(secData[0].id));
-}
+        }
 
 
       } catch (error) {
@@ -106,10 +106,10 @@ export default function AdminDashboard() {
     // The api might return sectionId as string in entry. section.id is number/long.
     // Let's coerce both to string.
   }, [allEntries, selectedSectionId]);
-  
+
   const timetableMatrix = useMemo(() => {
-  return buildTimetableMatrix(selectedSectionEntries);
-}, [selectedSectionEntries]);
+    return buildTimetableMatrix(selectedSectionEntries);
+  }, [selectedSectionEntries]);
 
   // Derived: Active Conflicts (Simple client-side check)
   // We check for Faculty Double Booking or Room Double Booking
@@ -305,7 +305,15 @@ export default function AdminDashboard() {
                         <AlertTriangle className="h-4 w-4 text-destructive" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm">{conflict.subject}</p>
+                        <div className="flex items-center justify-between">
+                          <p className="font-medium text-sm">{conflict.subject}</p>
+                          <Link
+                            to={`/admin/timetable?sectionId=${selectedSectionId}`}
+                            className="text-[10px] font-bold text-primary hover:underline"
+                          >
+                            Resolve
+                          </Link>
+                        </div>
                         <p className="text-xs text-muted-foreground truncate">
                           {conflict.reason}
                         </p>

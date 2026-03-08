@@ -42,7 +42,7 @@ public class AuditLogService {
     }
 
     public List<AuditLog> getAllLogs() {
-        return repo.findAllByOrderByIdDesc()
+        return repo.findAllByOrderByTimestampDesc()
                 .stream()
                 .filter(log -> !"ROLLED_BACK".equals(log.getStatus()))
                 .toList();

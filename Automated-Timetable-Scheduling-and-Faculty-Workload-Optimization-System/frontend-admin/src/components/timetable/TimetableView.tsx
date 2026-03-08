@@ -4,6 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 
 type Props = {
     entries: TimetableEntry[];
+    onEdit?: (entry: TimetableEntry) => void;
+    sectionId?: string;
 };
 
 const transformTimetable = (data: TimetableEntry[]) => {
@@ -15,7 +17,7 @@ const transformTimetable = (data: TimetableEntry[]) => {
     return table;
 };
 
-export function TimetableView({ entries }: Props) {
+export function TimetableView({ entries, onEdit, sectionId }: Props) {
     const timetable = transformTimetable(entries);
 
     // Compute Legend
@@ -54,7 +56,7 @@ export function TimetableView({ entries }: Props) {
 
     return (
         <div className="space-y-6">
-            <TimetableGrid timetable={timetable} />
+            <TimetableGrid timetable={timetable} onEdit={onEdit} sectionId={sectionId} />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Dynamic Subject Overview */}

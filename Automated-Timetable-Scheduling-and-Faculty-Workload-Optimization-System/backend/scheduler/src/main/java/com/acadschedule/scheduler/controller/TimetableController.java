@@ -2,6 +2,7 @@ package com.acadschedule.scheduler.controller;
 
 import com.acadschedule.scheduler.entity.TimetableEntry;
 import com.acadschedule.scheduler.repository.TimetableRepository;
+import com.acadschedule.scheduler.service.TimetableConflictService;
 import com.acadschedule.scheduler.service.TimetableGenerationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,10 +15,12 @@ public class TimetableController {
 
     private final TimetableRepository repo;
     private final TimetableGenerationService timetableGenerationService;
+    private final TimetableConflictService conflictService;
 
-    public TimetableController(TimetableRepository repo, TimetableGenerationService timetableGenerationService) {
+    public TimetableController(TimetableRepository repo, TimetableGenerationService timetableGenerationService, TimetableConflictService conflictService) {
         this.repo = repo;
         this.timetableGenerationService = timetableGenerationService;
+        this.conflictService = conflictService;
     }
 
     @GetMapping
@@ -33,6 +36,18 @@ public class TimetableController {
     @GetMapping("/faculty/{facultyName}")
     public List<TimetableEntry> getByFaculty(@PathVariable String facultyName) {
         return repo.findByFacultyName(facultyName);
+    }
+
+    @PutMapping("/update")
+    public ResponseEntity<?> updateEntry(@RequestBody TimetableEntry entry, @RequestParam(defaultValue = "false") boolean force) {
+        if (!force) {
+            List<String> conflicts = conflictService.checkConflicts(entry);
+            if (!conflicts.isEmpty()) {
+                return ResponseEntity.status(409).body(conflicts);
+            }
+        }
+        TimetableEntry saved = repo.save(entry);
+        return ResponseEntity.ok(saved);
     }
 
     @PostMapping("/generate-all")

@@ -210,6 +210,18 @@ export const getFacultyTimetable = async (facultyName: string) => {
   return Array.isArray(res.data) ? res.data : [];
 };
 
+export const updateTimetableEntry = async (entry: any, force = false) => {
+  try {
+    const res = await API.put(`/timetable/update?force=${force}`, entry);
+    return { success: true, data: res.data };
+  } catch (error: any) {
+    if (error.response && error.response.status === 409) {
+      return { success: false, conflict: true, messages: error.response.data };
+    }
+    throw error;
+  }
+};
+
 /* ===========================
    AUDIT LOG API
    =========================== */

@@ -27,6 +27,7 @@ C:\Users\acer\Desktop\SE\Automated_TT_Generator\Automated-Timetable-Scheduling-a
 C:\Users\acer\Desktop\SE\Automated_TT_Generator\Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System\backend\scheduler\src\main\java\com\acadschedule\scheduler\controller\RoomController.java
 C:\Users\acer\Desktop\SE\Automated_TT_Generator\Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System\backend\scheduler\src\main\java\com\acadschedule\scheduler\entity\Section.java
 C:\Users\acer\Desktop\SE\Automated_TT_Generator\Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System\backend\scheduler\src\main\java\com\acadschedule\scheduler\service\AuditLogService.java
+C:\Users\acer\Desktop\SE\Automated_TT_Generator\Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System\backend\scheduler\src\main\java\com\acadschedule\scheduler\service\TimetableConflictService.java
 C:\Users\acer\Desktop\SE\Automated_TT_Generator\Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System\backend\scheduler\src\main\java\com\acadschedule\scheduler\SchedulerApplication.java
 C:\Users\acer\Desktop\SE\Automated_TT_Generator\Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System\backend\scheduler\src\main\java\com\acadschedule\scheduler\entity\AuditLog.java
 C:\Users\acer\Desktop\SE\Automated_TT_Generator\Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System\backend\scheduler\src\main\java\com\acadschedule\scheduler\service\RoomService.java

@@ -64,7 +64,10 @@ const LeaveRequestsPage = () => {
             title="Faculty Leave Management"
             subtitle="Review and approve faculty leave applications"
             actions={
-                <Button onClick={handleGenerateSchedule} className="gap-2 bg-indigo-600 hover:bg-indigo-700 text-white">
+                <Button
+                    onClick={handleGenerateSchedule}
+                    className="gap-2 bg-[#0F1B2D] hover:bg-[#1B2A41] text-white shadow-md"
+                >
                     <Sparkles className="h-4 w-4" />
                     Optimize Timetable
                 </Button>
@@ -125,16 +128,16 @@ const LeaveRequestsPage = () => {
                                         </td>
                                         <td className="px-6 py-5 text-right">
                                             {request.status === 'Pending' && (
-                                                <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <div className="flex justify-end gap-2">
                                                     <button
                                                         onClick={() => handleUpdateStatus(request.id, 'Approved')}
-                                                        className="px-3 py-1.5 bg-green-500 text-white text-[10px] font-bold rounded-lg hover:bg-green-600 transition-colors"
+                                                        className="px-3 py-1.5 bg-[#16a34a] text-white text-[10px] font-bold rounded-lg hover:bg-[#15803d] shadow-sm transition-colors"
                                                     >
                                                         Approve
                                                     </button>
                                                     <button
                                                         onClick={() => handleUpdateStatus(request.id, 'Rejected')}
-                                                        className="px-3 py-1.5 bg-red-500 text-white text-[10px] font-bold rounded-lg hover:bg-red-600 transition-colors"
+                                                        className="px-3 py-1.5 bg-[#dc2626] text-white text-[10px] font-bold rounded-lg hover:bg-[#b91c1c] shadow-sm transition-colors"
                                                     >
                                                         Reject
                                                     </button>

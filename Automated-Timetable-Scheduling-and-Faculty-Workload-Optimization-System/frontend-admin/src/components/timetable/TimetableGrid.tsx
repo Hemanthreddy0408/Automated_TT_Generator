@@ -25,6 +25,8 @@ export type TimetableEntry = {
 type Props = {
   timetable?: any; // Day -> TimeSlot matrix
   entries?: TimetableEntry[]; // Flat array of entries
+  onEdit?: (entry: TimetableEntry) => void;
+  sectionId?: string;
 };
 
 // Pastel color palette for subjects
@@ -55,7 +57,7 @@ export const getColorForSubject = (subjectCode?: string) => {
   return COLORS[Math.abs(hash) % COLORS.length];
 };
 
-export function TimetableGrid({ timetable = {} }: Props) {
+export function TimetableGrid({ timetable = {}, onEdit, sectionId }: Props) {
   const DAYS = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"];
 
   const TIME_SLOTS = [
@@ -120,6 +122,7 @@ export function TimetableGrid({ timetable = {} }: Props) {
                     <HoverCard openDelay={100} closeDelay={100}>
                       <HoverCardTrigger asChild>
                         <Card
+                          onClick={() => onEdit?.(entry)}
                           className={`group h-full p-3 flex flex-col gap-2 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border-l-4 cursor-pointer ${colorClass} ${entry.hasConflict ? 'ring-2 ring-destructive ring-offset-2' : ''}`}
                         >
                           <div className="flex justify-between items-start">
@@ -190,8 +193,11 @@ export function TimetableGrid({ timetable = {} }: Props) {
                       </HoverCardContent>
                     </HoverCard>
                   ) : (
-                    <div className="h-full rounded-2xl border-2 border-dashed border-slate-50 flex items-center justify-center group hover:border-slate-100 transition-colors">
-                      <span className="text-slate-100 text-2xl font-black group-hover:text-slate-200">-</span>
+                    <div
+                      onDoubleClick={() => onEdit?.({ day, timeSlot: slot, sectionId, type: 'LECTURE' } as TimetableEntry)}
+                      className="h-full rounded-2xl border-2 border-dashed border-slate-50 flex items-center justify-center group hover:border-slate-100 transition-colors cursor-cell"
+                    >
+                      <span className="text-slate-100 text-2xl font-black group-hover:text-slate-200">+</span>
                     </div>
                   )}
                 </div>
