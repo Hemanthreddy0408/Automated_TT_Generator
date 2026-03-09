@@ -18,6 +18,7 @@ import SubjectsPage from "./pages/admin/SubjectsPage";
 import ConstraintsPage from "./pages/admin/ConstraintsPage";
 import HistoryPage from "./pages/admin/HistoryPage";
 import AnalyticsPage from "./pages/admin/AnalyticsPage";
+import AdminSettings from "./pages/admin/AdminSettings";
 
 
 // Add/Edit Sub-pages
@@ -253,6 +254,14 @@ const App = () => {
                   element={
                     <ProtectedRoute requiredRole="admin">
                       <LeaveRequestsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/settings"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <AdminSettings />
                     </ProtectedRoute>
                   }
                 />

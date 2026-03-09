@@ -46,9 +46,9 @@ public class Faculty {
     @Column(name = "qualifications")
     private List<String> qualifications = new ArrayList<>();
 
-    @ElementCollection
+    @ElementCollection(fetch = jakarta.persistence.FetchType.EAGER)
     @CollectionTable(name = "faculty_eligible_subjects", joinColumns = @JoinColumn(name = "faculty_id"))
-    @Column(name = "eligible_subjects")
+    @Column(name = "subject_code")
     private List<String> eligibleSubjects = new ArrayList<>();
 
     @Column(nullable = false)
@@ -56,42 +56,107 @@ public class Faculty {
 
     // ===== Getters & Setters =====
 
-    public String getPassword() { return password; }
-    public void setPassword(String password) { this.password = password; }
+    public String getPassword() {
+        return password;
+    }
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public void setPassword(String password) {
+        this.password = password;
+    }
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    public Long getId() {
+        return id;
+    }
 
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public String getDepartment() { return department; }
-    public void setDepartment(String department) { this.department = department; }
+    public String getName() {
+        return name;
+    }
 
-    public String getDesignation() { return designation; }
-    public void setDesignation(String designation) { this.designation = designation; }
+    public void setName(String name) {
+        this.name = name;
+    }
 
-    public String getEmployeeId() { return employeeId; }
-    public void setEmployeeId(String employeeId) { this.employeeId = employeeId; }
+    public String getEmail() {
+        return email;
+    }
 
-    public int getMaxHoursPerDay() { return maxHoursPerDay; }
-    public void setMaxHoursPerDay(int maxHoursPerDay) { this.maxHoursPerDay = maxHoursPerDay; }
+    public void setEmail(String email) {
+        this.email = email;
+    }
 
-    public int getMaxHoursPerWeek() { return maxHoursPerWeek; }
-    public void setMaxHoursPerWeek(int maxHoursPerWeek) { this.maxHoursPerWeek = maxHoursPerWeek; }
+    public String getDepartment() {
+        return department;
+    }
 
-    public String getSpecialization() { return specialization; }
-    public void setSpecialization(String specialization) { this.specialization = specialization; }
+    public void setDepartment(String department) {
+        this.department = department;
+    }
 
-    public boolean isActive() { return active; }
-    public void setActive(boolean active) { this.active = active; }
+    public String getDesignation() {
+        return designation;
+    }
 
-    public List<String> getQualifications() { return qualifications; }
-    public void setQualifications(List<String> qualifications) { this.qualifications = qualifications; }
+    public void setDesignation(String designation) {
+        this.designation = designation;
+    }
 
-    public List<String> getEligibleSubjects() { return eligibleSubjects; }
-    public void setEligibleSubjects(List<String> eligibleSubjects) { this.eligibleSubjects = eligibleSubjects; }
+    public String getEmployeeId() {
+        return employeeId;
+    }
+
+    public void setEmployeeId(String employeeId) {
+        this.employeeId = employeeId;
+    }
+
+    public int getMaxHoursPerDay() {
+        return maxHoursPerDay;
+    }
+
+    public void setMaxHoursPerDay(int maxHoursPerDay) {
+        this.maxHoursPerDay = maxHoursPerDay;
+    }
+
+    public int getMaxHoursPerWeek() {
+        return maxHoursPerWeek;
+    }
+
+    public void setMaxHoursPerWeek(int maxHoursPerWeek) {
+        this.maxHoursPerWeek = maxHoursPerWeek;
+    }
+
+    public String getSpecialization() {
+        return specialization;
+    }
+
+    public void setSpecialization(String specialization) {
+        this.specialization = specialization;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
+    public List<String> getQualifications() {
+        return qualifications;
+    }
+
+    public void setQualifications(List<String> qualifications) {
+        this.qualifications = qualifications;
+    }
+
+    public List<String> getEligibleSubjects() {
+        return eligibleSubjects;
+    }
+
+    public void setEligibleSubjects(List<String> eligibleSubjects) {
+        this.eligibleSubjects = eligibleSubjects;
+    }
 }

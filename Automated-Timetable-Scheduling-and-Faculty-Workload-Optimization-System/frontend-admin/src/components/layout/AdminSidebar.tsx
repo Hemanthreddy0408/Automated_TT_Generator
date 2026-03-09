@@ -40,6 +40,7 @@ const managementItems = [
   { name: 'Leave Requests', href: '/admin/leaves', icon: FileText },
   { name: 'History', href: '/admin/history', icon: History },
   { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
+  { name: 'Settings', href: '/admin/settings', icon: Settings },
 ];
 
 export function AdminSidebar() {

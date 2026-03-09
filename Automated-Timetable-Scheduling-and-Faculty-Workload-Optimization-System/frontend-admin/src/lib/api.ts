@@ -210,6 +210,12 @@ export const getFacultyTimetable = async (facultyName: string) => {
   return Array.isArray(res.data) ? res.data : [];
 };
 
+export const getFacultyAnalyticsDetails = async (facultyName: string) => {
+  const encodedName = encodeURIComponent(facultyName);
+  const res = await API.get(`/timetable/faculty/${encodedName}/analytics`);
+  return res.data;
+};
+
 export const updateTimetableEntry = async (entry: any, force = false) => {
   try {
     const res = await API.put(`/timetable/update?force=${force}`, entry);
@@ -407,4 +413,42 @@ export const getElectives = async (): Promise<Record<string, any[]>> => {
 export const resolveConflict = async (entryId: number): Promise<any> => {
   const res = await API.post(`/timetable/resolve-conflict/${entryId}`);
   return res.data;
+};
+
+/* ===========================
+   OPTIMIZATION CHANGES API
+   =========================== */
+export interface OptimizationChange {
+  id: number;
+  sectionId: string;
+  subjectCode: string;
+  subjectName: string;
+  day: string;
+  timeSlot: string;
+  previousFaculty: string;
+  newFaculty: string;
+  timestamp: string;
+}
+
+export const getOptimizationChanges = async (): Promise<OptimizationChange[]> => {
+  try {
+    const res = await API.get("/timetable/optimization-changes");
+    return Array.isArray(res.data) ? res.data : [];
+  } catch (e) {
+    console.error("Failed to fetch optimization changes", e);
+    return [];
+  }
+};
+
+export const clearOptimizationChanges = async (): Promise<void> => {
+  try {
+    await API.delete("/timetable/optimization-changes");
+  } catch (e) {
+    console.error("Failed to clear optimization changes", e);
+  }
+};
+
+export const changeAdminPassword = async (data: any): Promise<any> => {
+  const response = await API.post('/auth/admin/change-password', data);
+  return response.data;
 };

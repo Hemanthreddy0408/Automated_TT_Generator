@@ -22,8 +22,10 @@ com/acadschedule/scheduler/service/TimetableGenerationService.class
 com/acadschedule/scheduler/repository/TimetableVersionRepository.class
 com/acadschedule/scheduler/repository/RoomRepository.class
 com/acadschedule/scheduler/service/TimetableGenerationService$Occupancy.class
+com/acadschedule/scheduler/util/FacultySubjectInitializer.class
 com/acadschedule/scheduler/repository/SectionRepository.class
 com/acadschedule/scheduler/entity/Subject.class
+com/acadschedule/scheduler/dto/FacultyAnalyticsDTO.class
 com/acadschedule/scheduler/dto/OtpVerifyRequest.class
 com/acadschedule/scheduler/controller/SectionController.class
 com/acadschedule/scheduler/service/OtpService.class
@@ -43,6 +45,7 @@ com/acadschedule/scheduler/entity/LeaveRequest.class
 com/acadschedule/scheduler/controller/RoomController.class
 com/acadschedule/scheduler/entity/TimetableEntry.class
 com/acadschedule/scheduler/controller/NotificationController.class
+com/acadschedule/scheduler/dto/FacultyAnalyticsDTO$DayScheduleDTO.class
 com/acadschedule/scheduler/repository/TimetableRepository.class
 com/acadschedule/scheduler/repository/AuditLogRepository.class
 com/acadschedule/scheduler/aspect/AuditLogAspect.class

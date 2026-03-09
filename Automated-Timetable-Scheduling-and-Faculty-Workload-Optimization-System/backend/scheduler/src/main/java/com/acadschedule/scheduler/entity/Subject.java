@@ -19,8 +19,7 @@ import jakarta.persistence.Column;
 public class Subject {
 
     @Column(name = "type")
-private String type;   // THEORY or LAB
-
+    private String type; // THEORY or LAB
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -59,46 +58,120 @@ private String type;   // THEORY or LAB
     @Column(name = "faculty_count")
     private int facultyCount;
 
-    @ElementCollection
+    @ElementCollection(fetch = jakarta.persistence.FetchType.EAGER)
     @CollectionTable(name = "subject_eligible_faculty", joinColumns = @JoinColumn(name = "subject_id"))
-    @Column(name = "faculty_id")
+    @Column(name = "faculty_name") // changed from faculty_id since we populate it with names
     private List<String> eligibleFaculty = new ArrayList<>();
 
-    public String getCode() { return code; }
-    public String getName() { return name; }
-    public String getDepartment() { return department; }
-    public int getCredits() { return credits; }
-    public int getLectureHoursPerWeek() { return lectureHoursPerWeek; }
-    public int getTutorialHoursPerWeek() { return tutorialHoursPerWeek; }
-    public int getLabHoursPerWeek() { return labHoursPerWeek; }
-    public int getYear() { return year; }
-    public boolean isElective() { return elective; }
-    public boolean isCommonCourse() { return commonCourse; }
-    public int getFacultyCount() { return facultyCount; }
+    public String getCode() {
+        return code;
+    }
 
-    public void setLectureHoursPerWeek(int v) { this.lectureHoursPerWeek = v; }
-    public void setTutorialHoursPerWeek(int v) { this.tutorialHoursPerWeek = v; }
-    public void setLabHoursPerWeek(int v) { this.labHoursPerWeek = v; }
-    public void setYear(int v) { this.year = v; }
-    public void setElective(boolean v) { this.elective = v; }
-    public void setCommonCourse(boolean v) { this.commonCourse = v; }
-    public void setFacultyCount(int v) { this.facultyCount = v; }
+    public String getName() {
+        return name;
+    }
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public String getDepartment() {
+        return department;
+    }
 
-    public void setCode(String code) { this.code = code; }
-    public void setName(String name) { this.name = name; }
-    public void setDepartment(String department) { this.department = department; }
-    public void setCredits(int credits) { this.credits = credits; }
+    public int getCredits() {
+        return credits;
+    }
+
+    public int getLectureHoursPerWeek() {
+        return lectureHoursPerWeek;
+    }
+
+    public int getTutorialHoursPerWeek() {
+        return tutorialHoursPerWeek;
+    }
+
+    public int getLabHoursPerWeek() {
+        return labHoursPerWeek;
+    }
+
+    public int getYear() {
+        return year;
+    }
+
+    public boolean isElective() {
+        return elective;
+    }
+
+    public boolean isCommonCourse() {
+        return commonCourse;
+    }
+
+    public int getFacultyCount() {
+        return facultyCount;
+    }
+
+    public void setLectureHoursPerWeek(int v) {
+        this.lectureHoursPerWeek = v;
+    }
+
+    public void setTutorialHoursPerWeek(int v) {
+        this.tutorialHoursPerWeek = v;
+    }
+
+    public void setLabHoursPerWeek(int v) {
+        this.labHoursPerWeek = v;
+    }
+
+    public void setYear(int v) {
+        this.year = v;
+    }
+
+    public void setElective(boolean v) {
+        this.elective = v;
+    }
+
+    public void setCommonCourse(boolean v) {
+        this.commonCourse = v;
+    }
+
+    public void setFacultyCount(int v) {
+        this.facultyCount = v;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setDepartment(String department) {
+        this.department = department;
+    }
+
+    public void setCredits(int credits) {
+        this.credits = credits;
+    }
+
     public String getType() {
-    return type;
-}
+        return type;
+    }
 
-public void setType(String type) {
-    this.type = type;
-}
+    public void setType(String type) {
+        this.type = type;
+    }
 
-    public List<String> getEligibleFaculty() { return eligibleFaculty; }
-    public void setEligibleFaculty(List<String> eligibleFaculty) { this.eligibleFaculty = eligibleFaculty; }
+    public List<String> getEligibleFaculty() {
+        return eligibleFaculty;
+    }
+
+    public void setEligibleFaculty(List<String> eligibleFaculty) {
+        this.eligibleFaculty = eligibleFaculty;
+    }
 }

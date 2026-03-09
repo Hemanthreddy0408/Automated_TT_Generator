@@ -11,6 +11,7 @@
 /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/aspect/AuditLogAspect.java
 /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/dto/NotificationDTO.java
 /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/service/TimetableGenerationService.java
+/Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/entity/Admin.java
 /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/controller/HistoryController.java
 /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/controller/NotificationController.java
 /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/entity/Section.java
@@ -22,6 +23,7 @@
 /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/controller/AuthController.java
 /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/service/OtpService.java
 /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/controller/TestController.java
+/Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/entity/OptimizationChange.java
 /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/service/RoomService.java
 /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/service/SubjectService.java
 /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/entity/Constraint.java
@@ -34,15 +36,18 @@
 /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/controller/FacultyController.java
 /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/service/AuthService.java
 /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/entity/Subject.java
+/Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/dto/AdminPasswordChangeRequest.java
 /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/dto/LoginResponse.java
 /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/entity/AuditLog.java
 /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/config/SecurityConfig.java
 /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/controller/SubjectController.java
 /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/entity/UserOtp.java
 /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/entity/Faculty.java
+/Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/util/FacultySubjectInitializer.java
 /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/config/HibernateConfig.java
 /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/entity/Notification.java
 /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/controller/LeaveController.java
+/Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/repository/AdminRepository.java
 /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/dto/SectionRequest.java
 /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/controller/ConstraintController.java
 /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/entity/Announcement.java
@@ -52,7 +57,9 @@
 /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/controller/SectionController.java
 /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/service/FacultyService.java
 /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/repository/RoomRepository.java
+/Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/dto/FacultyAnalyticsDTO.java
 /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/repository/AnnouncementRepository.java
+/Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/repository/OptimizationChangeRepository.java
 /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/entity/TimetableVersion.java
 /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/service/AuditLogService.java
 /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/entity/LeaveRequest.java
@@ -62,3 +69,4 @@
 /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/repository/SubjectRepository.java
 /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/entity/RoomStatus.java
 /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/dto/PasswordChangeRequest.java
+/Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/main/java/com/acadschedule/scheduler/util/AdminInitializer.java

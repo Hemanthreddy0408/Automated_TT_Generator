@@ -8,6 +8,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 
 import { buildTimetableMatrix } from "@/utils/timetableMapper";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 
 import {
@@ -34,7 +50,10 @@ import {
   getRooms,
   getSections,
   getAllTimetableEntries,
+  getOptimizationChanges,
+  clearOptimizationChanges,
   FacultyPayload,
+  OptimizationChange
 } from "@/lib/api";
 import { Section, Subject } from "@/types/timetable";
 
@@ -50,8 +69,10 @@ export default function AdminDashboard() {
   const [facultyList, setFacultyList] = useState<FacultyPayload[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
   const [allEntries, setAllEntries] = useState<TimetableEntry[]>([]);
+  const [optimizationChanges, setOptimizationChanges] = useState<OptimizationChange[]>([]);
   const [selectedSectionId, setSelectedSectionId] = useState<string>("");
   const [loading, setLoading] = useState(true);
+  const [isChangesModalOpen, setIsChangesModalOpen] = useState(false);
 
   // Fetch Data
   useEffect(() => {
@@ -88,6 +109,10 @@ export default function AdminDashboard() {
         } else if (secData.length > 0) {
           setSelectedSectionId(String(secData[0].id));
         }
+
+        // Fetch optimization changes
+        const changes = await getOptimizationChanges();
+        setOptimizationChanges(changes);
 
 
       } catch (error) {
@@ -200,12 +225,24 @@ export default function AdminDashboard() {
       title="Dashboard"
       subtitle="Overview of your academic scheduling system"
       actions={
-        <Link to="/admin/timetable">
-          <Button className="gap-2">
-            <Sparkles className="h-4 w-4" />
-            Generate Timetable
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          {optimizationChanges.length > 0 && (
+            <Button
+              variant="outline"
+              className="gap-2 border-primary/50 text-primary hover:bg-primary/5"
+              onClick={() => setIsChangesModalOpen(true)}
+            >
+              <Users className="h-4 w-4" />
+              View Changes
+            </Button>
+          )}
+          <Link to="/admin/timetable">
+            <Button className="gap-2">
+              <Sparkles className="h-4 w-4" />
+              Generate Timetable
+            </Button>
+          </Link>
+        </div>
       }
     >
       <div className="space-y-6">
@@ -409,6 +446,88 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Optimization Changes Modal */}
+      <Dialog open={isChangesModalOpen} onOpenChange={setIsChangesModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle className="text-xl flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                  Optimization Changes
+                </DialogTitle>
+                <DialogDescription>
+                  Review faculty reassignments made during timetable optimization.
+                </DialogDescription>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground hover:text-destructive"
+                onClick={async () => {
+                  if (confirm("Clear all optimization history?")) {
+                    await clearOptimizationChanges();
+                    setOptimizationChanges([]);
+                    setIsChangesModalOpen(false);
+                  }
+                }}
+              >
+                Clear History
+              </Button>
+            </div>
+          </DialogHeader>
+
+          <div className="border rounded-lg overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50">
+                  <TableHead>Section</TableHead>
+                  <TableHead>Subject</TableHead>
+                  <TableHead>Day/Time</TableHead>
+                  <TableHead>Previous Faculty</TableHead>
+                  <TableHead className="text-primary font-bold">New Faculty</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {optimizationChanges.map((change) => (
+                  <TableRow key={change.id}>
+                    <TableCell className="font-medium">{change.sectionId}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold">{change.subjectCode}</span>
+                        <span className="text-xs text-muted-foreground">{change.subjectName}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <span className="text-sm capitalize">{change.day.toLowerCase()}</span>
+                        <span className="text-xs text-muted-foreground">{change.timeSlot}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground line-through decoration-destructive/30">
+                      {change.previousFaculty}
+                    </TableCell>
+                    <TableCell className="text-primary font-bold">
+                      <div className="flex items-center gap-2">
+                        <ArrowRight className="h-3 w-3 text-muted-foreground" />
+                        {change.newFaculty}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {optimizationChanges.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                      No optimization changes recorded.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 }

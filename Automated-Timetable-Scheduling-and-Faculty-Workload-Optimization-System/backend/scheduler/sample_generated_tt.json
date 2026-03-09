@@ -1,0 +1,222 @@
+[
+  {
+    "id": 93653,
+    "sectionId": "2",
+    "day": "MONDAY",
+    "timeSlot": "09:00-09:40",
+    "subjectCode": "CSE311",
+    "subjectName": "Software",
+    "facultyName": "Dr. Karthik",
+    "roomNumber": "Programming Lab 2",
+    "type": "LAB"
+  },
+  {
+    "id": 93654,
+    "sectionId": "2",
+    "day": "MONDAY",
+    "timeSlot": "09:40-10:30",
+    "subjectCode": "CSE311",
+    "subjectName": "Software",
+    "facultyName": "Dr. Karthik",
+    "roomNumber": "Programming Lab 2",
+    "type": "LAB"
+  },
+  {
+    "id": 93655,
+    "sectionId": "2",
+    "day": "WEDNESDAY",
+    "timeSlot": "11:35-12:25",
+    "subjectCode": "cse314",
+    "subjectName": "compiler",
+    "facultyName": "Dr. Anitha M",
+    "roomNumber": "Programming Lab 1",
+    "type": "LAB"
+  },
+  {
+    "id": 93656,
+    "sectionId": "2",
+    "day": "WEDNESDAY",
+    "timeSlot": "12:25-01:15",
+    "subjectCode": "cse314",
+    "subjectName": "compiler",
+    "facultyName": "Dr. Anitha M",
+    "roomNumber": "Programming Lab 1",
+    "type": "LAB"
+  },
+  {
+    "id": 93657,
+    "sectionId": "2",
+    "day": "MONDAY",
+    "timeSlot": "02:05-02:55",
+    "subjectCode": "cse312",
+    "subjectName": "distributed",
+    "facultyName": "Dr. Raghu",
+    "roomNumber": "Programming Lab 2",
+    "type": "LAB"
+  },
+  {
+    "id": 93658,
+    "sectionId": "2",
+    "day": "MONDAY",
+    "timeSlot": "02:55-03:45",
+    "subjectCode": "cse312",
+    "subjectName": "distributed",
+    "facultyName": "Dr. Raghu",
+    "roomNumber": "Programming Lab 2",
+    "type": "LAB"
+  },
+  {
+    "id": 93659,
+    "sectionId": "2",
+    "day": "THURSDAY",
+    "timeSlot": "02:55-03:45",
+    "subjectCode": "CSE311",
+    "subjectName": "Software",
+    "facultyName": "Dr. Karthik",
+    "roomNumber": "AB1-401",
+    "type": "LECTURE"
+  },
+  {
+    "id": 93660,
+    "sectionId": "2",
+    "day": "THURSDAY",
+    "timeSlot": "09:40-10:30",
+    "subjectCode": "c=cse313",
+    "subjectName": "focs",
+    "facultyName": "Dr. Raghu",
+    "roomNumber": "AB1-404",
+    "type": "LECTURE"
+  },
+  {
+    "id": 93661,
+    "sectionId": "2",
+    "day": "WEDNESDAY",
+    "timeSlot": "02:55-03:45",
+    "subjectCode": "cse312",
+    "subjectName": "distributed",
+    "facultyName": "Dr. Raghu",
+    "roomNumber": "AB1-402",
+    "type": "LECTURE"
+  },
+  {
+    "id": 93662,
+    "sectionId": "2",
+    "day": "FRIDAY",
+    "timeSlot": "03:45-04:35",
+    "subjectCode": "cse312",
+    "subjectName": "distributed",
+    "facultyName": "Dr. Raghu",
+    "roomNumber": "AB1-402",
+    "type": "LECTURE"
+  },
+  {
+    "id": 93663,
+    "sectionId": "2",
+    "day": "TUESDAY",
+    "timeSlot": "02:55-03:45",
+    "subjectCode": "CSE311",
+    "subjectName": "Software",
+    "facultyName": "Dr. Karthik",
+    "roomNumber": "AB1-404",
+    "type": "LECTURE"
+  },
+  {
+    "id": 93664,
+    "sectionId": "2",
+    "day": "TUESDAY",
+    "timeSlot": "03:45-04:35",
+    "subjectCode": "CSE311",
+    "subjectName": "Software",
+    "facultyName": "Dr. Karthik",
+    "roomNumber": "AB1-401",
+    "type": "LECTURE"
+  },
+  {
+    "id": 93665,
+    "sectionId": "2",
+    "day": "TUESDAY",
+    "timeSlot": "02:05-02:55",
+    "subjectCode": "cse314",
+    "subjectName": "compiler",
+    "facultyName": "Dr. Anitha M",
+    "roomNumber": "AB1-401",
+    "type": "LECTURE"
+  },
+  {
+    "id": 93666,
+    "sectionId": "2",
+    "day": "THURSDAY",
+    "timeSlot": "03:45-04:35",
+    "subjectCode": "c=cse313",
+    "subjectName": "focs",
+    "facultyName": "Dr. Raghu",
+    "roomNumber": "AB1-403",
+    "type": "LECTURE"
+  },
+  {
+    "id": 93667,
+    "sectionId": "2",
+    "day": "TUESDAY",
+    "timeSlot": "09:00-09:40",
+    "subjectCode": "cse312",
+    "subjectName": "distributed",
+    "facultyName": "Dr. Raghu",
+    "roomNumber": "AB1-401",
+    "type": "LECTURE"
+  },
+  {
+    "id": 93668,
+    "sectionId": "2",
+    "day": "MONDAY",
+    "timeSlot": "10:45-11:35",
+    "subjectCode": "cse314",
+    "subjectName": "compiler",
+    "facultyName": "Dr. Anitha M",
+    "roomNumber": "AB1-401",
+    "type": "LECTURE"
+  },
+  {
+    "id": 93669,
+    "sectionId": "2",
+    "day": "WEDNESDAY",
+    "timeSlot": "02:05-02:55",
+    "subjectCode": "cse312",
+    "subjectName": "distributed",
+    "facultyName": "Dr. Raghu",
+    "roomNumber": "AB1-403",
+    "type": "LECTURE"
+  },
+  {
+    "id": 93670,
+    "sectionId": "2",
+    "day": "WEDNESDAY",
+    "timeSlot": "03:45-04:35",
+    "subjectCode": "c=cse313",
+    "subjectName": "focs",
+    "facultyName": "Dr. Raghu",
+    "roomNumber": "AB1-401",
+    "type": "LECTURE"
+  },
+  {
+    "id": 93671,
+    "sectionId": "2",
+    "day": "TUESDAY",
+    "timeSlot": "09:40-10:30",
+    "subjectCode": "cse314",
+    "subjectName": "compiler",
+    "facultyName": "Dr. Anitha M",
+    "roomNumber": "AB2-202",
+    "type": "LECTURE"
+  },
+  {
+    "id": 93672,
+    "sectionId": "2",
+    "day": "FRIDAY",
+    "timeSlot": "02:55-03:45",
+    "subjectCode": "cse314",
+    "subjectName": "compiler",
+    "facultyName": "Dr. Anitha M",
+    "roomNumber": "AB1-401",
+    "type": "LECTURE"
+  }
+]

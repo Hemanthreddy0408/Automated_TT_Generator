@@ -8,8 +8,9 @@ import {
   BookOpen,
   Clock,
   AlertCircle,
+  X
 } from "lucide-react";
-import { getFacultyWorkloadSummary, getAllTimetableEntries } from "@/lib/api";
+import { getFacultyWorkloadSummary, getAllTimetableEntries, getFacultyAnalyticsDetails } from "@/lib/api";
 
 interface WorkloadSummary {
   facultyId: number;
@@ -27,6 +28,23 @@ export default function AnalyticsPage() {
   const [workloads, setWorkloads] = useState<WorkloadSummary[]>([]);
   const [allEntries, setAllEntries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const [selectedFaculty, setSelectedFaculty] = useState<string | null>(null);
+  const [facultyDetails, setFacultyDetails] = useState<any | null>(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
+
+  const handleFacultyClick = async (facultyName: string) => {
+    setSelectedFaculty(facultyName);
+    setLoadingDetails(true);
+    try {
+      const details = await getFacultyAnalyticsDetails(facultyName);
+      setFacultyDetails(details);
+    } catch (err) {
+      console.error("Failed to load faculty details", err);
+    } finally {
+      setLoadingDetails(false);
+    }
+  };
 
   useEffect(() => {
     Promise.all([getFacultyWorkloadSummary(), getAllTimetableEntries()])
@@ -179,7 +197,11 @@ export default function AnalyticsPage() {
                     const isOver = w.weeklyHours > w.maxHoursPerWeek;
                     const days = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'];
                     return (
-                      <tr key={w.facultyId} className="hover:bg-muted/20 transition-colors">
+                      <tr
+                        key={w.facultyId}
+                        className="hover:bg-muted/20 transition-colors cursor-pointer"
+                        onClick={() => handleFacultyClick(w.facultyName)}
+                      >
                         <td className="px-6 py-4">
                           <div>
                             <p className="font-semibold">{w.facultyName}</p>
@@ -190,8 +212,8 @@ export default function AnalyticsPage() {
                         {days.map(d => (
                           <td key={d} className="px-4 py-4 text-center">
                             <span className={`inline-block min-w-[28px] text-center px-2 py-0.5 rounded-full text-xs font-bold ${(w.dailyBreakdown[d] || 0) > 0
-                                ? 'bg-blue-100 text-blue-700'
-                                : 'text-muted-foreground'
+                              ? 'bg-blue-100 text-blue-700'
+                              : 'text-muted-foreground'
                               }`}>
                               {w.dailyBreakdown[d] || 0}
                             </span>
@@ -255,6 +277,143 @@ export default function AnalyticsPage() {
           </div>
         )}
       </div>
+
+      {/* FACULTY DETAILS MODAL */}
+      {selectedFaculty && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b bg-muted/20">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xl">
+                  {selectedFaculty.charAt(0)}
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold">{selectedFaculty}</h2>
+                  <p className="text-sm text-muted-foreground">Detailed Analytics & Schedule</p>
+                </div>
+              </div>
+              <button
+                onClick={() => { setSelectedFaculty(null); setFacultyDetails(null); }}
+                className="p-2 hover:bg-muted rounded-full transition-colors"
+              >
+                <X className="h-5 w-5 text-muted-foreground" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 overflow-y-auto flex-1">
+              {loadingDetails ? (
+                <div className="flex items-center justify-center h-48 text-muted-foreground">
+                  <div className="animate-pulse flex flex-col items-center gap-2">
+                    <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                    <span>Loading faculty profile...</span>
+                  </div>
+                </div>
+              ) : facultyDetails ? (
+                <div className="space-y-8">
+                  {/* Summary Metrics */}
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl">
+                      <p className="text-sm text-blue-600 font-semibold">Total Weekly Load</p>
+                      <p className="text-2xl font-bold mt-1 text-blue-900">{facultyDetails.weeklyWorkload} hours</p>
+                    </div>
+                    <div className="bg-purple-50 border border-purple-100 p-4 rounded-xl">
+                      <p className="text-sm text-purple-600 font-semibold">Total Subjects Assigned</p>
+                      <p className="text-2xl font-bold mt-1 text-purple-900">{facultyDetails.subjectsAssigned?.length || 0}</p>
+                    </div>
+                    <div className="bg-green-50 border border-green-100 p-4 rounded-xl">
+                      <p className="text-sm text-green-600 font-semibold">Total Sections Handled</p>
+                      <p className="text-2xl font-bold mt-1 text-green-900">{facultyDetails.sectionsTeaching?.length || 0}</p>
+                    </div>
+                  </div>
+
+                  {/* Subject & Sections Grid */}
+                  <div className="grid grid-cols-2 gap-6">
+                    <div>
+                      <h3 className="font-semibold mb-3 flex items-center gap-2">
+                        <BookOpen className="h-4 w-4 text-muted-foreground" />
+                        Subjects teaching
+                      </h3>
+                      <div className="space-y-2">
+                        {facultyDetails.subjectsAssigned?.length > 0 ? (
+                          facultyDetails.subjectsAssigned.map((sub: string, i: number) => (
+                            <div key={i} className="px-3 py-2 bg-muted/40 rounded-lg text-sm border">
+                              {sub}
+                            </div>
+                          ))
+                        ) : <p className="text-sm text-muted-foreground italic">No subjects scheduled.</p>}
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold mb-3 flex items-center gap-2">
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                        Sections teaching
+                      </h3>
+                      <div className="flex flex-wrap gap-2">
+                        {facultyDetails.sectionsTeaching?.length > 0 ? (
+                          facultyDetails.sectionsTeaching.map((sec: string, i: number) => (
+                            <span key={i} className="px-3 py-1 bg-primary/10 text-primary font-medium text-sm rounded-full border border-primary/20">
+                              Section {sec}
+                            </span>
+                          ))
+                        ) : <p className="text-sm text-muted-foreground italic">No sections scheduled.</p>}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Daily Schedule */}
+                  <div>
+                    <h3 className="font-semibold mb-4 border-b pb-2 flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      Detailed Regular Schedule
+                    </h3>
+                    <div className="grid grid-cols-5 gap-4">
+                      {['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'].map(day => {
+                        const lessons = facultyDetails.dailySchedule?.[day] || [];
+                        return (
+                          <div key={day} className="bg-card border rounded-xl overflow-hidden flex flex-col h-full">
+                            <div className="bg-muted/50 py-2 border-b text-center font-semibold text-xs text-muted-foreground tracking-wider">
+                              {day.substring(0, 3)}
+                            </div>
+                            <div className="p-2 space-y-2 flex-1 min-h-[150px]">
+                              {lessons.length > 0 ? (
+                                lessons.map((l: any, i: number) => (
+                                  <div key={i} className="bg-blue-50 border border-blue-100 rounded-lg p-2 text-xs relative group">
+                                    <div className="font-bold text-blue-900 truncate" title={l.subjectCode}>{l.subjectCode}</div>
+                                    <div className="text-blue-700 font-medium truncate">{l.sectionName}</div>
+                                    <div className="mt-2 text-muted-foreground truncate">{l.timeSlot}</div>
+                                    <div className="text-muted-foreground truncate font-medium">{l.roomNumber}</div>
+                                  </div>
+                                ))
+                              ) : (
+                                <div className="h-full flex items-center justify-center text-xs text-muted-foreground italic opacity-50">
+                                  Free
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center text-muted-foreground py-12">Failed to load data.</div>
+              )}
+            </div>
+            {/* Footer */}
+            <div className="p-4 border-t bg-muted/10 text-right">
+              <button
+                onClick={() => { setSelectedFaculty(null); setFacultyDetails(null); }}
+                className="px-4 py-2 bg-slate-900 text-white font-medium rounded-lg hover:bg-slate-800 transition-colors"
+              >
+                Close View
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   );
 }

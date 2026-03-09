@@ -2,6 +2,7 @@ package com.acadschedule.scheduler.service;
 
 import com.acadschedule.scheduler.entity.*;
 import com.acadschedule.scheduler.repository.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
@@ -22,26 +23,23 @@ public class TimetableGenerationService {
     private final TimetableRepository timetableRepo;
     private final FacultyRepository facultyRepo;
     private final SubjectRepository subjectRepo;
-    private final RoomRepository roomRepo;
     private final SectionRepository sectionRepo;
+    private final RoomRepository roomRepo;
+    private final OptimizationChangeRepository optimizationChangeRepo;
     private final AuditLogService auditLogService;
     private final NotificationService notificationService;
-    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper;
 
-    public TimetableGenerationService(
-            TimetableRepository timetableRepo,
-            FacultyRepository facultyRepo,
-            SubjectRepository subjectRepo,
-            RoomRepository roomRepo,
-            SectionRepository sectionRepo,
-            AuditLogService auditLogService,
-            NotificationService notificationService,
-            com.fasterxml.jackson.databind.ObjectMapper objectMapper) {
+    public TimetableGenerationService(TimetableRepository timetableRepo, FacultyRepository facultyRepo,
+            SubjectRepository subjectRepo, SectionRepository sectionRepo, RoomRepository roomRepo,
+            OptimizationChangeRepository optimizationChangeRepo,
+            AuditLogService auditLogService, NotificationService notificationService, ObjectMapper objectMapper) {
         this.timetableRepo = timetableRepo;
         this.facultyRepo = facultyRepo;
         this.subjectRepo = subjectRepo;
-        this.roomRepo = roomRepo;
         this.sectionRepo = sectionRepo;
+        this.roomRepo = roomRepo;
+        this.optimizationChangeRepo = optimizationChangeRepo;
         this.auditLogService = auditLogService;
         this.notificationService = notificationService;
         this.objectMapper = objectMapper;
@@ -199,6 +197,8 @@ public class TimetableGenerationService {
         Section section = sectionRepo.findById(Long.parseLong(sectionId))
                 .orElseThrow();
 
+        System.err.println("DEBUG OVERLOAD: Generating for section " + section.getName());
+
         if (commit)
             timetableRepo.deleteBySectionId(sectionId);
 
@@ -227,6 +227,13 @@ public class TimetableGenerationService {
         /* ========= STEP 2: EXPAND ALL REQUIRED SESSIONS ========= */
         List<Session> sessions = new ArrayList<>();
         List<Session> electiveSessions = new ArrayList<>();
+
+        System.err.println("DEBUG OVERLOAD: Expanding sessions for " + subjects.size() + " subjects.");
+        if (subjects.isEmpty()) {
+            System.err.println("DEBUG OVERLOAD: No subjects found for " + section.getDepartment() + " Year "
+                    + section.getYear() + " - returning empty.");
+            return Collections.emptyList();
+        }
 
         for (Subject s : subjects) {
             int lectureHours = lectureHours(s);
@@ -365,17 +372,22 @@ public class TimetableGenerationService {
                     break;
                 }
             }
-            if (chosen == null)
+            if (chosen == null) {
+                System.err.println("DEBUG OVERLOAD: Could not find ANY faculty for elective " + subjectCode + " at "
+                        + elecDay + " " + elecTime);
                 continue;
+            }
 
             // Find a room
             Room room = rooms.stream()
-                    .filter(r -> r.getCapacity() >= section.getCapacity()) // Electives might need bigger rooms for
-                                                                           // combined sections in real world
+                    .filter(r -> r.getCapacity() >= section.getCapacity())
                     .filter(r -> !occ.roomBlocked(r.getName(), elecDay, elecTime))
                     .findFirst().orElse(null);
-            if (room == null)
+            if (room == null) {
+                System.err.println("DEBUG OVERLOAD: Could not find ANY room for elective " + subjectCode + " at "
+                        + elecDay + " " + elecTime);
                 continue;
+            }
 
             TimetableEntry e = new TimetableEntry();
             e.setSectionId(sectionId);
@@ -512,8 +524,37 @@ public class TimetableGenerationService {
                 return false;
             candidateFaculty = List.of(locked);
         } else {
-            // No lock yet — pick from all eligible, sorted by least-loaded first
+            // If NO faculty is mapped to this subject at all, throw exception
+            boolean hasAnyEligibleMap = faculties.stream().anyMatch(f -> {
+                boolean isEligible = false;
+                if (f.getEligibleSubjects() != null) {
+                    isEligible = f.getEligibleSubjects().contains(s.subject.getCode()) ||
+                            f.getEligibleSubjects().contains(s.subject.getName());
+                }
+                if (!isEligible && s.subject.getEligibleFaculty() != null) {
+                    isEligible = s.subject.getEligibleFaculty().contains(f.getName());
+                }
+                return isEligible;
+            });
+
+            if (!hasAnyEligibleMap) {
+                throw new RuntimeException("CRITICAL: No faculty members are mapped to teach subject: " +
+                        s.subject.getCode() + " - " + s.subject.getName() + ". Please update mappings.");
+            }
+
+            // No lock yet — pick ONLY from ELIGIBLE faculty, sorted by least-loaded first
             candidateFaculty = faculties.stream()
+                    .filter(x -> {
+                        boolean isEligible = false;
+                        if (x.getEligibleSubjects() != null) {
+                            isEligible = x.getEligibleSubjects().contains(s.subject.getCode()) ||
+                                    x.getEligibleSubjects().contains(s.subject.getName());
+                        }
+                        if (!isEligible && s.subject.getEligibleFaculty() != null) {
+                            isEligible = s.subject.getEligibleFaculty().contains(x.getName());
+                        }
+                        return isEligible;
+                    })
                     .filter(x -> {
                         int dLoadX = dailyLoad.getOrDefault(x.getId(), 0);
                         int wLoadX = weeklyLoad.getOrDefault(x.getId(), 0);
@@ -528,8 +569,11 @@ public class TimetableGenerationService {
                     .collect(java.util.stream.Collectors.toCollection(ArrayList::new));
         }
 
-        if (candidateFaculty.isEmpty())
+        if (candidateFaculty.isEmpty()) {
+            System.err.println("DEBUG: No candidate faculty eligible and available (due to load etc.) for subject: "
+                    + s.subject.getCode());
             return false;
+        }
 
         // TRY EACH FACULTY until placement succeeds
         for (Faculty f : candidateFaculty) {
@@ -802,7 +846,7 @@ public class TimetableGenerationService {
             RuntimeException lastSectionError = null;
             boolean sectionPlaced = false;
 
-            for (int attempt = 1; attempt <= 100; attempt++) {
+            for (int attempt = 1; attempt <= 250; attempt++) {
                 try {
                     List<TimetableEntry> sectionTT = generateForSection(
                             sectionId, false, // commit=false: we batch-commit at the end
@@ -827,9 +871,10 @@ public class TimetableGenerationService {
             }
 
             if (!sectionPlaced) {
-                throw new RuntimeException(
-                        "Could not generate timetable for section " + sectionId + " after 100 attempts: " +
+                System.err.println(
+                        "WARNING: Could not generate timetable for section " + sectionId + " after 100 attempts: " +
                                 (lastSectionError != null ? lastSectionError.getMessage() : "unknown"));
+                // Do not throw an exception here, allow other sections to generate
             }
         }
 
@@ -918,10 +963,19 @@ public class TimetableGenerationService {
             List<TimetableEntry> entriesToReassign = group.getValue();
             int requiredHours = entriesToReassign.size();
 
+            String subjectCode = entriesToReassign.get(0).getSubjectCode();
+            String subjectName = entriesToReassign.get(0).getSubjectName();
+
             // Find a replacement faculty capable of taking ALL iterations of this
             // subject-section pair
             Faculty replacement = allFaculty.stream()
                     .filter(f -> !f.getName().equals(facultyName))
+                    .filter(f -> {
+                        // Strict Faculty-Subject Mapping check
+                        return (f.getEligibleSubjects() != null &&
+                                (f.getEligibleSubjects().contains(subjectCode)
+                                        || f.getEligibleSubjects().contains(subjectName)));
+                    })
                     .filter(f -> {
                         int wLoad = weeklyLoad.getOrDefault(f.getId(), 0);
                         int wLimit = f.getMaxHoursPerWeek() > 0 ? f.getMaxHoursPerWeek() : DEFAULT_WEEKLY;
@@ -938,7 +992,6 @@ public class TimetableGenerationService {
             if (replacement != null) {
                 // We found a replacement! Reassign ALL entries in the group to them
                 String oldFaculty = facultyName;
-                String subjectCode = entriesToReassign.get(0).getSubjectCode();
                 String sectionId = entriesToReassign.get(0).getSectionId();
 
                 for (TimetableEntry entry : entriesToReassign) {
@@ -960,6 +1013,18 @@ public class TimetableGenerationService {
                     info.put("newFaculty", replacement.getName());
                     info.put("room", entry.getRoomNumber());
                     reassigned.add(info);
+
+                    // RECORD THE CHANGE PERSISTENTLY
+                    OptimizationChange change = new OptimizationChange();
+                    change.setSectionId(entry.getSectionId());
+                    change.setSubjectCode(entry.getSubjectCode());
+                    change.setSubjectName(entry.getSubjectName());
+                    change.setDay(entry.getDay());
+                    change.setTimeSlot(entry.getTimeSlot());
+                    change.setPreviousFaculty(oldFaculty);
+                    change.setNewFaculty(replacement.getName());
+                    change.setTimestamp(java.time.LocalDateTime.now());
+                    optimizationChangeRepo.save(change);
                 }
 
                 // Batch up the notification details for this replacement faculty

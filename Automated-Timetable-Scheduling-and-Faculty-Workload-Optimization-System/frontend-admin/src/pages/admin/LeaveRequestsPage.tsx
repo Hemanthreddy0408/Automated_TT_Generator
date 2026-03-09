@@ -13,6 +13,16 @@ import {
     DialogTitle,
     DialogDescription,
 } from '@/components/ui/dialog';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+import { Users, ArrowRight } from 'lucide-react';
+import { getOptimizationChanges, clearOptimizationChanges, OptimizationChange } from '@/lib/api';
 
 interface LeaveRequest {
     id: number;
@@ -55,6 +65,8 @@ const LeaveRequestsPage = () => {
     const [loading, setLoading] = useState(true);
     const [optimizingId, setOptimizingId] = useState<number | null>(null);
     const [optimizeResult, setOptimizeResult] = useState<ReassignmentResult | null>(null);
+    const [optimizationChanges, setOptimizationChanges] = useState<OptimizationChange[]>([]);
+    const [isChangesModalOpen, setIsChangesModalOpen] = useState(false);
 
     const fetchRequests = async () => {
         try {
@@ -70,6 +82,15 @@ const LeaveRequestsPage = () => {
 
     useEffect(() => {
         fetchRequests();
+        const fetchChanges = async () => {
+            try {
+                const changes = await getOptimizationChanges();
+                setOptimizationChanges(changes);
+            } catch (err) {
+                console.error('Error fetching optimization changes:', err);
+            }
+        };
+        fetchChanges();
     }, []);
 
     const handleUpdateStatus = async (id: number, status: string) => {
@@ -88,6 +109,9 @@ const LeaveRequestsPage = () => {
             toast.info('Optimizing timetable for leave coverage...');
             const result = await optimizeForLeave(request.id);
             setOptimizeResult(result);
+            // Refresh optimization history
+            const changes = await getOptimizationChanges();
+            setOptimizationChanges(changes);
             toast.success(`Timetable optimized! ${result.reassigned?.length || 0} session(s) reassigned.`);
         } catch (err: any) {
             const msg = err?.response?.data?.error || 'Failed to optimize timetable.';
@@ -104,6 +128,20 @@ const LeaveRequestsPage = () => {
         <AdminLayout
             title="Faculty Leave Management"
             subtitle="Review and approve faculty leave applications"
+            actions={
+                <div className="flex items-center gap-2">
+                    {optimizationChanges.length > 0 && (
+                        <Button
+                            variant="outline"
+                            className="gap-2 border-primary/50 text-primary hover:bg-primary/5"
+                            onClick={() => setIsChangesModalOpen(true)}
+                        >
+                            <Users className="h-4 w-4" />
+                            View Changes
+                        </Button>
+                    )}
+                </div>
+            }
         >
             {/* Stats row */}
             <div className="grid grid-cols-3 gap-4 mb-6">
@@ -266,6 +304,88 @@ const LeaveRequestsPage = () => {
                     )}
                     <div className="flex justify-end mt-4">
                         <Button onClick={() => setOptimizeResult(null)}>Close</Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Optimization Changes Modal */}
+            <Dialog open={isChangesModalOpen} onOpenChange={setIsChangesModalOpen}>
+                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <DialogTitle className="text-xl flex items-center gap-2">
+                                    <Sparkles className="h-5 w-5 text-primary" />
+                                    Optimization Changes
+                                </DialogTitle>
+                                <DialogDescription>
+                                    Review faculty reassignments made during timetable optimization.
+                                </DialogDescription>
+                            </div>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-muted-foreground hover:text-destructive"
+                                onClick={async () => {
+                                    if (confirm("Clear all optimization history?")) {
+                                        await clearOptimizationChanges();
+                                        setOptimizationChanges([]);
+                                        setIsChangesModalOpen(false);
+                                    }
+                                }}
+                            >
+                                Clear History
+                            </Button>
+                        </div>
+                    </DialogHeader>
+
+                    <div className="border rounded-lg overflow-hidden">
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="bg-muted/50">
+                                    <TableHead>Section</TableHead>
+                                    <TableHead>Subject</TableHead>
+                                    <TableHead>Day/Time</TableHead>
+                                    <TableHead>Previous Faculty</TableHead>
+                                    <TableHead className="text-primary font-bold">New Faculty</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {optimizationChanges.map((change) => (
+                                    <TableRow key={change.id}>
+                                        <TableCell className="font-medium">{change.sectionId}</TableCell>
+                                        <TableCell>
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-bold">{change.subjectCode}</span>
+                                                <span className="text-xs text-muted-foreground">{change.subjectName}</span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex flex-col">
+                                                <span className="text-sm capitalize">{change.day.toLowerCase()}</span>
+                                                <span className="text-xs text-muted-foreground">{change.timeSlot}</span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="text-muted-foreground line-through decoration-destructive/30">
+                                            {change.previousFaculty}
+                                        </TableCell>
+                                        <TableCell className="text-primary font-bold">
+                                            <div className="flex items-center gap-2">
+                                                <ArrowRight className="h-3 w-3 text-muted-foreground" />
+                                                {change.newFaculty}
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                                {optimizationChanges.length === 0 && (
+                                    <TableRow>
+                                        <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                                            No optimization changes recorded.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
                     </div>
                 </DialogContent>
             </Dialog>
