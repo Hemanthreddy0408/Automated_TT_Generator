@@ -61,6 +61,7 @@ com/acadschedule/scheduler/controller/HistoryController.class
 com/acadschedule/scheduler/config/SecurityConfig.class
 com/acadschedule/scheduler/entity/UserOtp.class
 com/acadschedule/scheduler/controller/TimetableController.class
+com/acadschedule/scheduler/service/AuditLogService$1.class
 com/acadschedule/scheduler/config/WebConfig.class
 com/acadschedule/scheduler/controller/AuditLogController.class
 com/acadschedule/scheduler/repository/SubjectRepository.class

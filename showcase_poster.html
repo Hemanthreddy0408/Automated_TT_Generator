@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AcadSchedule — Showcase Poster</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #050818;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+  }
+
+  .poster {
+    width: 900px;
+    background: linear-gradient(145deg, #0a0e2e 0%, #0d1545 35%, #120828 70%, #050818 100%);
+    border-radius: 24px;
+    border: 1px solid rgba(99, 179, 237, 0.15);
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 0 80px rgba(99, 179, 237, 0.06), 0 40px 120px rgba(0,0,0,0.7);
+  }
+
+  /* Background grid */
+  .poster::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(99,179,237,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(99,179,237,0.04) 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events: none;
+  }
+
+  /* Glow orbs */
+  .orb {
+    position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none;
+  }
+  .orb-1 { width: 400px; height: 400px; background: rgba(99,179,237,0.07); top: -100px; right: -100px; }
+  .orb-2 { width: 350px; height: 350px; background: rgba(139,92,246,0.08); bottom: 100px; left: -80px; }
+  .orb-3 { width: 200px; height: 200px; background: rgba(52,211,153,0.06); bottom: -50px; right: 200px; }
+
+  .content { position: relative; z-index: 1; padding: 60px 64px 48px; }
+
+  /* ── HEADER ── */
+  .header { text-align: center; margin-bottom: 52px; }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(99,179,237,0.1);
+    border: 1px solid rgba(99,179,237,0.25);
+    border-radius: 100px;
+    padding: 6px 18px;
+    color: #63b3ed;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+  }
+  .badge::before { content: '◆'; font-size: 8px; }
+
+  h1 {
+    font-size: 42px;
+    font-weight: 900;
+    line-height: 1.1;
+    color: #fff;
+    margin-bottom: 8px;
+    letter-spacing: -1px;
+  }
+  h1 span {
+    background: linear-gradient(135deg, #63b3ed, #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .subtitle {
+    font-size: 16px;
+    color: rgba(255,255,255,0.45);
+    font-weight: 400;
+    margin-bottom: 28px;
+    letter-spacing: 0.3px;
+  }
+
+  .divider {
+    width: 80px; height: 3px;
+    background: linear-gradient(90deg, #63b3ed, #a78bfa);
+    border-radius: 2px;
+    margin: 0 auto;
+  }
+
+  /* ── PROBLEM STATEMENT ── */
+  .problem {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 16px;
+    padding: 24px 32px;
+    margin-bottom: 48px;
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+  }
+  .problem-icon { font-size: 32px; flex-shrink: 0; margin-top: 2px; }
+  .problem h3 { font-size: 13px; font-weight: 700; color: #a78bfa; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+  .problem p { font-size: 14px; color: rgba(255,255,255,0.6); line-height: 1.7; }
+
+  /* ── SECTION TITLE ── */
+  .section-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+    margin-bottom: 20px;
+  }
+
+  /* ── FEATURES GRID ── */
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 48px;
+  }
+
+  .feature-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 24px 20px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .feature-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    border-radius: 16px 16px 0 0;
+  }
+  .feature-card.blue::before   { background: linear-gradient(90deg, #63b3ed, #4299e1); }
+  .feature-card.purple::before { background: linear-gradient(90deg, #a78bfa, #7c3aed); }
+  .feature-card.green::before  { background: linear-gradient(90deg, #34d399, #059669); }
+  .feature-card.cyan::before   { background: linear-gradient(90deg, #67e8f9, #0891b2); }
+  .feature-card.pink::before   { background: linear-gradient(90deg, #f472b6, #db2777); }
+  .feature-card.yellow::before { background: linear-gradient(90deg, #fbbf24, #d97706); }
+
+  .feature-icon {
+    font-size: 28px;
+    margin-bottom: 12px;
+    display: block;
+  }
+  .feature-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 8px;
+    line-height: 1.3;
+  }
+  .feature-desc {
+    font-size: 12px;
+    color: rgba(255,255,255,0.5);
+    line-height: 1.6;
+  }
+
+  /* ── STANDOUT SECTION ── */
+  .standout {
+    margin-bottom: 48px;
+  }
+  .standout-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+  .standout-card {
+    background: rgba(52, 211, 153, 0.05);
+    border: 1px solid rgba(52, 211, 153, 0.2);
+    border-radius: 14px;
+    padding: 20px 18px;
+  }
+  .standout-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #34d399;
+    margin-bottom: 8px;
+  }
+  .standout-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 6px;
+  }
+  .standout-desc {
+    font-size: 12px;
+    color: rgba(255,255,255,0.5);
+    line-height: 1.6;
+  }
+
+  /* ── TECH STACK ── */
+  .tech-stack {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px;
+    padding: 20px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 36px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .tech-label { font-size: 11px; color: rgba(255,255,255,0.3); font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
+  .tech-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+  .pill {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 100px;
+    padding: 5px 14px;
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.7);
+    letter-spacing: 0.3px;
+  }
+  .pill.highlight { background: rgba(99,179,237,0.12); border-color: rgba(99,179,237,0.3); color: #63b3ed; }
+
+  /* ── FOOTER ── */
+  .footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 24px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .footer-project {
+    font-size: 18px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.5px;
+  }
+  .footer-project span {
+    background: linear-gradient(135deg, #63b3ed, #a78bfa);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .footer-stats {
+    display: flex;
+    gap: 28px;
+  }
+  .stat { text-align: center; }
+  .stat-number { font-size: 22px; font-weight: 900; color: #fff; line-height: 1; }
+  .stat-label { font-size: 10px; color: rgba(255,255,255,0.35); margin-top: 2px; letter-spacing: 0.5px; }
+
+  @media print {
+    body { background: #050818; -webkit-print-color-adjust: exact; print-color-adjust: exact; padding: 0; }
+    .poster { width: 100%; border-radius: 0; box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+<div class="poster">
+  <!-- Background effects -->
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <div class="content">
+
+    <!-- ── HEADER ── -->
+    <div class="header">
+      <div class="badge">Academic Tech Showcase 2026</div>
+      <h1>Automated <span>Timetable Scheduling</span><br>& Faculty Workload Optimization</h1>
+      <p class="subtitle">An intelligent platform that eliminates manual scheduling headaches in colleges</p>
+      <div class="divider"></div>
+    </div>
+
+    <!-- ── PROBLEM ── -->
+    <div class="problem">
+      <div class="problem-icon">⚡</div>
+      <div>
+        <h3>Problem We Solve</h3>
+        <p>
+          College administrators spend <strong style="color:#fff;">days every semester</strong> manually creating timetables — battling room conflicts, faculty overlaps, lab constraints, and workload limits using spreadsheets that break with every change. Leave periods make it even worse with no automated recovery.
+        </p>
+      </div>
+    </div>
+
+    <!-- ── KEY FEATURES ── -->
+    <div class="section-title">✦ Key Features</div>
+    <div class="features-grid">
+
+      <div class="feature-card blue">
+        <span class="feature-icon">🤖</span>
+        <div class="feature-title">AI-Powered Schedule Generation</div>
+        <div class="feature-desc">One-click generation of complete conflict-free timetables for all sections, respecting rooms, labs, and break rules simultaneously.</div>
+      </div>
+
+      <div class="feature-card purple">
+        <span class="feature-icon">⚖️</span>
+        <div class="feature-title">Faculty Workload Optimization</div>
+        <div class="feature-desc">Live workload dashboard enforcing per-faculty daily and weekly hour limits. Visual alerts when any faculty is over/under-utilized.</div>
+      </div>
+
+      <div class="feature-card green">
+        <span class="feature-icon">🔄</span>
+        <div class="feature-title">Live Conflict Resolution</div>
+        <div class="feature-desc">Real-time detection of faculty or room double-bookings with a single "Auto-Resolve" button that reschedules conflicts instantly.</div>
+      </div>
+
+      <div class="feature-card cyan">
+        <span class="feature-icon">🏖️</span>
+        <div class="feature-title">Leave-Driven Optimization</div>
+        <div class="feature-desc">When a faculty leave is approved, the system automatically reassigns all affected sessions to free faculty — no manual rescheduling needed.</div>
+      </div>
+
+      <div class="feature-card pink">
+        <span class="feature-icon">🔬</span>
+        <div class="feature-title">Smart Elective Management</div>
+        <div class="feature-desc">Handles shared elective subjects across multiple sections without double-counting faculty hours. Supports multi-section elective slots.</div>
+      </div>
+
+      <div class="feature-card yellow">
+        <span class="feature-icon">🔔</span>
+        <div class="feature-title">Real-Time Notifications</div>
+        <div class="feature-desc">Instant in-app alerts to admins and faculty members when timetables change, leave status updates, or new conflicts are detected.</div>
+      </div>
+
+    </div>
+
+    <!-- ── WHERE WE STAND OUT ── -->
+    <div class="standout">
+      <div class="section-title">✦ Where We Stand Out</div>
+      <div class="standout-grid">
+
+        <div class="standout-card">
+          <div class="standout-label">vs. Spreadsheets</div>
+          <div class="standout-title">Dynamic, Not Static</div>
+          <div class="standout-desc">Traditional Excel timetables break on every edit. Our system propagates changes instantly and detects newly created conflicts in real time.</div>
+        </div>
+
+        <div class="standout-card">
+          <div class="standout-label">vs. Manual Scheduling</div>
+          <div class="standout-title">All Constraints at Once</div>
+          <div class="standout-desc">Humans cannot hold 100+ constraints in mind simultaneously. Our engine evaluates rooms, faculty, labs, breaks & workload limits in a single pass.</div>
+        </div>
+
+        <div class="standout-card">
+          <div class="standout-label">vs. Generic Tools</div>
+          <div class="standout-title">Built for Indian Colleges</div>
+          <div class="standout-desc">Lab sessions enforced as consecutive 2-slot blocks. Lunch and tea breaks built in. Section-year structure matches Indian semester systems.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── TECH STACK ── -->
+    <div class="tech-stack">
+      <div class="tech-label">Tech Stack</div>
+      <div class="tech-pills">
+        <span class="pill highlight">Spring Boot 3</span>
+        <span class="pill highlight">React + Vite</span>
+        <span class="pill">PostgreSQL</span>
+        <span class="pill">JWT Auth</span>
+        <span class="pill">JUnit 5 + Mockito</span>
+        <span class="pill">Cypress E2E</span>
+        <span class="pill">Hibernate ORM</span>
+        <span class="pill">REST API</span>
+      </div>
+    </div>
+
+    <!-- ── FOOTER ── -->
+    <div class="footer">
+      <div class="footer-project">Acad<span>Schedule</span></div>
+      <div class="footer-stats">
+        <div class="stat">
+          <div class="stat-number" style="color:#63b3ed;">56</div>
+          <div class="stat-label">Backend Tests</div>
+        </div>
+        <div class="stat">
+          <div class="stat-number" style="color:#a78bfa;">66</div>
+          <div class="stat-label">Frontend Tests</div>
+        </div>
+        <div class="stat">
+          <div class="stat-number" style="color:#34d399;">3</div>
+          <div class="stat-label">E2E Flows</div>
+        </div>
+        <div class="stat">
+          <div class="stat-number" style="color:#fbbf24;">100%</div>
+          <div class="stat-label">Automated</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /poster -->
+</body>
+</html>

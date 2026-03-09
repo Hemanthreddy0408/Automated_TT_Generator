@@ -30,7 +30,7 @@ public class LeaveController {
 
     // GET requests by faculty ID (for Faculty)
     @GetMapping("/faculty/{facultyId}")
-    public List<LeaveRequest> getRequestsByFaculty(@PathVariable Long facultyId) {
+    public List<LeaveRequest> getRequestsByFaculty(@PathVariable("facultyId") Long facultyId) {
         return leaveService.getRequestsByFaculty(facultyId);
     }
 
@@ -42,13 +42,14 @@ public class LeaveController {
 
     // UPDATE status (Approve/Reject)
     @PatchMapping("/{id}/status")
-    public ResponseEntity<LeaveRequest> updateStatus(@PathVariable Long id, @RequestParam String status) {
+    public ResponseEntity<LeaveRequest> updateStatus(@PathVariable("id") Long id,
+            @RequestParam("status") String status) {
         return ResponseEntity.ok(leaveService.updateStatus(id, status));
     }
 
     // DELETE request
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteRequest(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteRequest(@PathVariable("id") Long id) {
         leaveService.deleteRequest(id);
         return ResponseEntity.noContent().build();
     }

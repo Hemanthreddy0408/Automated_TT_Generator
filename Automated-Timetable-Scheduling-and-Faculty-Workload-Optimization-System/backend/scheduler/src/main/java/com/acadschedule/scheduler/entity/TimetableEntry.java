@@ -1,4 +1,5 @@
 package com.acadschedule.scheduler.entity;
+
 import jakarta.persistence.*;
 
 @Entity
@@ -34,29 +35,75 @@ public class TimetableEntry {
     private String type; // LECTURE / LAB / BREAK / LUNCH
 
     // ===== Getters & Setters =====
-    public Long getId() { return id; }
-    
-    public String getSectionId() { return sectionId; }
-    public void setSectionId(String sectionId) { this.sectionId = sectionId; }
+    public Long getId() {
+        return id;
+    }
 
-    public String getDay() { return day; }
-    public void setDay(String day) { this.day = day; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public String getTimeSlot() { return timeSlot; }
-    public void setTimeSlot(String timeSlot) { this.timeSlot = timeSlot; }
+    public String getSectionId() {
+        return sectionId;
+    }
 
-    public String getSubjectCode() { return subjectCode; }
-    public void setSubjectCode(String subjectCode) { this.subjectCode = subjectCode; }
+    public void setSectionId(String sectionId) {
+        this.sectionId = sectionId;
+    }
 
-    public String getSubjectName() { return subjectName; }
-    public void setSubjectName(String subjectName) { this.subjectName = subjectName; }
+    public String getDay() {
+        return day;
+    }
 
-    public String getFacultyName() { return facultyName; }
-    public void setFacultyName(String facultyName) { this.facultyName = facultyName; }
+    public void setDay(String day) {
+        this.day = day;
+    }
 
-    public String getRoomNumber() { return roomNumber; }
-    public void setRoomNumber(String roomNumber) { this.roomNumber = roomNumber; }
+    public String getTimeSlot() {
+        return timeSlot;
+    }
 
-    public String getType() { return type; }
-    public void setType(String type) { this.type = type; }
+    public void setTimeSlot(String timeSlot) {
+        this.timeSlot = timeSlot;
+    }
+
+    public String getSubjectCode() {
+        return subjectCode;
+    }
+
+    public void setSubjectCode(String subjectCode) {
+        this.subjectCode = subjectCode;
+    }
+
+    public String getSubjectName() {
+        return subjectName;
+    }
+
+    public void setSubjectName(String subjectName) {
+        this.subjectName = subjectName;
+    }
+
+    public String getFacultyName() {
+        return facultyName;
+    }
+
+    public void setFacultyName(String facultyName) {
+        this.facultyName = facultyName;
+    }
+
+    public String getRoomNumber() {
+        return roomNumber;
+    }
+
+    public void setRoomNumber(String roomNumber) {
+        this.roomNumber = roomNumber;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
 }

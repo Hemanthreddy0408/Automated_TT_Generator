@@ -32,18 +32,29 @@ public class TimetableController {
     }
 
     @GetMapping("/{sectionId}")
-    public List<TimetableEntry> getBySection(@PathVariable String sectionId) {
-        return repo.findBySectionId(sectionId);
+    public ResponseEntity<?> getBySection(@PathVariable("sectionId") String sectionId) {
+        try {
+            List<TimetableEntry> list = repo.findBySectionId(sectionId);
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            // Register JavaTimeModule if Date/Time fields exist, but let's just test basic
+            // mapping
+            mapper.findAndRegisterModules();
+            String json = mapper.writeValueAsString(list);
+            return ResponseEntity.ok().header("Content-Type", "application/json").body(json);
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                    .body("Serialization Error: " + e.getClass().getName() + " - " + e.getMessage());
+        }
     }
 
     @GetMapping("/faculty/{facultyName}")
-    public List<TimetableEntry> getByFaculty(@PathVariable String facultyName) {
+    public List<TimetableEntry> getByFaculty(@PathVariable("facultyName") String facultyName) {
         return repo.findByFacultyName(facultyName);
     }
 
     @PutMapping("/update")
     public ResponseEntity<?> updateEntry(@RequestBody TimetableEntry entry,
-            @RequestParam(defaultValue = "false") boolean force) {
+            @RequestParam(value = "force", defaultValue = "false") boolean force) {
         if (!force) {
             List<String> conflicts = conflictService.checkConflicts(entry);
             if (!conflicts.isEmpty()) {
@@ -66,7 +77,7 @@ public class TimetableController {
     }
 
     @PostMapping("/generate/{sectionId}")
-    public ResponseEntity<?> generateForSection(@PathVariable String sectionId) {
+    public ResponseEntity<?> generateForSection(@PathVariable("sectionId") String sectionId) {
         try {
             List<TimetableEntry> generatedTimetable = timetableGenerationService.generateForSection(sectionId, true);
             return ResponseEntity.ok(generatedTimetable);
@@ -95,7 +106,7 @@ public class TimetableController {
     }
 
     @PostMapping("/resolve-conflict/{entryId}")
-    public ResponseEntity<?> autoResolveConflict(@PathVariable Long entryId) {
+    public ResponseEntity<?> autoResolveConflict(@PathVariable("entryId") Long entryId) {
         try {
             TimetableEntry resolved = conflictService.autoResolveConflict(entryId);
             return ResponseEntity.ok(resolved);

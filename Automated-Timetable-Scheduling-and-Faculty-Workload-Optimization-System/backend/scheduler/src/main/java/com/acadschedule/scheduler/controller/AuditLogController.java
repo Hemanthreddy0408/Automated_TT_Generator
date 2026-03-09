@@ -34,11 +34,12 @@ public class AuditLogController {
 
     /**
      * Update an audit log entry with conflict detection.
-     * Conflicts occur if the database version differs from the client version (lastModifiedTimestamp).
+     * Conflicts occur if the database version differs from the client version
+     * (lastModifiedTimestamp).
      */
     @PutMapping("/{id}")
     public ResponseEntity<?> updateAuditLog(
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @RequestBody Map<String, Object> updates) {
         try {
             // Extract the lastModifiedTimestamp from the request for conflict detection
@@ -46,7 +47,8 @@ public class AuditLogController {
             String description = (String) updates.get("description");
 
             // Call service to update with conflict detection
-            Map<String, Object> result = service.updateAuditLogWithConflictDetection(id, description, lastModifiedTimestamp);
+            Map<String, Object> result = service.updateAuditLogWithConflictDetection(id, description,
+                    lastModifiedTimestamp);
 
             // If conflict detected, return 409 Conflict
             if ((Boolean) result.get("hasConflict")) {
@@ -63,7 +65,7 @@ public class AuditLogController {
     }
 
     @PostMapping("/rollback/{id}")
-    public ResponseEntity<?> rollback(@PathVariable Long id) {
+    public ResponseEntity<?> rollback(@PathVariable("id") Long id) {
         service.rollbackAction(id);
 
         Map<String, Object> response = new HashMap<>();
@@ -73,7 +75,7 @@ public class AuditLogController {
     }
 
     @PostMapping("/undo-rollback/{id}")
-    public ResponseEntity<?> undoRollback(@PathVariable Long id) {
+    public ResponseEntity<?> undoRollback(@PathVariable("id") Long id) {
         service.undoRollback(id);
 
         Map<String, Object> response = new HashMap<>();

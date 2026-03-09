@@ -26,6 +26,7 @@ public class TimetableGenerationService {
     private final SectionRepository sectionRepo;
     private final AuditLogService auditLogService;
     private final NotificationService notificationService;
+    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
     public TimetableGenerationService(
             TimetableRepository timetableRepo,
@@ -34,7 +35,8 @@ public class TimetableGenerationService {
             RoomRepository roomRepo,
             SectionRepository sectionRepo,
             AuditLogService auditLogService,
-            NotificationService notificationService) {
+            NotificationService notificationService,
+            com.fasterxml.jackson.databind.ObjectMapper objectMapper) {
         this.timetableRepo = timetableRepo;
         this.facultyRepo = facultyRepo;
         this.subjectRepo = subjectRepo;
@@ -42,6 +44,7 @@ public class TimetableGenerationService {
         this.sectionRepo = sectionRepo;
         this.auditLogService = auditLogService;
         this.notificationService = notificationService;
+        this.objectMapper = objectMapper;
     }
 
     /* ================== CONFIG ================== */
@@ -141,6 +144,14 @@ public class TimetableGenerationService {
                     }
                 });
 
+        String snapshotJson = null;
+        if (commit) {
+            try {
+                snapshotJson = objectMapper.writeValueAsString(timetableRepo.findBySectionId(sectionId));
+            } catch (Exception e) {
+            }
+        }
+
         for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
             try {
                 System.out.println("Attempt " + attempt + " for section " + sectionId);
@@ -150,7 +161,7 @@ public class TimetableGenerationService {
 
                 if (commit) {
                     auditLogService.logAction("TIMETABLE", "GENERATE",
-                            "Generated timetable for Section ID: " + sectionId, "System/Admin", null);
+                            "Generated timetable for Section ID: " + sectionId, "System/Admin", null, snapshotJson);
 
                     notificationService.createAdminNotification(
                             "Timetable Generated",
@@ -743,9 +754,14 @@ public class TimetableGenerationService {
      */
     public List<TimetableEntry> generateForAllSections(boolean commit) {
 
-        // Clear existing timetable when committing (not in dry-run mode)
-        if (commit)
+        String snapshotJson = null;
+        if (commit) {
+            try {
+                snapshotJson = objectMapper.writeValueAsString(timetableRepo.findAll());
+            } catch (Exception e) {
+            }
             timetableRepo.deleteAll();
+        }
 
         List<TimetableEntry> all = new ArrayList<>();
         Map<Long, Integer> globalFacultyLoad = new HashMap<>();
@@ -820,7 +836,7 @@ public class TimetableGenerationService {
         if (commit) {
             auditLogService.logAction("TIMETABLE", "GENERATE_ALL",
                     "Successfully generated master timetable for all sections (" + all.size() + " entries)",
-                    "System/Admin", null);
+                    "System/Admin", null, snapshotJson);
 
             notificationService.createAdminNotification(
                     "Master Timetable Generated",
@@ -850,6 +866,12 @@ public class TimetableGenerationService {
      */
     @Transactional
     public List<Map<String, Object>> optimizeForLeave(String facultyName, Set<String> leaveDays) {
+        String snapshotJson = null;
+        try {
+            snapshotJson = objectMapper.writeValueAsString(timetableRepo.findAll());
+        } catch (Exception e) {
+        }
+
         // 1. Identify which (sectionId + subjectCode) pairs are affected by the leave
         Set<String> affectedSectionSubjects = timetableRepo.findByFacultyName(facultyName).stream()
                 .filter(e -> leaveDays.contains(e.getDay().toUpperCase()))
@@ -962,7 +984,7 @@ public class TimetableGenerationService {
                     "Reassigned " + reassigned.size()
                             + " total sessions (maintaining section-subject consistency) from " + facultyName
                             + " due to approved leave.",
-                    "Admin", null);
+                    "Admin", null, snapshotJson);
             notificationService.createAdminNotification(
                     "Timetable Optimized for Leave",
                     "Consistency rule enforced: Reassigned " + reassigned.size() + " total session(s) from "

@@ -64,7 +64,8 @@ class TimetableControllerTest {
     void getBySection() {
         when(timetableRepo.findBySectionId("1")).thenReturn(List.of(sampleEntry));
 
-        List<TimetableEntry> result = controller.getBySection("1");
+        @SuppressWarnings("unchecked")
+        List<TimetableEntry> result = (List<TimetableEntry>) controller.getBySection("1").getBody();
 
         assertEquals(1, result.size());
         assertEquals("CSE301", result.get(0).getSubjectCode());

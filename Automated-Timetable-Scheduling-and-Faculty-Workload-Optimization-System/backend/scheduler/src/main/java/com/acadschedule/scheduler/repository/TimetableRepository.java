@@ -9,10 +9,13 @@ import java.util.List;
 
 @Repository
 public interface TimetableRepository extends JpaRepository<TimetableEntry, Long> {
+    @Transactional
     void deleteBySectionId(String sectionId);
+
     List<TimetableEntry> findBySectionId(String sectionId);
+
     List<TimetableEntry> findByFacultyName(String facultyName);
-    
+
     @Transactional
     void deleteByFacultyName(String facultyName);
 }

@@ -18,10 +18,10 @@ public class AuditLog {
     private Long id;
 
     @Column(name = "action_type")
-    private String actionType;   // GENERATED / OPTIMIZED / ROLLBACK
+    private String actionType; // GENERATED / OPTIMIZED / ROLLBACK
 
     @Column(name = "entity_type")
-    private String entityType;   // TIMETABLE
+    private String entityType; // TIMETABLE
 
     @Column(name = "description")
     private String description;
@@ -38,7 +38,11 @@ public class AuditLog {
     @Column(name = "entity_id")
     private Long entityId;
 
-    public AuditLog() {} // Make sure default constructor is intact
+    @Column(name = "snapshot_data", columnDefinition = "TEXT")
+    private String snapshotData;
+
+    public AuditLog() {
+    } // Make sure default constructor is intact
 
     public AuditLog(String entityType, String actionType, String description, String userEmail) {
         this.entityType = entityType;
@@ -108,5 +112,13 @@ public class AuditLog {
 
     public void setEntityId(Long entityId) {
         this.entityId = entityId;
+    }
+
+    public String getSnapshotData() {
+        return snapshotData;
+    }
+
+    public void setSnapshotData(String snapshotData) {
+        this.snapshotData = snapshotData;
     }
 }
