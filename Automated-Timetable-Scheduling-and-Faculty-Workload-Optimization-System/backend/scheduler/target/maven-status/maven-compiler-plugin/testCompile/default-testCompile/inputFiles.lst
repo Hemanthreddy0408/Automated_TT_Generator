@@ -1,2 +1,9 @@
+/Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/test/java/com/acadschedule/scheduler/service/TimetableConflictServiceTest.java
 /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/test/java/com/acadschedule/scheduler/service/FacultyServiceTest.java
+/Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/test/java/com/acadschedule/scheduler/service/TimetableGenerationServiceTest.java
+/Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/test/java/com/acadschedule/scheduler/controller/FacultyControllerTest.java
 /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/test/java/com/acadschedule/scheduler/service/SubjectServiceTest.java
+/Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/test/java/com/acadschedule/scheduler/service/NotificationServiceTest.java
+/Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/test/java/com/acadschedule/scheduler/controller/TimetableControllerTest.java
+/Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/test/java/com/acadschedule/scheduler/service/LeaveServiceTest.java
+/Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/src/test/java/com/acadschedule/scheduler/controller/LeaveControllerTest.java

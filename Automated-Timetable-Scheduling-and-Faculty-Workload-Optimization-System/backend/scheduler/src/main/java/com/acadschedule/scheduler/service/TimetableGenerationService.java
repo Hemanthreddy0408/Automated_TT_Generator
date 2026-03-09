@@ -59,33 +59,49 @@ public class TimetableGenerationService {
     private static final List<String> DAYS = List.of("MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY");
 
     private static final List<String> TIME_SLOTS = List.of(
-            "09:00-09:40",
-            "09:40-10:30",
-            "10:30-10:45", // BREAK
-            "10:45-11:35",
-            "11:35-12:25",
-            "12:25-01:15",
-            "LUNCH_BREAK",
-            "02:05-02:55",
-            "02:55-03:45",
-            "03:45-04:35");
+            "09:00-09:40", // index 0
+            "09:40-10:30", // index 1
+            "10:30-10:45", // index 2 → SHORT BREAK (skip for all sessions)
+            "10:45-11:35", // index 3
+            "11:35-12:25", // index 4
+            "12:25-01:15", // index 5
+            "LUNCH_BREAK", // index 6 → LUNCH (skip)
+            "02:05-02:55", // index 7
+            "02:55-03:45", // index 8
+            "03:45-04:35"); // index 9
 
     /*
-     * Slot indices:
-     * 0: NO_CLASS (skip this slot)
-     * 1-4: Morning TIME_SLOTS (09:00 to 12:50) - classes start here
-     * 5: LUNCH_BREAK (no classes scheduled)
-     * 6-8: Afternoon TIME_SLOTS (02:10 to 05:00)
-     * 
-     * Labs (2 consecutive hours) can be at:
-     * - Morning: ONE lab starting at index 2 (TIME_SLOTS 2-3: 10:00-11:50)
-     * - Afternoon: Labs starting at 6 or 7 (TIME_SLOTS 6-7 or 7-8)
+     * Non-teachable slots (must not be used for any session start or span):
+     * index 2 → 10:30-10:45 (SHORT BREAK)
+     * index 6 → LUNCH_BREAK
+     *
+     * Valid lab starting indices (length=2, must not span a break/lunch):
+     * Morning : index 0 (09:00-09:40 + 09:40-10:30) – consecutive, no break
+     * index 3 (10:45-11:35 + 11:35-12:25) – consecutive, no break
+     * index 4 (11:35-12:25 + 12:25-01:15) – consecutive, no break
+     * Afternoon: index 7 (02:05-02:55 + 02:55-03:45) – consecutive, no break
+     * index 8 (02:55-03:45 + 03:45-04:35) – consecutive, no break
+     *
+     * index 1 (09:40-10:30) is INVALID for labs because index 2 is BREAK.
+     * index 5 (12:25-01:15) is INVALID for labs because index 6 is LUNCH_BREAK.
      */
 
-    private static final Set<Integer> AFTERNOON = Set.of(6, 7, 8);
-    private static final Set<Integer> MORNING_LAB_TIME_SLOTS = Set.of(2); // Only slot 2 for morning labs
-    private static final int DEFAULT_DAILY = 5;
-    private static final int DEFAULT_WEEKLY = 20;
+    /**
+     * Slots that must never be used as a session start or appear inside a session
+     * span.
+     */
+    private static final Set<Integer> NON_TEACHABLE_SLOTS = Set.of(2, 6); // SHORT_BREAK, LUNCH_BREAK
+
+    /**
+     * Valid starting indices for 2-period LAB sessions (pre-validated for no break
+     * spanning).
+     */
+    private static final Set<Integer> VALID_LAB_START_SLOTS = Set.of(0, 3, 4, 7, 8);
+
+    private static final Set<Integer> AFTERNOON = Set.of(7, 8, 9);
+    private static final Set<Integer> MORNING_LAB_TIME_SLOTS = Set.of(0, 3, 4); // Valid morning lab starts
+    private static final int DEFAULT_DAILY = 8; // per-day cap (labs across 8 sections need headroom)
+    private static final int DEFAULT_WEEKLY = 20; // weekly teaching-hours hard cap
 
     /* ================== PUBLIC ================== */
 
@@ -96,7 +112,7 @@ public class TimetableGenerationService {
      */
     public List<TimetableEntry> generateForSection(String sectionId, boolean commit) {
 
-        int MAX_ATTEMPTS = 50;
+        int MAX_ATTEMPTS = 100;
         RuntimeException lastError = null;
 
         // ✅ PRIME GLOBAL STATE: Gather all existing entries from OTHER sections
@@ -383,15 +399,17 @@ public class TimetableGenerationService {
             }
         }
 
-        // PASS 1: Place all LAB sessions (most constrained)
+        // PASS 1: Place all LAB sessions (most constrained first)
+        // Two sub-passes: (a) randomized for speed, (b) exhaustive if randomized fails
         for (Session s : sessions) {
             if (s.length != 2)
                 continue;
 
             boolean placed = false;
+
+            // (a) Try random order first
             List<String> shuffledDays = new ArrayList<>(DAYS);
             Collections.shuffle(shuffledDays);
-
             for (String day : shuffledDays) {
                 if (tryPlaceSession(s, sectionId, day, occ, dailyWorkloads.get(day), weeklyLoad,
                         rooms, faculties, section, result, commit, morningLabCounts, sectionDailyLoad,
@@ -400,6 +418,19 @@ public class TimetableGenerationService {
                     break;
                 }
             }
+
+            // (b) Exhaustive fallback — try all days in fixed order
+            if (!placed) {
+                for (String day : DAYS) {
+                    if (tryPlaceSession(s, sectionId, day, occ, dailyWorkloads.get(day), weeklyLoad,
+                            rooms, faculties, section, result, commit, morningLabCounts, sectionDailyLoad,
+                            subjectToFacultyMap)) {
+                        placed = true;
+                        break;
+                    }
+                }
+            }
+
             if (!placed)
                 failedSessions.add(s);
         }
@@ -509,26 +540,31 @@ public class TimetableGenerationService {
                 if (currentLoad + s.length > 7)
                     continue;
 
-                // Skip NO_CLASS and LUNCH_BREAK TIME_SLOTS
-                if (TIME_SLOTS.get(si).equals("NO_CLASS") || TIME_SLOTS.get(si).equals("LUNCH_BREAK"))
+                // ── Skip non-teachable slots (BREAK and LUNCH_BREAK) ──────────────────────
+                if (NON_TEACHABLE_SLOTS.contains(si))
                     continue;
 
-                // Check we have enough consecutive TIME_SLOTS
+                // ── For LAB sessions (length == 2): only allow pre-validated starting slots
+                // to guarantee no break/lunch is spanned ────────────────────────────────
+                if (s.length == 2 && !VALID_LAB_START_SLOTS.contains(si))
+                    continue;
+
+                // Check we have enough consecutive slots remaining
                 if (si + s.length > TIME_SLOTS.size())
                     continue;
 
-                // Check if consecutive TIME_SLOTS skip over lunch break
-                boolean spansLunch = false;
+                // Double-check: none of the spanned slots may be non-teachable
+                boolean spansBreak = false;
                 for (int k = 0; k < s.length; k++) {
-                    if (TIME_SLOTS.get(si + k).equals("LUNCH_BREAK")) {
-                        spansLunch = true;
+                    if (NON_TEACHABLE_SLOTS.contains(si + k)) {
+                        spansBreak = true;
                         break;
                     }
                 }
-                if (spansLunch)
+                if (spansBreak)
                     continue;
 
-                // Check if all required TIME_SLOTS are free
+                // Check if all required TIME_SLOTS are free (section + faculty)
                 boolean allFree = true;
                 for (int k = 0; k < s.length; k++) {
                     if (occ.blocked(sectionId, f.getName(), day, TIME_SLOTS.get(si + k))) {
@@ -539,39 +575,34 @@ public class TimetableGenerationService {
                 if (!allFree)
                     continue;
 
-                // Find suitable room
+                // ── Find a suitable room ─────────────────────────────────────────────────
                 Room room = null;
-                // First pass: try to find a specialized room (e.g. LAB for lab sessions)
-                for (Room r : rooms) {
-                    if (r.getCapacity() < section.getCapacity())
-                        continue;
 
-                    // For labs, prefer lab rooms
-                    if (s.length == 2) {
-                        if (r.getType() == null ||
-                                !r.getType().name().toUpperCase().contains("LAB")) {
+                if (s.length == 2) {
+                    // LAB sessions: ONLY accept rooms whose type is LAB; no fallback.
+                    // Lab sessions are typically run in batches (half the section at once),
+                    // so we allow any LAB room with at least 50% of section capacity.
+                    int minLabCap = Math.max(1, section.getCapacity() / 2);
+                    for (Room r : rooms) {
+                        if (r.getCapacity() < minLabCap)
                             continue;
-                        }
-                    }
+                        if (r.getType() == null || r.getType() != RoomType.LAB)
+                            continue;
 
-                    // Check if room is free for all required TIME_SLOTS
-                    boolean roomFree = true;
-                    for (int k = 0; k < s.length; k++) {
-                        if (occ.roomBlocked(r.getName(), day, TIME_SLOTS.get(si + k))) {
-                            roomFree = false;
+                        boolean roomFree = true;
+                        for (int k = 0; k < s.length; k++) {
+                            if (occ.roomBlocked(r.getName(), day, TIME_SLOTS.get(si + k))) {
+                                roomFree = false;
+                                break;
+                            }
+                        }
+                        if (roomFree) {
+                            room = r;
                             break;
                         }
                     }
-
-                    if (roomFree) {
-                        room = r;
-                        break;
-                    }
-                }
-
-                // Fallback second pass: if no specialized room found, try any room with
-                // capacity
-                if (room == null) {
+                } else {
+                    // LECTURE / ELECTIVE sessions: prefer non-lab rooms, fallback to any
                     for (Room r : rooms) {
                         if (r.getCapacity() < section.getCapacity())
                             continue;
@@ -591,7 +622,7 @@ public class TimetableGenerationService {
                 }
 
                 if (room == null)
-                    continue; // No suitable room found even in fallback
+                    continue; // No suitable room found
 
                 // SUCCESS! Place the session
                 for (int k = 0; k < s.length; k++) {
@@ -712,86 +743,101 @@ public class TimetableGenerationService {
      */
     public List<TimetableEntry> generateForAllSections(boolean commit) {
 
-        int MAX_ATTEMPTS = 50;
-        RuntimeException lastError = null;
+        // Clear existing timetable when committing (not in dry-run mode)
+        if (commit)
+            timetableRepo.deleteAll();
 
-        for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-            try {
-                System.out.println("GLOBAL GENERATION ATTEMPT " + attempt);
+        List<TimetableEntry> all = new ArrayList<>();
+        Map<Long, Integer> globalFacultyLoad = new HashMap<>();
+        Map<String, Map<Long, Integer>> globalDailyWorkloads = new HashMap<>();
+        for (String d : DAYS) {
+            globalDailyWorkloads.put(d, new HashMap<>());
+        }
+        Occupancy globalOcc = new Occupancy();
+        Map<String, Long> subjectToFacultyMap = new HashMap<>();
+        Map<String, TimetableEntry> globalElectives = new HashMap<>();
 
-                List<TimetableEntry> all = new ArrayList<>();
-                Map<Long, Integer> globalFacultyLoad = new HashMap<>();
-                Map<String, Map<Long, Integer>> globalDailyWorkloads = new HashMap<>();
-                for (String d : DAYS) {
-                    globalDailyWorkloads.put(d, new HashMap<>());
-                }
-                Occupancy globalOcc = new Occupancy();
-
-                // ✅ NEW: Track which faculty teaches which subject globally
-                Map<String, Long> subjectToFacultyMap = new HashMap<>();
-                // Key: subjectCode (e.g., "CSE314"), Value: facultyId
-
-                Map<String, TimetableEntry> globalElectives = new HashMap<>();
-
-                // ✅ NEW: Calculate Max Elective Hours needed
-                int maxElectiveHours = 0;
-                for (Subject sub : subjectRepo.findAll()) {
-                    if (sub.isElective()) {
-                        int hours = lectureHours(sub);
-                        if (hours > maxElectiveHours)
-                            maxElectiveHours = hours;
-                    }
-                }
-
-                // Pick N random unique global slots for these electives
-                List<String> allPossibleSlots = new ArrayList<>();
-                for (String d : DAYS) {
-                    for (int i = 1; i < TIME_SLOTS.size(); i++) {
-                        if (i == 5 || i == 2)
-                            continue; // Skip lunch (5) and lab start (2)
-                        allPossibleSlots.add(d + "|" + TIME_SLOTS.get(i));
-                    }
-                }
-                Collections.shuffle(allPossibleSlots);
-                List<String> globalElectiveSlots = allPossibleSlots.subList(0,
-                        Math.min(maxElectiveHours, allPossibleSlots.size()));
-
-                for (Section s : sectionRepo.findAll()) {
-                    List<TimetableEntry> sectionTT = generateForSection(
-                            String.valueOf(s.getId()), commit, globalFacultyLoad, globalOcc, subjectToFacultyMap,
-                            globalElectives, globalElectiveSlots, globalDailyWorkloads);
-                    all.addAll(sectionTT);
-                }
-
-                if (commit) {
-                    auditLogService.logAction("TIMETABLE", "GENERATE_ALL",
-                            "Successfully generated master timetable for all sections (" + all.size() + " entries)",
-                            "System/Admin", null);
-
-                    notificationService.createAdminNotification(
-                            "Master Timetable Generated",
-                            "The master timetable for all sections was successfully generated or optimized.",
-                            "TIMETABLE_MASTER_GENERATED");
-
-                    // Notify all faculty about the new timetable
-                    List<Faculty> activeFaculties = facultyRepo.findByActiveTrue();
-                    for (Faculty f : activeFaculties) {
-                        notificationService.createFacultyNotification(
-                                f.getId(),
-                                "Timetable Updated",
-                                "A new timetable has been generated. Please check your schedule.",
-                                "TIMETABLE_UPDATED");
-                    }
-                }
-
-                return all; // SUCCESS 🎉
-            } catch (RuntimeException e) {
-                lastError = e;
-                timetableRepo.deleteAll(); // clear partial timetable and retry fresh
+        // Calculate Max Elective Hours needed across all subjects
+        int maxElectiveHours = 0;
+        for (Subject sub : subjectRepo.findAll()) {
+            if (sub.isElective()) {
+                int hours = lectureHours(sub);
+                if (hours > maxElectiveHours)
+                    maxElectiveHours = hours;
             }
         }
 
-        throw new RuntimeException("Global timetable generation failed after retries", lastError);
+        // Pick N globally-consistent slots for electives (avoid breaks/lunch)
+        List<String> allPossibleSlots = new ArrayList<>();
+        for (String d : DAYS) {
+            for (int i = 0; i < TIME_SLOTS.size(); i++) {
+                if (NON_TEACHABLE_SLOTS.contains(i))
+                    continue;
+                allPossibleSlots.add(d + "|" + TIME_SLOTS.get(i));
+            }
+        }
+        Collections.shuffle(allPossibleSlots);
+        List<String> globalElectiveSlots = allPossibleSlots.subList(0,
+                Math.min(maxElectiveHours, allPossibleSlots.size()));
+
+        // --- PER-SECTION RETRY --- //
+        for (Section s : sectionRepo.findAll()) {
+            String sectionId = String.valueOf(s.getId());
+            RuntimeException lastSectionError = null;
+            boolean sectionPlaced = false;
+
+            for (int attempt = 1; attempt <= 100; attempt++) {
+                try {
+                    List<TimetableEntry> sectionTT = generateForSection(
+                            sectionId, false, // commit=false: we batch-commit at the end
+                            globalFacultyLoad, globalOcc,
+                            subjectToFacultyMap, globalElectives,
+                            globalElectiveSlots, globalDailyWorkloads);
+
+                    // Commit section entries to DB if requested
+                    if (commit) {
+                        timetableRepo.deleteBySectionId(sectionId);
+                        timetableRepo.saveAll(sectionTT);
+                    }
+
+                    all.addAll(sectionTT);
+                    sectionPlaced = true;
+                    System.out.println("Section " + sectionId + " placed on attempt " + attempt);
+                    break;
+                } catch (RuntimeException e) {
+                    lastSectionError = e;
+                    // Allow a small context reset between retries of the same section
+                }
+            }
+
+            if (!sectionPlaced) {
+                throw new RuntimeException(
+                        "Could not generate timetable for section " + sectionId + " after 100 attempts: " +
+                                (lastSectionError != null ? lastSectionError.getMessage() : "unknown"));
+            }
+        }
+
+        if (commit) {
+            auditLogService.logAction("TIMETABLE", "GENERATE_ALL",
+                    "Successfully generated master timetable for all sections (" + all.size() + " entries)",
+                    "System/Admin", null);
+
+            notificationService.createAdminNotification(
+                    "Master Timetable Generated",
+                    "The master timetable for all sections was successfully generated or optimized.",
+                    "TIMETABLE_MASTER_GENERATED");
+
+            List<Faculty> activeFaculties = facultyRepo.findByActiveTrue();
+            for (Faculty f : activeFaculties) {
+                notificationService.createFacultyNotification(
+                        f.getId(),
+                        "Timetable Updated",
+                        "A new timetable has been generated. Please check your schedule.",
+                        "TIMETABLE_UPDATED");
+            }
+        }
+
+        return all;
     }
 
     /**
