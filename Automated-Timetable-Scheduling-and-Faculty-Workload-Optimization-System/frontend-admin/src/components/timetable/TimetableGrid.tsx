@@ -68,7 +68,7 @@ export function TimetableGrid({ timetable = {}, entries = [], onEdit, onElective
     timetable?.[day]?.[slot];
 
   return (
-    <div className="overflow-x-auto border rounded-2xl bg-white shadow-xl">
+    <div id="timetable-scroll-container" className="overflow-x-auto border rounded-2xl bg-white shadow-xl">
       <div className="grid grid-cols-[100px_repeat(10,minmax(160px,1fr))] gap-[1px] bg-slate-200">
         {/* HEADER */}
         <div className="bg-slate-50/80 backdrop-blur-sm p-4 font-bold text-xs text-slate-500 uppercase flex items-center justify-center tracking-widest border-b">

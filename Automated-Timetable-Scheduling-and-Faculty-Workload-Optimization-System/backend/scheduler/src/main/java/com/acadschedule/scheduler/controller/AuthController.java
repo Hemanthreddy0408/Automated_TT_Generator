@@ -54,17 +54,9 @@ public class AuthController {
 
             if (facultyOpt.isPresent()) {
                 com.acadschedule.scheduler.entity.Faculty f = facultyOpt.get();
-                // Check password safely (assume frontend still sends password123 as dummy or
-                // real)
-                // For this demo, using existing logic: `password123` matches all or we don't
-                // enforce fully here yet
-                // The prompt says "After entering the correct username and password, the user
-                // must verify using a second authentication step."
-                // I will improve Faculty password checking later in the Password Management
-                // step. For now, checking the current logic.
-                // Wait, existing logic was && "faculty123".equals(password).
-                if ("faculty123".equals(password)
-                        || (f.getPassword() != null && passwordEncoder.matches(password, f.getPassword()))) {
+
+                // Secure password check using PasswordEncoder
+                if (f.getPassword() != null && passwordEncoder.matches(password, f.getPassword())) {
                     // Generate OTP
                     String email = f.getEmail() != null ? f.getEmail() : "faculty@acadschedule.com";
                     String preAuthToken = otpService.generateAndSendOtp(email);

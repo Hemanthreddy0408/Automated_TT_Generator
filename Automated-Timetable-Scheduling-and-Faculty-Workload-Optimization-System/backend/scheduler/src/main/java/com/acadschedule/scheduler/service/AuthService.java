@@ -9,13 +9,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
-
 @Service
 public class AuthService {
 
     @Autowired
     private FacultyRepository facultyRepository;
+
+    @Autowired
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     @Value("${spring.security.user.password:password123}")
     private String adminPassword;
@@ -46,20 +47,18 @@ public class AuthService {
      * For demo: admin@acadschedule.com / password123
      */
     private LoginResponse authenticateAdmin(String identifier, String password) {
-    if (identifier.endsWith("@acadschedule.com") && adminPassword.equals(password)){
+        if (identifier.endsWith("@acadschedule.com") && adminPassword.equals(password)) {
 
-        UserData userData = new UserData(
-            0L,
-            "Administrator",
-            "admin@acadschedule.com",
-            "Administration",
-            "ADMIN001"
-        );
-        return new LoginResponse(true, "Login successful", "admin", userData);
+            UserData userData = new UserData(
+                    0L,
+                    "Administrator",
+                    "admin@acadschedule.com",
+                    "Administration",
+                    "ADMIN001");
+            return new LoginResponse(true, "Login successful", "admin", userData);
+        }
+        return new LoginResponse(false, "Invalid admin credentials", null, null);
     }
-    return new LoginResponse(false, "Invalid admin credentials", null, null);
-}
-
 
     /**
      * Faculty authentication
@@ -67,24 +66,31 @@ public class AuthService {
      * For demo: any faculty email/employeeId with password "faculty123"
      */
     private LoginResponse authenticateFaculty(String identifier, String password) {
-        // Try to find faculty by email and password
-        Optional<Faculty> facultyOpt = facultyRepository.findByEmailAndPassword(identifier, password);
+        // Find faculty by email or employee ID
+        java.util.Optional<Faculty> facultyOpt = facultyRepository.findByEmail(identifier);
+        if (facultyOpt.isEmpty()) {
+            facultyOpt = facultyRepository.findByEmployeeId(identifier);
+        }
 
         if (facultyOpt.isPresent()) {
             Faculty faculty = facultyOpt.get();
-            
+
+            // Validate password using PasswordEncoder
+            if (!passwordEncoder.matches(password, faculty.getPassword())) {
+                return new LoginResponse(false, "Invalid faculty credentials", null, null);
+            }
+
             // Check if faculty is active
             if (!faculty.isActive()) {
                 return new LoginResponse(false, "Account is inactive. Please contact administrator.", null, null);
             }
 
             UserData userData = new UserData(
-                faculty.getId(),
-                faculty.getName(),
-                faculty.getEmail(),
-                faculty.getDepartment(),
-                faculty.getEmployeeId()
-            );
+                    faculty.getId(),
+                    faculty.getName(),
+                    faculty.getEmail(),
+                    faculty.getDepartment(),
+                    faculty.getEmployeeId());
             return new LoginResponse(true, "Login successful", "faculty", userData);
         }
 
