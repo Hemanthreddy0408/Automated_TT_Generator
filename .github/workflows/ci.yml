@@ -69,3 +69,15 @@ jobs:
         run: |
           cd Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/frontend-faculty
           npm run build
+  
+
+  deploy:
+    needs: [backend, frontend-admin, frontend-faculty]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy backend
+        run: echo "Deploy backend to server"
+
+      - name: Deploy frontend
+        run: echo "Deploy frontend to hosting"
