@@ -7,25 +7,65 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
 
+  backend:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
 
-    - name: Setup Node
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
+      - name: Build Backend
+        run: |
+          cd Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler
+          mvn clean install
 
-    - name: Install dependencies
-      run: npm install
+  frontend-admin:
+    runs-on: ubuntu-latest
 
-    - name: Build project
-      run: npm run build
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Run tests
-      run: npm test || echo "No tests configured"
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: |
+          cd Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/frontend-admin
+          npm install
+
+      - name: Build frontend admin
+        run: |
+          cd Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/frontend-admin
+          npm run build
+
+  frontend-faculty:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: |
+          cd Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/frontend-faculty
+          npm install
+
+      - name: Build frontend faculty
+        run: |
+          cd Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/frontend-faculty
+          npm run build
