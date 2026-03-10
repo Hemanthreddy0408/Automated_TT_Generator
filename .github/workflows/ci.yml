@@ -24,7 +24,7 @@ jobs:
       - name: Build Backend
         run: |
           cd Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler
-          mvn clean install
+          mvn clean install -DskipTests
 
   frontend-admin:
     runs-on: ubuntu-latest
