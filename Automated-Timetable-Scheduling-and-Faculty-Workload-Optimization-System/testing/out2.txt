@@ -1,0 +1,112 @@
+Warning: The allowCypressEnv configuration option is enabled. This allows any browser code to read values from Cypress.env(). This is insecure and will be removed in a future major version.
+
+1. Replace Cypress.env() calls with cy.env() (for sensitive values) or Cypress.expose() (for public configuration)
+2. Set allowCypressEnv: false in your Cypress configuration to disable Cypress.env()
+
+Learn more: https://on.cypress.io/cypress-env-migration
+
+
+===============================================
+
+  (Run Starting)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Cypress:        15.11.0                                                                        │
+  │ Browser:        Electron 138 (headless)                                                        │
+  │ Node Version:   v20.12.1 (/usr/local/bin/node)                                                 │
+  │ Specs:          1 found (faculty-leave.cy.js)                                                  │
+  │ Searched:       cypress/e2e/faculty-leave.cy.js                                                │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+Remove output folder /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/testing/cypress/reports
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  faculty-leave.cy.js                                                             (1 of 1)
+
+
+  Faculty Leave Management
+    1) Faculty should apply for leave and Admin should approve it
+
+
+  0 passing (11s)
+  1 failing
+
+  1) Faculty Leave Management
+       Faculty should apply for leave and Admin should approve it:
+     CypressError: Timed out retrying after 4050ms: `cy.click()` failed because this element is not visible:
+
+`<a class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all mb-1 text-slate-400 hover:text-white hover:bg-slate-800/50" href="/faculty/leave">...</a>`
+
+This element `<a.flex.items-center.gap-3.px-4.py-3.rounded-xl.transition-all.mb-1.text-slate-400.hover:text-white.hover:bg-slate-800/50>` is not visible because its parent `<aside.w-64.bg-[#111827].text-white.flex.flex-shrink-0.flex-col.border-r.border-slate-800.hidden.lg:flex.sticky.top-0.h-screen>` has CSS property: `display: none`
+
+Fix this problem, or use `{force: true}` to disable error checking.
+
+https://on.cypress.io/element-cannot-be-interacted-with
+      at runVisibilityCheck (http://localhost:5173/__cypress/runner/cypress_runner.js:153214:58)
+      at Object.isStrictlyVisible (http://localhost:5173/__cypress/runner/cypress_runner.js:153228:10)
+      at runAllChecks (http://localhost:5173/__cypress/runner/cypress_runner.js:115518:26)
+      at retryActionability (http://localhost:5173/__cypress/runner/cypress_runner.js:115586:16)
+      at tryCatcher (http://localhost:5173/__cypress/runner/cypress_runner.js:1777:23)
+      at Promise.attempt.Promise.try (http://localhost:5173/__cypress/runner/cypress_runner.js:4285:29)
+      at whenStable (http://localhost:5173/__cypress/runner/cypress_runner.js:152022:68)
+      at <unknown> (http://localhost:5173/__cypress/runner/cypress_runner.js:151963:14)
+      at tryCatcher (http://localhost:5173/__cypress/runner/cypress_runner.js:1777:23)
+      at Promise._settlePromiseFromHandler (http://localhost:5173/__cypress/runner/cypress_runner.js:1489:31)
+      at Promise._settlePromise (http://localhost:5173/__cypress/runner/cypress_runner.js:1546:18)
+      at Promise._settlePromise0 (http://localhost:5173/__cypress/runner/cypress_runner.js:1591:10)
+      at Promise._settlePromises (http://localhost:5173/__cypress/runner/cypress_runner.js:1671:18)
+      at Promise._fulfill (http://localhost:5173/__cypress/runner/cypress_runner.js:1615:18)
+      at <unknown> (http://localhost:5173/__cypress/runner/cypress_runner.js:5420:46)
+  From Your Spec Code:
+      at Object.proxyGetter [as get] (http://localhost:5173/__cypress/runner/cypress_runner.js:81162:22)
+      at exists (http://localhost:5173/__cypress/runner/cypress_runner.js:151210:26)
+      at elExists (http://localhost:5173/__cypress/runner/cypress_runner.js:151225:10)
+      at ensureExistence (http://localhost:5173/__cypress/runner/cypress_runner.js:151406:22)
+      at onFailFn (http://localhost:5173/__cypress/runner/cypress_runner.js:151435:53)
+
+
+
+[mochawesome] Report JSON saved to /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/testing/cypress/reports/.jsons/mochawesome.json
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        1                                                                                │
+  │ Passing:      0                                                                                │
+  │ Failing:      1                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  1                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     10 seconds                                                                       │
+  │ Spec Ran:     faculty-leave.cy.js                                                              │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+  (Screenshots)
+
+  -  /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Schedulin    (2560x1440)
+     g-and-Faculty-Workload-Optimization-System/testing/cypress/screenshots/faculty-l               
+     eave.cy.js/Faculty Leave Management -- Faculty should apply for leave and Admin                
+     should approve it (failed).png                                                                 
+
+Start generate report process
+Read and merge jsons from "/Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/testing/cypress/reports/.jsons"
+Enhance report
+Create HTML report
+HTML report successfully created!
+/Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/testing/cypress/reports/index.html
+
+===============================================
+
+  (Run Finished)
+
+
+       Spec                                              Tests  Passing  Failing  Pending  Skipped  
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ ✖  faculty-leave.cy.js                      00:10        1        -        1        -        - │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+    ✖  1 of 1 failed (100%)                     00:10        1        -        1        -        -  
+

@@ -74,7 +74,7 @@ export function AdminLayout({ children, title, subtitle, actions, breadcrumbs }:
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative">
+                <Button variant="ghost" size="icon" className="relative" data-testid="notifications-trigger">
                   <Bell className="h-5 w-5" />
                   <span className="absolute -right-0.5 -top-0.5 h-4 w-4 rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground flex items-center justify-center">
                     3

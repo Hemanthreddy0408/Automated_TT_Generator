@@ -1,0 +1,86 @@
+Warning: The allowCypressEnv configuration option is enabled. This allows any browser code to read values from Cypress.env(). This is insecure and will be removed in a future major version.
+
+1. Replace Cypress.env() calls with cy.env() (for sensitive values) or Cypress.expose() (for public configuration)
+2. Set allowCypressEnv: false in your Cypress configuration to disable Cypress.env()
+
+Learn more: https://on.cypress.io/cypress-env-migration
+
+
+==========================================
+
+  (Run Starting)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Cypress:        15.11.0                                                                        │
+  │ Browser:        Electron 138 (headless)                                                        │
+  │ Node Version:   v20.12.1 (/usr/local/bin/node)                                                 │
+  │ Specs:          1 found (timetable-generation.cy.js)                                           │
+  │ Searched:       cypress/e2e/timetable-generation.cy.js                                         │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+Remove output folder /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/testing/cypress/reports
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  timetable-generation.cy.js                                                      (1 of 1)
+
+
+  Timetable Generation Test
+    1) Admin should be able to generate a new timetable completely
+
+
+  0 passing (10s)
+  1 failing
+
+  1) Timetable Generation Test
+       Admin should be able to generate a new timetable completely:
+     AssertionError: Timed out retrying after 4000ms: expected '<button.inline-flex.items-center.justify-center.gap-2.whitespace-nowrap.rounded-md.text-sm.font-medium.ring-offset-background.transition-colors.focus-visible:outline-none.focus-visible:ring-2.focus-visible:ring-ring.focus-visible:ring-offset-2.disabled:pointer-events-none.disabled:opacity-50.[&_svg]:pointer-events-none.[&_svg]:size-4.[&_svg]:shrink-0.border.border-input.bg-background.hover:bg-accent.hover:text-accent-foreground.h-10.px-4.py-2>' to be 'visible'
+
+This element `<button.inline-flex.items-center.justify-center.gap-2.whitespace-nowrap.rounded-md.text-sm.font-medium.ring-offset-background.transition-colors.focus-visible:outline-none.focus-visible:ring-2.focus-visible:ring-ring.focus-visible:ring-offset-2.disabled:pointer-events-none.disabled:opacity-50.[&_svg]:pointer-events-none.[&_svg]:size-4.[&_svg]:shrink-0.border.border-input.bg-background.hover:bg-accent.hover:text-accent-foreground.h-10.px-4.py-2>` is not visible because its ancestor has `position: fixed` CSS property and it is overflowed by other elements. How about scrolling to the element with `cy.scrollIntoView()`?
+      at Context.eval (webpack://testing/./cypress/e2e/timetable-generation.cy.js:12:40)
+
+
+
+[mochawesome] Report JSON saved to /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/testing/cypress/reports/.jsons/mochawesome.json
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        1                                                                                │
+  │ Passing:      0                                                                                │
+  │ Failing:      1                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  1                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     9 seconds                                                                        │
+  │ Spec Ran:     timetable-generation.cy.js                                                       │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+  (Screenshots)
+
+  -  /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Schedulin    (2560x1440)
+     g-and-Faculty-Workload-Optimization-System/testing/cypress/screenshots/timetable               
+     -generation.cy.js/Timetable Generation Test -- Admin should be able to generate                
+     a new timetable completely (failed).png                                                        
+
+Start generate report process
+Read and merge jsons from "/Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/testing/cypress/reports/.jsons"
+Enhance report
+Create HTML report
+HTML report successfully created!
+/Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/testing/cypress/reports/index.html
+
+===============================================
+
+  (Run Finished)
+
+
+       Spec                                              Tests  Passing  Failing  Pending  Skipped  
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ ✖  timetable-generation.cy.js               00:09        1        -        1        -        - │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+    ✖  1 of 1 failed (100%)                     00:09        1        -        1        -        -  
+

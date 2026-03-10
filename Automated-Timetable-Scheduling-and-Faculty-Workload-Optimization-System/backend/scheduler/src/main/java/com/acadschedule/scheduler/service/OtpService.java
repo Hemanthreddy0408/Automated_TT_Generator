@@ -12,9 +12,13 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class OtpService {
+
+    private static final Logger log = LoggerFactory.getLogger(OtpService.class);
 
     private final UserOtpRepository userOtpRepository;
     private final JavaMailSender mailSender;
@@ -33,9 +37,10 @@ public class OtpService {
 
         // Generate 6 digit OTP
         String otp = String.format("%06d", new Random().nextInt(999999));
-        System.out.println("=======================================================================");
-        System.out.println("OTP GENERATED FOR " + email + " : " + otp);
-        System.out.println("=======================================================================");
+
+        log.info("\n\n***********************************************************************");
+        log.info("🔐 OTP GENERATED FOR {} : {}", email, otp);
+        log.info("***********************************************************************\n\n");
 
         // Hash it
         String hashedOtp = passwordEncoder.encode(otp);
@@ -62,8 +67,9 @@ public class OtpService {
             message.setSubject("Your Login OTP - Automated Timetable System");
             message.setText("Your OTP for login is: " + otp + "\n\nThis OTP is valid for 5 minutes.");
             mailSender.send(message);
+            log.info("📧 OTP email sent successfully to {}", email);
         } catch (Exception e) {
-            System.err.println("Failed to send email to " + email + ": " + e.getMessage());
+            log.error("❌ Failed to send OTP email to {}: {}", email, e.getMessage());
             // In a real system, we might handle this differently, but we catch it
             // to allow testing even if the dummy email config fails.
         }

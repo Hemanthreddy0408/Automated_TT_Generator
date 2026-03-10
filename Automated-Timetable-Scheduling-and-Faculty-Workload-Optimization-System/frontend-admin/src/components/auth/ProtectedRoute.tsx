@@ -10,8 +10,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     children,
     requiredRole
 }) => {
-    const { isAuthenticated, role } = useAuth();
+    const { isAuthenticated, role, isLoading } = useAuth();
     const location = useLocation();
+
+    if (isLoading) {
+        return null; // Don't redirect while still loading from localStorage
+    }
 
     // If not authenticated, redirect to login
     if (!isAuthenticated) {

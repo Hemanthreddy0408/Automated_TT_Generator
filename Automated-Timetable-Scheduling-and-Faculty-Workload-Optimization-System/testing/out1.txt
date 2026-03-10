@@ -1,0 +1,88 @@
+Warning: The allowCypressEnv configuration option is enabled. This allows any browser code to read values from Cypress.env(). This is insecure and will be removed in a future major version.
+
+1. Replace Cypress.env() calls with cy.env() (for sensitive values) or Cypress.expose() (for public configuration)
+2. Set allowCypressEnv: false in your Cypress configuration to disable Cypress.env()
+
+Learn more: https://on.cypress.io/cypress-env-migration
+
+
+==========================================
+
+  (Run Starting)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Cypress:        15.11.0                                                                        │
+  │ Browser:        Electron 138 (headless)                                                        │
+  │ Node Version:   v20.12.1 (/usr/local/bin/node)                                                 │
+  │ Specs:          1 found (download-timetable.cy.js)                                             │
+  │ Searched:       cypress/e2e/download-timetable.cy.js                                           │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+Remove output folder /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/testing/cypress/reports
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  download-timetable.cy.js                                                        (1 of 1)
+
+
+  Timetable Export and Download
+    1) Admin: Should be able to trigger timetable download (PDF/CSV/EXCEL)
+
+
+  0 passing (13s)
+  1 failing
+
+  1) Timetable Export and Download
+       Admin: Should be able to trigger timetable download (PDF/CSV/EXCEL):
+     AssertionError: Timed out retrying after 4000ms: `cy.readFile("/Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/testing/cypress/downloads/Timetable_Full_View_Section.pdf")` failed because the file does not exist at the following path:
+
+`/Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/testing/cypress/downloads/Timetable_Full_View_Section.pdf`
+
+https://on.cypress.io/readfile
+      at Context.eval (webpack://testing/./cypress/e2e/download-timetable.cy.js:24:74)
+
+
+
+[mochawesome] Report JSON saved to /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/testing/cypress/reports/.jsons/mochawesome.json
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        1                                                                                │
+  │ Passing:      0                                                                                │
+  │ Failing:      1                                                                                │
+  │ Pending:      0                                                                                │
+  │ Skipped:      0                                                                                │
+  │ Screenshots:  1                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     13 seconds                                                                       │
+  │ Spec Ran:     download-timetable.cy.js                                                         │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+  (Screenshots)
+
+  -  /Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Schedulin    (2560x1440)
+     g-and-Faculty-Workload-Optimization-System/testing/cypress/screenshots/download-               
+     timetable.cy.js/Timetable Export and Download -- Admin Should be able to trigger               
+      timetable download (PDFCSVEXCEL) (failed).png                                                 
+
+Start generate report process
+Read and merge jsons from "/Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/testing/cypress/reports/.jsons"
+Enhance report
+Create HTML report
+HTML report successfully created!
+/Users/hemanthreddy/Desktop/Automated_TT_Generator/Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/testing/cypress/reports/index.html
+
+==========================================
+
+  (Run Finished)
+
+
+       Spec                                              Tests  Passing  Failing  Pending  Skipped  
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ ✖  download-timetable.cy.js                 00:13        1        -        1        -        - │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+    ✖  1 of 1 failed (100%)                     00:13        1        -        1        -        -  
+

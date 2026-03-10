@@ -1,5 +1,5 @@
 import axios from "axios";
-import { Subject, Section } from "@/types/timetable";
+import { Subject, Section, Room, NotificationDTO } from "@/types/timetable";
 
 /* ===========================
    BASE CONFIG
@@ -16,19 +16,19 @@ const API = axios.create({
 /* ===========================
    ROOMS API
    =========================== */
-export const getRooms = async () => {
+export const getRooms = async (): Promise<Room[]> => {
   const res = await API.get("/rooms");
   return Array.isArray(res.data) ? res.data : [];
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const createRoom = async (room: any) => {
+export const createRoom = async (room: Room) => {
   const res = await API.post("/rooms", room);
   return res.data;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const updateRoom = async (id: number, room: any) => {
+export const updateRoom = async (id: number, room: Room) => {
   const res = await API.put(`/rooms/${id}`, room);
   return res.data;
 };
@@ -159,6 +159,7 @@ export const deleteSection = async (id: number) => {
   await API.delete(`/sections/${id}`);
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const updateSection = async (id: number, section: any) => {
   const res = await API.put(`/sections/${id}`, section);
   return res.data;
@@ -183,8 +184,30 @@ export const toggleConstraintStatus = async (id: string) => {
 };
 
 /* ===========================
+   ADMIN NOTIFICATIONS API
+   =========================== */
+export const getAdminNotifications = async (): Promise<NotificationDTO[]> => {
+  const res = await API.get("/admin/notifications");
+  return Array.isArray(res.data) ? res.data : [];
+};
+
+export const getAdminUnreadCount = async (): Promise<number> => {
+  const res = await API.get("/admin/notifications/unread-count");
+  return res.data?.count || 0;
+};
+
+export const markAdminNotificationAsRead = async (id: number) => {
+  await API.patch(`/admin/notifications/${id}/read`);
+};
+
+export const markAllAdminNotificationsAsRead = async () => {
+  await API.patch(`/admin/notifications/read-all`);
+};
+
+/* ===========================
    TIMETABLE API ✅ FIXED
    =========================== */
+
 // SECTION ID IS STRING (UUID)
 export const generateTimetable = async (sectionId: string) => {
   await API.post(`/timetable/generate/${sectionId}`);
@@ -216,10 +239,12 @@ export const getFacultyAnalyticsDetails = async (facultyName: string) => {
   return res.data;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const updateTimetableEntry = async (entry: any, force = false) => {
   try {
     const res = await API.put(`/timetable/update?force=${force}`, entry);
     return { success: true, data: res.data };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     if (error.response && error.response.status === 409) {
       return { success: false, conflict: true, messages: error.response.data };
@@ -272,6 +297,7 @@ export const updateAuditLog = async (payload: UpdateAuditLogRequest): Promise<Up
       lastModifiedTimestamp: payload.lastModifiedTimestamp,
     });
     return res.data;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     if (error.response && error.response.status === 409) {
       // Conflict detected
@@ -321,6 +347,7 @@ export const loginUser = async (credentials: LoginRequest): Promise<LoginRespons
   try {
     const res = await API.post("/auth/login", credentials);
     return res.data;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     if (error.response && error.response.data) {
       return error.response.data;
@@ -338,6 +365,7 @@ export const verifyOtp = async (request: OtpVerifyRequest): Promise<LoginRespons
   try {
     const res = await API.post("/auth/verify-otp", request);
     return res.data;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     if (error.response && error.response.data) {
       return error.response.data;
@@ -358,6 +386,7 @@ export const logout = async (): Promise<void> => {
 /* ===========================
    FACULTY WORKLOAD API
    =========================== */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const getFacultyWorkloadSummary = async (): Promise<any[]> => {
   try {
     const res = await API.get("/faculty/workload-summary");
@@ -371,11 +400,13 @@ export const getFacultyWorkloadSummary = async (): Promise<any[]> => {
 /* ===========================
    LEAVE OPTIMIZATION API
    =========================== */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const optimizeForLeave = async (leaveId: number): Promise<any> => {
   const res = await API.post(`/leaves/${leaveId}/optimize`);
   return res.data;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const getNotifications = async (facultyId: number): Promise<any[]> => {
   try {
     const res = await API.get(`/notifications/faculty/${facultyId}?page=0&size=10`);
@@ -397,6 +428,7 @@ export const markNotificationsRead = async (facultyId: number): Promise<void> =>
 /* ===========================
    ELECTIVES API
    =========================== */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const getElectives = async (): Promise<Record<string, any[]>> => {
   try {
     const res = await API.get('/timetable/electives');
@@ -410,6 +442,7 @@ export const getElectives = async (): Promise<Record<string, any[]>> => {
 /* ===========================
    CONFLICTS API
    =========================== */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const resolveConflict = async (entryId: number): Promise<any> => {
   const res = await API.post(`/timetable/resolve-conflict/${entryId}`);
   return res.data;
@@ -448,6 +481,7 @@ export const clearOptimizationChanges = async (): Promise<void> => {
   }
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const changeAdminPassword = async (data: any): Promise<any> => {
   const response = await API.post('/auth/admin/change-password', data);
   return response.data;

@@ -160,3 +160,12 @@ export const DAYS_OF_WEEK = [
 ] as const;
 
 export type DayOfWeek = typeof DAYS_OF_WEEK[number];
+
+export interface NotificationDTO {
+  id: number;
+  title: string;
+  message: string;
+  read: boolean;
+  createdAt: string;
+}
+

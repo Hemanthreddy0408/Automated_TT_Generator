@@ -1,0 +1,14 @@
+{
+    "admin": {
+        "email": "pattemhemanth.04@gmail.com",
+        "password": "password123"
+    },
+    "faculty": {
+        "email": "dr.smith@example.com",
+        "password": "password123",
+        "name": "Dr. Smith"
+    },
+    "timetableData": {
+        "section": "cse-A"
+    }
+}
