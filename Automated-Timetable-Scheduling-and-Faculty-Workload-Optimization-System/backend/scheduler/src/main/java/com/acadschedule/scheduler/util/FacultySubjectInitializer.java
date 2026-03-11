@@ -28,12 +28,17 @@ public class FacultySubjectInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
+        if (facultyRepo.count() > 0) {
+            System.out.println("Database already seeded. Skipping initialization.");
+            return;
+        }
+
         System.out.println("Initializing Comprehensive Faculty-Subject Database Seeding...");
 
         String defaultPass = passwordEncoder.encode("faculty123");
 
         // 0. Clean and Reset
-        roomRepo.deleteAll();
+        // roomRepo.deleteAll();
         List<Faculty> allFac = facultyRepo.findAll();
         for (Faculty fac : allFac) {
             fac.setActive(false);
