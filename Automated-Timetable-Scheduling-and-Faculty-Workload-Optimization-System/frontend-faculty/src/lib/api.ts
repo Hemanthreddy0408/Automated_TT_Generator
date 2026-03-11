@@ -1,7 +1,7 @@
 import axios from "axios";
 import { Subject } from "@/types/timetable";
 
-const API_BASE_URL = "http://localhost:8083";
+const API_BASE_URL = "https://automated-tt-generator.onrender.com";
 
 export const getAuditLogs = async () => {
   const res = await axios.get(`${API_BASE_URL}/api/audit-logs`);
