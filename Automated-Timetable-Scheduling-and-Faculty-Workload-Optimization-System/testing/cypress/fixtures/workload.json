@@ -1,0 +1,16 @@
+[
+    {
+        "id": 1,
+        "name": "Dr. Smith",
+        "weeklyHours": 10,
+        "maxHoursPerWeek": 20,
+        "percentage": 50
+    },
+    {
+        "id": 2,
+        "name": "Prof. Other",
+        "weeklyHours": 8,
+        "maxHoursPerWeek": 18,
+        "percentage": 44
+    }
+]

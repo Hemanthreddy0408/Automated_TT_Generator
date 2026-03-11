@@ -10,15 +10,19 @@ INSERT INTO rooms (name, code, building, floor, type, capacity, status, active, 
 
 -- Insert Subjects
 INSERT INTO subjects (code, name, department, credits, faculty_count, lecture_hours_per_week, tutorial_hours_per_week, lab_hours_per_week, elective) VALUES
-('CS101', 'Introduction to Programming', 'Computer Science', 4, 2, 3, 1, 2, false),
-('CS201', 'Data Structures', 'Computer Science', 4, 2, 3, 1, 2, false),
-('CS301', 'Algorithms', 'Computer Science', 4, 2, 3, 1, 0, false),
+('CS101', 'Introduction to Programming', 'CSE', 4, 2, 3, 1, 2, false),
+('CS201', 'Data Structures', 'CSE', 4, 2, 3, 1, 2, false),
+('CS301', 'Algorithms', 'CSE', 4, 2, 3, 1, 0, false),
 ('MATH101', 'Calculus I', 'Mathematics', 4, 1, 4, 0, 0, false),
-('PHYS101', 'Physics I', 'Physics', 4, 1, 3, 1, 2, false);
+('PHYS101', 'Physics I', 'Physics', 4, 1, 3, 1, 2, false),
+('CSE220', 'Computer Networks', 'CSE', 4, 1, 3, 0, 2, false),
+('CSE343', 'Machine Learning', 'CSE', 4, 1, 3, 0, 2, false);
 
 -- Insert Faculty
+-- Ravi, Ibraheem, Gowtham, Punith requested
 INSERT INTO faculty (name, email, department, designation, employee_id, max_hours_per_day, max_hours_per_week, specialization, active) VALUES
-('Dr. John Smith', 'john.smith@university.edu', 'Computer Science', 'Professor', 'CS001', 6, 30, 'Machine Learning', true),
-('Dr. Jane Doe', 'jane.doe@university.edu', 'Computer Science', 'Associate Professor', 'CS002', 6, 30, 'Data Structures', true),
-('Prof. Bob Wilson', 'bob.wilson@university.edu', 'Mathematics', 'Professor', 'MATH001', 6, 30, 'Calculus', true),
-('Dr. Alice Brown', 'alice.brown@university.edu', 'Physics', 'Assistant Professor', 'PHYS001', 6, 30, 'Quantum Physics', true);
+('Ravi', 'ravikarthikeya1825@gmail.com', 'CSE', 'Assistant Professor', 'FAC001', 6, 30, 'Machine Learning', true),
+('Ibraheem', 'ibraheem@university.edu', 'CSE', 'Assistant Professor', 'FAC002', 6, 30, 'Data Structures', true),
+('Gowtham', 'gowtham@university.edu', 'CSE', 'Professor', 'FAC003', 6, 30, 'Calculus', true),
+('Punith', 'punith@university.edu', 'CSE', 'Assistant Professor', 'FAC004', 6, 30, 'Quantum Physics', true),
+('Dr. Ramya', 'ramya@university.edu', 'CSE', 'Professor', 'FAC005', 10, 60, 'Networks', true);

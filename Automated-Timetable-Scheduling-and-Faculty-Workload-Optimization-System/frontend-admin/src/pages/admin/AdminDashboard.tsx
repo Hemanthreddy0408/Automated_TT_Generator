@@ -52,6 +52,7 @@ import {
   getAllTimetableEntries,
   getOptimizationChanges,
   clearOptimizationChanges,
+  getFacultyWorkloadSummary,
   FacultyPayload,
   OptimizationChange
 } from "@/lib/api";
@@ -69,6 +70,7 @@ export default function AdminDashboard() {
   const [facultyList, setFacultyList] = useState<FacultyPayload[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
   const [allEntries, setAllEntries] = useState<TimetableEntry[]>([]);
+  const [workloads, setWorkloads] = useState<any[]>([]);
   const [optimizationChanges, setOptimizationChanges] = useState<OptimizationChange[]>([]);
   const [selectedSectionId, setSelectedSectionId] = useState<string>("");
   const [loading, setLoading] = useState(true);
@@ -78,17 +80,19 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [facData, subData, roomData, secData, ttData] = await Promise.all([
+        const [facData, subData, roomData, secData, ttData, wlData] = await Promise.all([
           getFaculty(),
           getSubjects(),
           getRooms(),
           getSections(),
           getAllTimetableEntries(),
+          getFacultyWorkloadSummary(),
         ]);
 
         setFacultyList(facData);
         setSections(secData);
         setAllEntries(ttData);
+        setWorkloads(wlData);
 
         setMetrics({
           faculty: facData.length,
@@ -207,17 +211,16 @@ export default function AdminDashboard() {
     return conflictsList;
   }, [allEntries]);
 
-  // Derived: Faculty Workload
-  const facultyWorkload = useMemo(() => {
-    return facultyList.map(f => {
-      const sessions = allEntries.filter(e => e.facultyName === f.name).length;
-      return {
-        ...f,
-        sessions,
-        percentage: Math.min((sessions / (f.maxHoursPerWeek || 30)) * 100, 100)
-      };
-    }).sort((a, b) => b.sessions - a.sessions).slice(0, 5); // Top 5
-  }, [facultyList, allEntries]);
+  // Derived: Faculty Workload (from backend summary to match Analytics)
+  const topFacultyWorkload = useMemo(() => {
+    return workloads
+      .map(w => ({
+        ...w,
+        percentage: w.maxHoursPerWeek > 0 ? Math.min((w.weeklyHours / w.maxHoursPerWeek) * 100, 100) : 0
+      }))
+      .sort((a, b) => b.weeklyHours - a.weeklyHours)
+      .slice(0, 5); // Top 5
+  }, [workloads]);
 
   const selectedSectionName = sections.find(s => String(s.id) === selectedSectionId)?.name || "Unknown Section";
   return (
@@ -370,10 +373,28 @@ export default function AdminDashboard() {
                                 setLoading(true);
                                 const { resolveConflict } = await import('@/lib/api');
                                 await resolveConflict(conflict.entryId);
-                                // Refresh entries
-                                const { getAllTimetableEntries } = await import('@/lib/api');
-                                const newEntries = await getAllTimetableEntries();
+                                // Refresh all dashboard data
+                                const [newFac, newSub, newRoom, newSec, newEntries, newWL, newOpt] = await Promise.all([
+                                  getFaculty(),
+                                  getSubjects(),
+                                  getRooms(),
+                                  getSections(),
+                                  getAllTimetableEntries(),
+                                  getFacultyWorkloadSummary(),
+                                  getOptimizationChanges()
+                                ]);
+                                setFacultyList(newFac);
+                                setSections(newSec);
                                 setAllEntries(newEntries);
+                                setWorkloads(newWL);
+                                setOptimizationChanges(newOpt);
+                                setMetrics({
+                                  faculty: newFac.length,
+                                  subjects: newSub.length,
+                                  rooms: newRoom.length,
+                                  sections: newSec.length,
+                                  scheduledSessions: newEntries.filter(t => t.type === 'LECTURE' || t.type === 'LAB').length,
+                                });
                               } catch (e) {
                                 console.error('Failed to resolve conflict automatically', e);
                                 alert('Could not find a free slot to automatically resolve this conflict.');
@@ -416,18 +437,18 @@ export default function AdminDashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {facultyWorkload.map((faculty) => {
+                {topFacultyWorkload.map((faculty) => {
                   const isOverloaded = faculty.percentage > 90;
 
                   return (
-                    <div key={faculty.id} className="space-y-1.5">
+                    <div key={faculty.facultyId} className="space-y-1.5">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium truncate w-32">{faculty.name}</span>
+                        <span className="text-sm font-medium truncate w-32">{faculty.facultyName}</span>
                         <Badge
                           variant="outline"
                           className={isOverloaded ? 'text-red-600 border-red-200 bg-red-50' : 'text-blue-600 border-blue-200 bg-blue-50'}
                         >
-                          {faculty.sessions} sessions
+                          {faculty.weeklyHours}h / {faculty.maxHoursPerWeek}h
                         </Badge>
                       </div>
                       <div className="h-2 rounded-full bg-muted overflow-hidden">
@@ -440,7 +461,7 @@ export default function AdminDashboard() {
                     </div>
                   );
                 })}
-                {facultyWorkload.length === 0 && <p className="text-sm text-muted-foreground">No faculty data.</p>}
+                {topFacultyWorkload.length === 0 && <p className="text-sm text-muted-foreground">No faculty workload data.</p>}
               </CardContent>
             </Card>
           </div>

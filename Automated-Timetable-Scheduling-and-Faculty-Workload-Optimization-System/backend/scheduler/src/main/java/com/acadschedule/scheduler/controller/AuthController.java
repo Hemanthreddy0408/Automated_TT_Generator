@@ -64,7 +64,10 @@ public class AuthController {
                 // Secure password check using PasswordEncoder
                 if (f.getPassword() != null && passwordEncoder.matches(password, f.getPassword())) {
                     // Generate OTP
-                    String email = f.getEmail() != null ? f.getEmail() : "faculty@acadschedule.com";
+                    String email = f.getEmail();
+                    if (email == null || email.isEmpty()) {
+                        return new LoginResponse(false, "Faculty email not configured", null, null);
+                    }
                     String preAuthToken = otpService.generateAndSendOtp(email);
                     return new LoginResponse(true, "OTP sent to email", preAuthToken);
                 }
@@ -80,14 +83,13 @@ public class AuthController {
     public org.springframework.http.ResponseEntity<?> changeAdminPassword(
             @RequestBody com.acadschedule.scheduler.dto.AdminPasswordChangeRequest request) {
 
-        java.util.Optional<com.acadschedule.scheduler.entity.Admin> adminOpt = adminRepo
-                .findByEmail("admin@acadschedule.com");
-        if (adminOpt.isEmpty()) {
+        java.util.List<com.acadschedule.scheduler.entity.Admin> admins = adminRepo.findAll();
+        if (admins.isEmpty()) {
             return org.springframework.http.ResponseEntity.status(404)
                     .body(java.util.Map.of("message", "Admin not found"));
         }
 
-        com.acadschedule.scheduler.entity.Admin admin = adminOpt.get();
+        com.acadschedule.scheduler.entity.Admin admin = admins.get(0);
 
         // Verify current password
         if (!passwordEncoder.matches(request.getCurrentPassword(), admin.getPassword())) {

@@ -3,7 +3,9 @@ package com.acadschedule.scheduler.service;
 import com.acadschedule.scheduler.dto.LoginRequest;
 import com.acadschedule.scheduler.dto.LoginResponse;
 import com.acadschedule.scheduler.dto.UserData;
+import com.acadschedule.scheduler.entity.Admin;
 import com.acadschedule.scheduler.entity.Faculty;
+import com.acadschedule.scheduler.repository.AdminRepository;
 import com.acadschedule.scheduler.repository.FacultyRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,8 +20,8 @@ public class AuthService {
     @Autowired
     private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
-    @Value("${spring.security.user.password:password123}")
-    private String adminPassword;
+    @Autowired
+    private AdminRepository adminRepository;
 
     /**
      * Authenticate user based on role
@@ -44,19 +46,26 @@ public class AuthService {
 
     /**
      * Admin authentication
-     * For demo: admin@acadschedule.com / password123
+     * Validates against Admin credentials in database.
      */
     private LoginResponse authenticateAdmin(String identifier, String password) {
-        if (identifier.endsWith("@acadschedule.com") && adminPassword.equals(password)) {
+        java.util.Optional<Admin> adminOpt = adminRepository.findByEmail(identifier);
 
-            UserData userData = new UserData(
-                    0L,
-                    "Administrator",
-                    "admin@acadschedule.com",
-                    "Administration",
-                    "ADMIN001");
-            return new LoginResponse(true, "Login successful", "admin", userData);
+        if (adminOpt.isPresent()) {
+            Admin admin = adminOpt.get();
+
+            // Validate password using PasswordEncoder
+            if (passwordEncoder.matches(password, admin.getPassword())) {
+                UserData userData = new UserData(
+                        admin.getId(),
+                        "Administrator",
+                        admin.getEmail(),
+                        "Administration",
+                        "ADMIN001");
+                return new LoginResponse(true, "Login successful", "admin", userData);
+            }
         }
+
         return new LoginResponse(false, "Invalid admin credentials", null, null);
     }
 

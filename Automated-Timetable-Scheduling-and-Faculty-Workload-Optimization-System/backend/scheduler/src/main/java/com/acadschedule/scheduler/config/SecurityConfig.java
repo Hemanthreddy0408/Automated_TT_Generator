@@ -33,15 +33,11 @@ public class SecurityConfig {
 
         // ✅ Spring Boot 3 / Spring Security 6 REQUIRED
         configuration.setAllowedOriginPatterns(List.of(
-                "http://localhost:3000",
-                "http://localhost:5173", // Frontend Vite dev server
-                "http://10.12.147.158:5173", // User's remote IP
-                "http://10.12.147.*:5173", // Allow other machines on the same network
+                "http://localhost:*", // Allow any localhost port (e.g., 5173, 5174, 8080)
+                "http://10.12.147.*:*", // Allow any port on the same network
                 "https://*.vercel.app", // Allow Vercel deployments
-                "https://*.up.railway.app", // Allow Railway deployments
-                "http://localhost:8080",
-                "http://localhost:8081",
-                "http://localhost:8082"));
+                "https://*.up.railway.app" // Allow Railway deployments
+        ));
 
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowedMethods(List.of("*"));

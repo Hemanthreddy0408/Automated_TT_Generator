@@ -1,16 +1,45 @@
-import 'cypress-file-upload';
-import '@testing-library/cypress/add-commands';
+// cypress/support/commands.js
+// Reusable Cypress commands for all E2E tests
 
-Cypress.Commands.add('loginAdmin', (email, password) => {
-    cy.visit('/login');
-    cy.get('input[type="text"], input[name="email"]').type(email);
-    cy.get('input[type="password"], input[name="password"]').type(password);
-    cy.get('button[type="submit"]').click();
+/**
+ * cy.navigateTo(path) — navigate to a page and wait for it to be visible
+ */
+Cypress.Commands.add('navigateTo', (path) => {
+    cy.visit(path);
+    cy.get('body').should('be.visible');
 });
 
-Cypress.Commands.add('loginFaculty', (email, password) => {
-    cy.visit('http://localhost:5174/login'); // Default faculty port
-    cy.get('input[type="text"], input[name="email"]').type(email);
-    cy.get('input[type="password"], input[name="password"]').type(password);
-    cy.get('button[type="submit"]').click();
+/**
+ * cy.waitForApiCall(alias) — wait for an intercepted network call
+ */
+Cypress.Commands.add('waitForApiCall', (alias) => {
+    cy.wait(`@${alias}`, { timeout: 15000 });
+});
+
+/**
+ * cy.interceptGenerateAll() — stub the generate-all endpoint
+ */
+Cypress.Commands.add('interceptGenerateAll', (fixture = 'timetable.json') => {
+    cy.intercept('POST', '**/timetable/generate-all', { fixture }).as('generateAll');
+});
+
+/**
+ * cy.interceptGetTimetable(sectionId) — stub timetable GET
+ */
+Cypress.Commands.add('interceptGetTimetable', (sectionId = '*') => {
+    cy.intercept('GET', `**/timetable/${sectionId}`, { fixture: 'timetable.json' }).as('getTimetable');
+});
+
+/**
+ * cy.interceptGetFaculty() — stub GET /faculty
+ */
+Cypress.Commands.add('interceptGetFaculty', () => {
+    cy.intercept('GET', '**/faculty', { fixture: 'faculty.json' }).as('getFaculty');
+});
+
+/**
+ * cy.interceptLeaveApprove(id) — stub leave approval
+ */
+Cypress.Commands.add('interceptLeaveApprove', (id) => {
+    cy.intercept('PUT', `**/leaves/approve/${id}`, { statusCode: 200, body: {} }).as('approveLeave');
 });

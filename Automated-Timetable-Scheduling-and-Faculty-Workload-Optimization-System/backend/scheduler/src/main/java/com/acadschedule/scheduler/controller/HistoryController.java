@@ -30,7 +30,7 @@ public class HistoryController {
     }
 
     @GetMapping("/{date}")
-    public List<AuditLog> getLogsByDate(@PathVariable String date) {
+    public List<AuditLog> getLogsByDate(@PathVariable(name = "date") String date) {
 
         // Convert String date to LocalDate
         LocalDate localDate = LocalDate.parse(date);

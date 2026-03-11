@@ -30,7 +30,7 @@ public class LeaveController {
 
     // GET requests by faculty ID (for Faculty)
     @GetMapping("/faculty/{facultyId}")
-    public List<LeaveRequest> getRequestsByFaculty(@PathVariable("facultyId") Long facultyId) {
+    public List<LeaveRequest> getRequestsByFaculty(@PathVariable(name = "facultyId") Long facultyId) {
         return leaveService.getRequestsByFaculty(facultyId);
     }
 
@@ -42,14 +42,14 @@ public class LeaveController {
 
     // UPDATE status (Approve/Reject)
     @PatchMapping("/{id}/status")
-    public ResponseEntity<LeaveRequest> updateStatus(@PathVariable("id") Long id,
-            @RequestParam("status") String status) {
+    public ResponseEntity<LeaveRequest> updateStatus(@PathVariable(name = "id") Long id,
+            @RequestParam(name = "status") String status) {
         return ResponseEntity.ok(leaveService.updateStatus(id, status));
     }
 
     // DELETE request
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteRequest(@PathVariable("id") Long id) {
+    public ResponseEntity<Void> deleteRequest(@PathVariable(name = "id") Long id) {
         leaveService.deleteRequest(id);
         return ResponseEntity.noContent().build();
     }
@@ -60,7 +60,7 @@ public class LeaveController {
      * Finds all sessions the faculty has during leave dates and reassigns them.
      */
     @PostMapping("/{id}/optimize")
-    public ResponseEntity<?> optimizeForLeave(@PathVariable("id") Long id) {
+    public ResponseEntity<?> optimizeForLeave(@PathVariable(name = "id") Long id) {
         try {
             // Get the leave request
             List<LeaveRequest> allLeaves = leaveService.getAllRequests();

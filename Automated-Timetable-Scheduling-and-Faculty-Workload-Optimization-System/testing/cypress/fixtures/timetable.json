@@ -1,0 +1,35 @@
+[
+    {
+        "id": 1,
+        "sectionId": "1",
+        "day": "MONDAY",
+        "timeSlot": "09:00-09:40",
+        "subjectCode": "CSE301",
+        "subjectName": "Operating Systems",
+        "facultyName": "Dr. Smith",
+        "roomNumber": "AB1-401",
+        "type": "LECTURE"
+    },
+    {
+        "id": 2,
+        "sectionId": "1",
+        "day": "MONDAY",
+        "timeSlot": "09:40-10:30",
+        "subjectCode": "CSE302",
+        "subjectName": "OS Lab",
+        "facultyName": "Dr. Smith",
+        "roomNumber": "Programming Lab 1",
+        "type": "LAB"
+    },
+    {
+        "id": 3,
+        "sectionId": "1",
+        "day": "TUESDAY",
+        "timeSlot": "10:45-11:35",
+        "subjectCode": "CSE303",
+        "subjectName": "Networks",
+        "facultyName": "Prof. Other",
+        "roomNumber": "AB1-402",
+        "type": "LECTURE"
+    }
+]

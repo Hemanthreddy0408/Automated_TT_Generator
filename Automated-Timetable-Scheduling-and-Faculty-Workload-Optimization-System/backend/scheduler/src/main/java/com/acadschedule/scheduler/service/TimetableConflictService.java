@@ -13,6 +13,12 @@ public class TimetableConflictService {
 
     private final TimetableRepository timetableRepo;
 
+    @org.springframework.beans.factory.annotation.Value("${scheduler.grid.days}")
+    private String[] daysArray;
+
+    @org.springframework.beans.factory.annotation.Value("${scheduler.grid.time-slots}")
+    private String[] slotsArray;
+
     public TimetableConflictService(TimetableRepository timetableRepo) {
         this.timetableRepo = timetableRepo;
     }
@@ -71,11 +77,13 @@ public class TimetableConflictService {
         List<TimetableEntry> allEntries = timetableRepo.findAll();
         allEntries.removeIf(e -> Objects.equals(e.getId(), entryId));
 
-        List<String> days = List.of("MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY");
-        List<String> timeSlots = List.of(
-                "09:00-09:40", "09:40-10:30", "10:45-11:35", "11:35-12:25",
-                "12:25-01:15", "02:05-02:55", "02:55-03:45", "03:45-04:35" // Skipped breaks
-        );
+        List<String> days = java.util.Arrays.asList(daysArray);
+        List<String> timeSlots = new ArrayList<>();
+        for (String s : slotsArray) {
+            if (!s.equalsIgnoreCase("LUNCH_BREAK")) {
+                timeSlots.add(s);
+            }
+        }
 
         for (String day : days) {
             for (String slot : timeSlots) {

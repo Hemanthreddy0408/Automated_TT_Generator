@@ -37,7 +37,7 @@ public class TimetableController {
     }
 
     @GetMapping("/{sectionId}")
-    public ResponseEntity<?> getBySection(@PathVariable("sectionId") String sectionId) {
+    public ResponseEntity<?> getBySection(@PathVariable(name = "sectionId") String sectionId) {
         try {
             List<TimetableEntry> list = repo.findBySectionId(sectionId);
             com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
@@ -53,7 +53,7 @@ public class TimetableController {
     }
 
     @GetMapping("/faculty/{facultyName}")
-    public List<TimetableEntry> getByFaculty(@PathVariable("facultyName") String facultyName) {
+    public List<TimetableEntry> getByFaculty(@PathVariable(name = "facultyName") String facultyName) {
         return repo.findByFacultyName(facultyName);
     }
 
@@ -82,7 +82,7 @@ public class TimetableController {
     }
 
     @PostMapping("/generate/{sectionId}")
-    public ResponseEntity<?> generateForSection(@PathVariable("sectionId") String sectionId) {
+    public ResponseEntity<?> generateForSection(@PathVariable(name = "sectionId") String sectionId) {
         System.err.println("DEBUG CONTROLLER: Received request to generate timetable for sectionId=" + sectionId);
         try {
             List<TimetableEntry> generatedTimetable = timetableGenerationService.generateForSection(sectionId, true);
@@ -115,7 +115,7 @@ public class TimetableController {
     }
 
     @PostMapping("/resolve-conflict/{entryId}")
-    public ResponseEntity<?> autoResolveConflict(@PathVariable("entryId") Long entryId) {
+    public ResponseEntity<?> autoResolveConflict(@PathVariable(name = "entryId") Long entryId) {
         try {
             TimetableEntry resolved = conflictService.autoResolveConflict(entryId);
             return ResponseEntity.ok(resolved);
@@ -125,7 +125,8 @@ public class TimetableController {
     }
 
     @GetMapping("/faculty/{facultyName}/analytics")
-    public ResponseEntity<FacultyAnalyticsDTO> getFacultyAnalytics(@PathVariable("facultyName") String facultyName) {
+    public ResponseEntity<FacultyAnalyticsDTO> getFacultyAnalytics(
+            @PathVariable(name = "facultyName") String facultyName) {
         List<TimetableEntry> entries = repo.findAll().stream()
                 .filter(e -> facultyName.equalsIgnoreCase(e.getFacultyName()))
                 .collect(Collectors.toList());

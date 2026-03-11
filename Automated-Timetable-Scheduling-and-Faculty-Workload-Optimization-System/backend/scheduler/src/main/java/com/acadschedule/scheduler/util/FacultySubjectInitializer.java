@@ -72,7 +72,8 @@ public class FacultySubjectInitializer implements CommandLineRunner {
 
         // 2. Create Faculty (30 Faculty)
         List<String> facultyNames = new ArrayList<>(Arrays.asList(
-                "Dr. Ramya", "Dr. Vishnu", "Dr. Asha", "Dr. Dhanaya", "Dr. Ravi", "Dr. Meera",
+                "Ravi", "Ibraheem", "Gowtham", "Punith", "Dr. Ramya", "Dr. Vishnu", "Dr. Asha", "Dr. Dhanaya",
+                "Dr. Meera",
                 "Dr. Arun", "Dr. Priya", "Dr. Santosh", "Dr. Kavya", "Dr. Suresh", "Dr. Lakshmi",
                 "Dr. Rajesh", "Dr. Anjali", "Dr. Vikram", "Dr. Sneha", "Dr. Manoj", "Dr. Sunita",
                 "Dr. Amit", "Dr. Pooja", "Dr. Karthik", "Dr. Swathi", "Dr. Naveen", "Dr. Divya",
@@ -85,9 +86,16 @@ public class FacultySubjectInitializer implements CommandLineRunner {
             if (f == null) {
                 f = new Faculty();
                 f.setName(name);
-                f.setEmail(name.replace(" ", "").replace(".", "").toLowerCase() + "@university.edu");
+                if ("Ravi".equals(name)) {
+                    f.setEmail("ravikarthikeya1825@gmail.com");
+                } else {
+                    f.setEmail(name.replace(" ", "").replace(".", "").toLowerCase() + "@university.edu");
+                }
                 f.setDepartment("CSE");
                 f.setPassword(defaultPass);
+            }
+            if (f.getEmployeeId() == null || f.getEmployeeId().isEmpty()) {
+                f.setEmployeeId("FAC" + String.format("%03d", facultyNames.indexOf(name) + 1));
             }
             f.setActive(true);
             f.setMaxHoursPerDay(10);

@@ -26,7 +26,7 @@ public class RoomController {
     }
 
     @PutMapping("/{id}")
-    public Room updateRoom(@PathVariable Long id, @RequestBody Room roomDetails) {
+    public Room updateRoom(@PathVariable(name = "id") Long id, @RequestBody Room roomDetails) {
         Room room = roomService.findById(id);
         room.setName(roomDetails.getName());
         room.setCode(roomDetails.getCode());
@@ -42,7 +42,7 @@ public class RoomController {
     }
 
     @DeleteMapping("/{id}")
-    public void deleteRoom(@PathVariable Long id) {
+    public void deleteRoom(@PathVariable(name = "id") Long id) {
         roomService.deleteById(id);
     }
 }

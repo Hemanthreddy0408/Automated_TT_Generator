@@ -12,7 +12,10 @@ com/acadschedule/scheduler/dto/LoginResponse.class
 com/acadschedule/scheduler/service/SectionService.class
 com/acadschedule/scheduler/service/RoomService.class
 com/acadschedule/scheduler/service/SubjectService.class
+com/acadschedule/scheduler/repository/AdminRepository.class
+com/acadschedule/scheduler/dto/AdminPasswordChangeRequest.class
 com/acadschedule/scheduler/service/TimetableConflictService.class
+com/acadschedule/scheduler/util/AdminInitializer.class
 com/acadschedule/scheduler/entity/Announcement.class
 com/acadschedule/scheduler/controller/HomeController.class
 com/acadschedule/scheduler/dto/LoginRequest.class
@@ -30,10 +33,12 @@ com/acadschedule/scheduler/dto/OtpVerifyRequest.class
 com/acadschedule/scheduler/controller/SectionController.class
 com/acadschedule/scheduler/service/OtpService.class
 com/acadschedule/scheduler/service/AuditLogService.class
+com/acadschedule/scheduler/repository/OptimizationChangeRepository.class
 com/acadschedule/scheduler/entity/Faculty.class
 com/acadschedule/scheduler/service/AuthService.class
 com/acadschedule/scheduler/repository/NotificationRepository.class
 com/acadschedule/scheduler/dto/NotificationDTO.class
+com/acadschedule/scheduler/entity/OptimizationChange.class
 com/acadschedule/scheduler/entity/Constraint.class
 com/acadschedule/scheduler/repository/UserOtpRepository.class
 com/acadschedule/scheduler/entity/Notification.class
@@ -42,9 +47,11 @@ com/acadschedule/scheduler/repository/LeaveRepository.class
 com/acadschedule/scheduler/config/HibernateConfig.class
 com/acadschedule/scheduler/repository/AnnouncementRepository.class
 com/acadschedule/scheduler/entity/LeaveRequest.class
+HashGen.class
 com/acadschedule/scheduler/controller/RoomController.class
 com/acadschedule/scheduler/entity/TimetableEntry.class
 com/acadschedule/scheduler/controller/NotificationController.class
+com/acadschedule/scheduler/entity/Admin.class
 com/acadschedule/scheduler/dto/FacultyAnalyticsDTO$DayScheduleDTO.class
 com/acadschedule/scheduler/repository/TimetableRepository.class
 com/acadschedule/scheduler/repository/AuditLogRepository.class

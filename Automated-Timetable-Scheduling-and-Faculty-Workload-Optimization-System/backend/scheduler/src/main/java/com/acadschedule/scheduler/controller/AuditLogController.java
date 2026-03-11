@@ -39,7 +39,7 @@ public class AuditLogController {
      */
     @PutMapping("/{id}")
     public ResponseEntity<?> updateAuditLog(
-            @PathVariable("id") Long id,
+            @PathVariable(name = "id") Long id,
             @RequestBody Map<String, Object> updates) {
         try {
             // Extract the lastModifiedTimestamp from the request for conflict detection
@@ -65,7 +65,7 @@ public class AuditLogController {
     }
 
     @PostMapping("/rollback/{id}")
-    public ResponseEntity<?> rollback(@PathVariable("id") Long id) {
+    public ResponseEntity<?> rollback(@PathVariable(name = "id") Long id) {
         service.rollbackAction(id);
 
         Map<String, Object> response = new HashMap<>();
@@ -75,7 +75,7 @@ public class AuditLogController {
     }
 
     @PostMapping("/undo-rollback/{id}")
-    public ResponseEntity<?> undoRollback(@PathVariable("id") Long id) {
+    public ResponseEntity<?> undoRollback(@PathVariable(name = "id") Long id) {
         service.undoRollback(id);
 
         Map<String, Object> response = new HashMap<>();

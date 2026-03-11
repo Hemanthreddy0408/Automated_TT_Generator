@@ -1,0 +1,16 @@
+[
+    {
+        "id": 1,
+        "name": "AB1-401",
+        "type": "LECTURE",
+        "capacity": 70,
+        "active": true
+    },
+    {
+        "id": 8,
+        "name": "Programming Lab 1",
+        "type": "LAB",
+        "capacity": 40,
+        "active": true
+    }
+]

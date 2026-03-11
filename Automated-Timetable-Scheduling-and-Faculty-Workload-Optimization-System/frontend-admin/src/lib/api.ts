@@ -187,21 +187,21 @@ export const toggleConstraintStatus = async (id: string) => {
    ADMIN NOTIFICATIONS API
    =========================== */
 export const getAdminNotifications = async (): Promise<NotificationDTO[]> => {
-  const res = await API.get("/admin/notifications");
-  return Array.isArray(res.data) ? res.data : [];
+  const res = await API.get("/notifications/admin?page=0&size=50");
+  return res.data?.content ?? (Array.isArray(res.data) ? res.data : []);
 };
 
 export const getAdminUnreadCount = async (): Promise<number> => {
-  const res = await API.get("/admin/notifications/unread-count");
+  const res = await API.get("/notifications/admin/unread-count");
   return res.data?.count || 0;
 };
 
 export const markAdminNotificationAsRead = async (id: number) => {
-  await API.patch(`/admin/notifications/${id}/read`);
+  await API.put(`/notifications/${id}/read`);
 };
 
 export const markAllAdminNotificationsAsRead = async () => {
-  await API.patch(`/admin/notifications/read-all`);
+  await API.put(`/notifications/admin/read-all`);
 };
 
 /* ===========================

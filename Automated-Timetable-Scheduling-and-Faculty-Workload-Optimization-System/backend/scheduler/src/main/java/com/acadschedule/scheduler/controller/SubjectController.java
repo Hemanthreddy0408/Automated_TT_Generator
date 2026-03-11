@@ -27,13 +27,14 @@ public class SubjectController {
     @PostMapping
     public Subject createSubject(@RequestBody Subject subject) {
         Subject saved = repo.save(subject);
-        auditLogService.logAction("SUBJECT", "CREATE", 
-            "Created subject: " + saved.getName(), "admin@system", saved.getId());
+        auditLogService.logAction("SUBJECT", "CREATE",
+                "Created subject: " + saved.getName(), "admin@system", saved.getId());
         return saved;
     }
 
     @PutMapping("/{id}")
-    public org.springframework.http.ResponseEntity<?> updateSubject(@PathVariable Long id, @RequestBody Subject details) {
+    public org.springframework.http.ResponseEntity<?> updateSubject(@PathVariable(name = "id") Long id,
+            @RequestBody Subject details) {
         java.util.Optional<Subject> existing = repo.findById(id);
 
         if (existing.isEmpty()) {
@@ -58,13 +59,13 @@ public class SubjectController {
         subject.setEligibleFaculty(details.getEligibleFaculty());
 
         repo.save(subject);
-        auditLogService.logAction("SUBJECT", "UPDATE", 
-            "Updated subject details for: " + subject.getCode(), "admin@system", subject.getId());
+        auditLogService.logAction("SUBJECT", "UPDATE",
+                "Updated subject details for: " + subject.getCode(), "admin@system", subject.getId());
         return org.springframework.http.ResponseEntity.ok(subject);
     }
 
     @DeleteMapping("/{id}")
-    public org.springframework.http.ResponseEntity<?> deleteSubject(@PathVariable Long id) {
+    public org.springframework.http.ResponseEntity<?> deleteSubject(@PathVariable(name = "id") Long id) {
         java.util.Optional<Subject> existing = repo.findById(id);
         if (existing.isEmpty()) {
             return org.springframework.http.ResponseEntity
@@ -73,8 +74,8 @@ public class SubjectController {
         }
         Subject subject = existing.get();
         repo.deleteById(id);
-        auditLogService.logAction("SUBJECT", "DELETE", 
-            "Deleted subject: " + subject.getName() + " (" + subject.getCode() + ")", "admin@system", id);
+        auditLogService.logAction("SUBJECT", "DELETE",
+                "Deleted subject: " + subject.getName() + " (" + subject.getCode() + ")", "admin@system", id);
         return org.springframework.http.ResponseEntity.noContent().build();
     }
 }

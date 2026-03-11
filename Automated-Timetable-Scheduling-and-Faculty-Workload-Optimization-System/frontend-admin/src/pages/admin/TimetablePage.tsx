@@ -34,7 +34,7 @@ export default function TimetablePage() {
   const timetableRef = useRef<HTMLDivElement>(null);
 
   // ✅ MUST MATCH DB UUID (COPY FROM pgAdmin)
-  const sectionId = searchParams.get("sectionId") || "583cb115-a010-4ce9-bb42-83092a820e";
+  const sectionId = searchParams.get("sectionId") || "";
 
   const [entries, setEntries] = useState<TimetableEntry[]>([]);
   const [sections, setSections] = useState<Section[]>([]);

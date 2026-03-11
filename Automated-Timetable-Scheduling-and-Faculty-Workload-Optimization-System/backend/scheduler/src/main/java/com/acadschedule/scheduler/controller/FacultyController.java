@@ -32,12 +32,12 @@ public class FacultyController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Faculty> getFacultyById(@PathVariable("id") Long id) {
+    public ResponseEntity<Faculty> getFacultyById(@PathVariable(name = "id") Long id) {
         return ResponseEntity.ok(facultyService.getFacultyById(id));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateFaculty(@PathVariable("id") Long id, @RequestBody Faculty faculty) {
+    public ResponseEntity<?> updateFaculty(@PathVariable(name = "id") Long id, @RequestBody Faculty faculty) {
 
         Optional<Faculty> existing = facultyRepository.findById(id);
 
@@ -67,13 +67,13 @@ public class FacultyController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteFaculty(@PathVariable("id") Long id) {
+    public ResponseEntity<Void> deleteFaculty(@PathVariable(name = "id") Long id) {
         facultyService.deleteFaculty(id);
         return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/{id}/password")
-    public ResponseEntity<String> updatePassword(@PathVariable("id") Long id,
+    public ResponseEntity<String> updatePassword(@PathVariable(name = "id") Long id,
             @RequestBody com.acadschedule.scheduler.dto.PasswordChangeRequest request) {
         boolean success = facultyService.updatePassword(id, request.getOldPassword(), request.getNewPassword());
         if (success) {

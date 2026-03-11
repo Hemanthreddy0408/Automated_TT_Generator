@@ -71,7 +71,13 @@ const LeaveRequestsPage = () => {
     const fetchRequests = async () => {
         try {
             const response = await axios.get('http://localhost:8083/api/leaves', { timeout: 5000 });
-            setRequests(response.data);
+            // Sort: Pending first
+            const sortedData = [...response.data].sort((a, b) => {
+                if (a.status === 'Pending' && b.status !== 'Pending') return -1;
+                if (a.status !== 'Pending' && b.status === 'Pending') return 1;
+                return 0;
+            });
+            setRequests(sortedData);
         } catch (error) {
             console.error('Error fetching leave requests:', error);
             toast.error('Failed to load leave requests');

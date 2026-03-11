@@ -63,6 +63,7 @@ class TimetableGenerationServiceTest {
                 faculty.setActive(true);
                 faculty.setMaxHoursPerWeek(20);
                 faculty.setMaxHoursPerDay(8);
+                faculty.setEligibleSubjects(List.of("CSE301", "CSE302"));
 
                 lectureRoom = new Room();
                 lectureRoom.setId(1L);
@@ -93,6 +94,22 @@ class TimetableGenerationServiceTest {
                 labSubject.setDepartment("CSE");
                 labSubject.setLectureHoursPerWeek(1);
                 labSubject.setLabHoursPerWeek(2);
+
+                org.springframework.test.util.ReflectionTestUtils.setField(generationService, "DAYS",
+                                Arrays.asList("MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"));
+                org.springframework.test.util.ReflectionTestUtils.setField(generationService, "TIME_SLOTS",
+                                Arrays.asList("09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00"));
+                org.springframework.test.util.ReflectionTestUtils.setField(generationService, "NON_TEACHABLE_SLOTS",
+                                new HashSet<>(Arrays.asList(2, 4)));
+                org.springframework.test.util.ReflectionTestUtils.setField(generationService, "VALID_LAB_START_SLOTS",
+                                new HashSet<>(Arrays.asList(0, 3, 5)));
+                org.springframework.test.util.ReflectionTestUtils.setField(generationService, "MAX_SECTION_DAILY_HOURS",
+                                7);
+                org.springframework.test.util.ReflectionTestUtils.setField(generationService, "LAB_MIN_CAPACITY_RATIO",
+                                0.5);
+                org.springframework.test.util.ReflectionTestUtils.setField(generationService, "MAX_ATTEMPTS_SECTION",
+                                50);
+                org.springframework.test.util.ReflectionTestUtils.setField(generationService, "MAX_ATTEMPTS_ALL", 250);
         }
 
     /** Helper: sets up the standard mock state for section 1. */
@@ -110,14 +127,11 @@ class TimetableGenerationServiceTest {
         void labSessionsRequireLabRoom() {
                 setupSectionMocks(List.of(labSubject), List.of(lectureRoom));
 
-                // Service should handle gracefully — either skip lab or return empty
-                List<TimetableEntry> result = assertDoesNotThrow(
-                                () -> generationService.generateForSection("1", false),
-                                "Service should handle missing LAB room gracefully (no throw)");
+                // Service should throw RuntimeException indicating over-constrained
+                RuntimeException exception = assertThrows(RuntimeException.class,
+                                () -> generationService.generateForSection("1", false));
 
-                // When no LAB room exists, no LAB-type entries should be created
-                long labCount = result.stream().filter(e -> "LAB".equals(e.getType())).count();
-                assertEquals(0, labCount, "Should produce 0 LAB entries when no LAB room is available");
+                assertTrue(exception.getMessage().contains("Failed after multiple attempts"));
         }
 
         @Test
@@ -181,6 +195,7 @@ class TimetableGenerationServiceTest {
                 f2.setActive(true);
                 f2.setMaxHoursPerWeek(20);
                 f2.setMaxHoursPerDay(8);
+                f2.setEligibleSubjects(List.of("CSE303"));
 
                 Subject s2 = new Subject();
                 s2.setId(3L);

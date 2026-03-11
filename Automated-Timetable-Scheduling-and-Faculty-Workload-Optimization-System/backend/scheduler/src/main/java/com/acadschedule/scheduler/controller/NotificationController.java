@@ -22,8 +22,8 @@ public class NotificationController {
     // For Admin
     @GetMapping("/admin")
     public ResponseEntity<Page<NotificationDTO>> getAdminNotifications(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size) {
         return ResponseEntity.ok(notificationService.getAdminNotifications(PageRequest.of(page, size)));
     }
 
@@ -41,26 +41,26 @@ public class NotificationController {
     // For Faculty
     @GetMapping("/faculty/{facultyId}")
     public ResponseEntity<Page<NotificationDTO>> getFacultyNotifications(
-            @PathVariable Long facultyId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @PathVariable(name = "facultyId") Long facultyId,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size) {
         return ResponseEntity.ok(notificationService.getFacultyNotifications(facultyId, PageRequest.of(page, size)));
     }
 
     @GetMapping("/faculty/{facultyId}/unread-count")
-    public ResponseEntity<Map<String, Long>> getFacultyUnreadCount(@PathVariable Long facultyId) {
+    public ResponseEntity<Map<String, Long>> getFacultyUnreadCount(@PathVariable("facultyId") Long facultyId) {
         return ResponseEntity.ok(Map.of("count", notificationService.getUnreadFacultyCount(facultyId)));
     }
 
     @PutMapping("/faculty/{facultyId}/read-all")
-    public ResponseEntity<Void> markAllFacultyAsRead(@PathVariable Long facultyId) {
+    public ResponseEntity<Void> markAllFacultyAsRead(@PathVariable("facultyId") Long facultyId) {
         notificationService.markAllFacultyAsRead(facultyId);
         return ResponseEntity.ok().build();
     }
 
     // Generic
     @PutMapping("/{id}/read")
-    public ResponseEntity<Void> markAsRead(@PathVariable Long id) {
+    public ResponseEntity<Void> markAsRead(@PathVariable("id") Long id) {
         notificationService.markAsRead(id);
         return ResponseEntity.ok().build();
     }

@@ -1,0 +1,14 @@
+[
+    {
+        "id": 1,
+        "name": "cse-A",
+        "department": "CSE",
+        "capacity": 65
+    },
+    {
+        "id": 2,
+        "name": "cse-B",
+        "department": "CSE",
+        "capacity": 65
+    }
+]

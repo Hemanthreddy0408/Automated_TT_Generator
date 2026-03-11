@@ -26,7 +26,8 @@ public class SectionController {
     }
 
     @PutMapping("/{id}")
-    public org.springframework.http.ResponseEntity<?> updateSection(@PathVariable Long id, @RequestBody Section details) {
+    public org.springframework.http.ResponseEntity<?> updateSection(@PathVariable(name = "id") Long id,
+            @RequestBody Section details) {
         java.util.Optional<Section> existing = repo.findById(id);
 
         if (existing.isEmpty()) {
@@ -48,7 +49,7 @@ public class SectionController {
     }
 
     @DeleteMapping("/{id}")
-    public org.springframework.http.ResponseEntity<?> deleteSection(@PathVariable Long id) {
+    public org.springframework.http.ResponseEntity<?> deleteSection(@PathVariable(name = "id") Long id) {
         if (!repo.existsById(id)) {
             return org.springframework.http.ResponseEntity
                     .status(404)

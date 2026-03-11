@@ -1,0 +1,182 @@
+{
+  "stats": {
+    "suites": 1,
+    "tests": 4,
+    "passes": 0,
+    "pending": 0,
+    "failures": 4,
+    "start": "2026-03-11T07:00:36.806Z",
+    "end": "2026-03-11T07:01:20.839Z",
+    "duration": 44033,
+    "testsRegistered": 4,
+    "passPercent": 0,
+    "pendingPercent": 0,
+    "other": 0,
+    "hasOther": false,
+    "skipped": 0,
+    "hasSkipped": false
+  },
+  "results": [
+    {
+      "uuid": "bb965c06-2c2a-4043-aee3-5ad07dd04062",
+      "title": "",
+      "fullFile": "cypress/e2e/optimization.cy.js",
+      "file": "cypress/e2e/optimization.cy.js",
+      "beforeHooks": [],
+      "afterHooks": [],
+      "tests": [],
+      "suites": [
+        {
+          "uuid": "97a0e3ff-6d28-4f77-83aa-537ac176d458",
+          "title": "Timetable Optimization — Admin Flow",
+          "fullFile": "",
+          "file": "",
+          "beforeHooks": [],
+          "afterHooks": [],
+          "tests": [
+            {
+              "title": "shows conflict count when conflicts exist",
+              "fullTitle": "Timetable Optimization — Admin Flow shows conflict count when conflicts exist",
+              "timedOut": null,
+              "duration": 11352,
+              "state": "failed",
+              "speed": null,
+              "pass": false,
+              "fail": true,
+              "pending": false,
+              "context": "{\n  \"title\": \"cypress-mochawesome-reporter-screenshots\",\n  \"value\": [\n    [\n      \"/optimization.cy.js/Timetable Optimization — Admin Flow -- shows conflict count when conflicts exist (failed).png\"\n    ]\n  ]\n}",
+              "code": "cy.visit('/');\ncy.wait('@getConflicts', {\n  timeout: 10000\n});\n// At least a \"1\" or the entry should appear somewhere\ncy.get('body').contains(/conflict/i, {\n  timeout: 10000\n}).should('exist');",
+              "err": {
+                "message": "CypressError: Timed out retrying after 10000ms: `cy.wait()` timed out waiting `10000ms` for the 1st request to the route: `getConflicts`. No request ever occurred.\n\nhttps://on.cypress.io/wait",
+                "estack": "CypressError: Timed out retrying after 10000ms: `cy.wait()` timed out waiting `10000ms` for the 1st request to the route: `getConflicts`. No request ever occurred.\n\nhttps://on.cypress.io/wait\n    at cypressErr (http://localhost:5173/__cypress/runner/cypress_runner.js:78375:18)\n    at Object.errByPath (http://localhost:5173/__cypress/runner/cypress_runner.js:78443:10)\n    at checkForXhr (http://localhost:5173/__cypress/runner/cypress_runner.js:138930:84)\n    at <unknown> (http://localhost:5173/__cypress/runner/cypress_runner.js:138955:28)\n    at tryCatcher (http://localhost:5173/__cypress/runner/cypress_runner.js:1777:23)\n    at Promise.attempt.Promise.try (http://localhost:5173/__cypress/runner/cypress_runner.js:4285:29)\n    at whenStable (http://localhost:5173/__cypress/runner/cypress_runner.js:152022:68)\n    at <unknown> (http://localhost:5173/__cypress/runner/cypress_runner.js:151963:14)\n    at tryCatcher (http://localhost:5173/__cypress/runner/cypress_runner.js:1777:23)\n    at Promise._settlePromiseFromHandler (http://localhost:5173/__cypress/runner/cypress_runner.js:1489:31)\n    at Promise._settlePromise (http://localhost:5173/__cypress/runner/cypress_runner.js:1546:18)\n    at Promise._settlePromise0 (http://localhost:5173/__cypress/runner/cypress_runner.js:1591:10)\n    at Promise._settlePromises (http://localhost:5173/__cypress/runner/cypress_runner.js:1671:18)\n    at Promise._fulfill (http://localhost:5173/__cypress/runner/cypress_runner.js:1615:18)\n    at <unknown> (http://localhost:5173/__cypress/runner/cypress_runner.js:5420:46)\nFrom Your Spec Code:\n    at Context.eval (webpack://vite_react_shadcn_ts/./cypress/e2e/optimization.cy.js:34:11)",
+                "diff": null
+              },
+              "uuid": "82a66ecb-1c1f-400e-ab88-3913d422329e",
+              "parentUUID": "97a0e3ff-6d28-4f77-83aa-537ac176d458",
+              "isHook": false,
+              "skipped": false
+            },
+            {
+              "title": "displays conflicting entry details",
+              "fullTitle": "Timetable Optimization — Admin Flow displays conflicting entry details",
+              "timedOut": null,
+              "duration": 10812,
+              "state": "failed",
+              "speed": null,
+              "pass": false,
+              "fail": true,
+              "pending": false,
+              "context": "{\n  \"title\": \"cypress-mochawesome-reporter-screenshots\",\n  \"value\": [\n    [\n      \"/optimization.cy.js/Timetable Optimization — Admin Flow -- displays conflicting entry details (failed).png\"\n    ]\n  ]\n}",
+              "code": "cy.visit('/');\ncy.wait('@getConflicts', {\n  timeout: 10000\n});\ncy.wait('@getTimetable', {\n  timeout: 10000\n});\ncy.get('body').then($body => {\n  // Either the subject or faculty name should appear\n  const text = $body.text();\n  const hasConflictInfo = text.includes('Dr. Smith') || text.includes('Operating Systems') || text.includes('CSE301');\n  expect(hasConflictInfo).to.be.true;\n});",
+              "err": {
+                "message": "CypressError: Timed out retrying after 10000ms: `cy.wait()` timed out waiting `10000ms` for the 1st request to the route: `getConflicts`. No request ever occurred.\n\nhttps://on.cypress.io/wait",
+                "estack": "CypressError: Timed out retrying after 10000ms: `cy.wait()` timed out waiting `10000ms` for the 1st request to the route: `getConflicts`. No request ever occurred.\n\nhttps://on.cypress.io/wait\n    at cypressErr (http://localhost:5173/__cypress/runner/cypress_runner.js:78375:18)\n    at Object.errByPath (http://localhost:5173/__cypress/runner/cypress_runner.js:78443:10)\n    at checkForXhr (http://localhost:5173/__cypress/runner/cypress_runner.js:138930:84)\n    at <unknown> (http://localhost:5173/__cypress/runner/cypress_runner.js:138955:28)\n    at tryCatcher (http://localhost:5173/__cypress/runner/cypress_runner.js:1777:23)\n    at Promise.attempt.Promise.try (http://localhost:5173/__cypress/runner/cypress_runner.js:4285:29)\n    at whenStable (http://localhost:5173/__cypress/runner/cypress_runner.js:152022:68)\n    at <unknown> (http://localhost:5173/__cypress/runner/cypress_runner.js:151963:14)\n    at tryCatcher (http://localhost:5173/__cypress/runner/cypress_runner.js:1777:23)\n    at Promise._settlePromiseFromHandler (http://localhost:5173/__cypress/runner/cypress_runner.js:1489:31)\n    at Promise._settlePromise (http://localhost:5173/__cypress/runner/cypress_runner.js:1546:18)\n    at Promise._settlePromise0 (http://localhost:5173/__cypress/runner/cypress_runner.js:1591:10)\n    at Promise._settlePromises (http://localhost:5173/__cypress/runner/cypress_runner.js:1671:18)\n    at Promise._fulfill (http://localhost:5173/__cypress/runner/cypress_runner.js:1615:18)\n    at <unknown> (http://localhost:5173/__cypress/runner/cypress_runner.js:5420:46)\nFrom Your Spec Code:\n    at Context.eval (webpack://vite_react_shadcn_ts/./cypress/e2e/optimization.cy.js:42:11)",
+                "diff": null
+              },
+              "uuid": "1c99a467-d087-4959-94a0-25a7857d3d17",
+              "parentUUID": "97a0e3ff-6d28-4f77-83aa-537ac176d458",
+              "isHook": false,
+              "skipped": false
+            },
+            {
+              "title": "clicking Auto-Resolve calls the resolve-conflict API",
+              "fullTitle": "Timetable Optimization — Admin Flow clicking Auto-Resolve calls the resolve-conflict API",
+              "timedOut": null,
+              "duration": 10945,
+              "state": "failed",
+              "speed": null,
+              "pass": false,
+              "fail": true,
+              "pending": false,
+              "context": "{\n  \"title\": \"cypress-mochawesome-reporter-screenshots\",\n  \"value\": [\n    [\n      \"/optimization.cy.js/Timetable Optimization — Admin Flow -- clicking Auto-Resolve calls the resolve-conflict API (failed).png\"\n    ]\n  ]\n}",
+              "code": "cy.visit('/');\ncy.wait('@getConflicts', {\n  timeout: 10000\n});\ncy.get('button').contains(/resolve|fix|auto/i).first().click({\n  force: true\n});\ncy.wait('@resolveConflict', {\n  timeout: 15000\n});",
+              "err": {
+                "message": "CypressError: Timed out retrying after 10000ms: `cy.wait()` timed out waiting `10000ms` for the 1st request to the route: `getConflicts`. No request ever occurred.\n\nhttps://on.cypress.io/wait",
+                "estack": "CypressError: Timed out retrying after 10000ms: `cy.wait()` timed out waiting `10000ms` for the 1st request to the route: `getConflicts`. No request ever occurred.\n\nhttps://on.cypress.io/wait\n    at cypressErr (http://localhost:5173/__cypress/runner/cypress_runner.js:78375:18)\n    at Object.errByPath (http://localhost:5173/__cypress/runner/cypress_runner.js:78443:10)\n    at checkForXhr (http://localhost:5173/__cypress/runner/cypress_runner.js:138930:84)\n    at <unknown> (http://localhost:5173/__cypress/runner/cypress_runner.js:138955:28)\n    at tryCatcher (http://localhost:5173/__cypress/runner/cypress_runner.js:1777:23)\n    at Promise.attempt.Promise.try (http://localhost:5173/__cypress/runner/cypress_runner.js:4285:29)\n    at whenStable (http://localhost:5173/__cypress/runner/cypress_runner.js:152022:68)\n    at <unknown> (http://localhost:5173/__cypress/runner/cypress_runner.js:151963:14)\n    at tryCatcher (http://localhost:5173/__cypress/runner/cypress_runner.js:1777:23)\n    at Promise._settlePromiseFromHandler (http://localhost:5173/__cypress/runner/cypress_runner.js:1489:31)\n    at Promise._settlePromise (http://localhost:5173/__cypress/runner/cypress_runner.js:1546:18)\n    at Promise._settlePromise0 (http://localhost:5173/__cypress/runner/cypress_runner.js:1591:10)\n    at Promise._settlePromises (http://localhost:5173/__cypress/runner/cypress_runner.js:1671:18)\n    at Promise._fulfill (http://localhost:5173/__cypress/runner/cypress_runner.js:1615:18)\n    at <unknown> (http://localhost:5173/__cypress/runner/cypress_runner.js:5420:46)\nFrom Your Spec Code:\n    at Context.eval (webpack://vite_react_shadcn_ts/./cypress/e2e/optimization.cy.js:56:11)",
+                "diff": null
+              },
+              "uuid": "8e8f45e5-1b37-4335-9bdf-96fa5170f068",
+              "parentUUID": "97a0e3ff-6d28-4f77-83aa-537ac176d458",
+              "isHook": false,
+              "skipped": false
+            },
+            {
+              "title": "after resolve, the conflict count decreases",
+              "fullTitle": "Timetable Optimization — Admin Flow after resolve, the conflict count decreases",
+              "timedOut": null,
+              "duration": 10761,
+              "state": "failed",
+              "speed": null,
+              "pass": false,
+              "fail": true,
+              "pending": false,
+              "context": "{\n  \"title\": \"cypress-mochawesome-reporter-screenshots\",\n  \"value\": [\n    [\n      \"/optimization.cy.js/Timetable Optimization — Admin Flow -- after resolve, the conflict count decreases (failed).png\"\n    ]\n  ]\n}",
+              "code": "cy.intercept('GET', '**/timetable/conflicts', {\n  body: []\n}).as('noMoreConflicts');\ncy.visit('/');\ncy.wait('@noMoreConflicts', {\n  timeout: 10000\n});\ncy.get('body').then($body => {\n  const text = $body.text();\n  const conflictCleared = text.includes('0') || text.toLowerCase().includes('no conflict');\n  expect(conflictCleared).to.be.true;\n});",
+              "err": {
+                "message": "CypressError: Timed out retrying after 10000ms: `cy.wait()` timed out waiting `10000ms` for the 1st request to the route: `noMoreConflicts`. No request ever occurred.\n\nhttps://on.cypress.io/wait",
+                "estack": "CypressError: Timed out retrying after 10000ms: `cy.wait()` timed out waiting `10000ms` for the 1st request to the route: `noMoreConflicts`. No request ever occurred.\n\nhttps://on.cypress.io/wait\n    at cypressErr (http://localhost:5173/__cypress/runner/cypress_runner.js:78375:18)\n    at Object.errByPath (http://localhost:5173/__cypress/runner/cypress_runner.js:78443:10)\n    at checkForXhr (http://localhost:5173/__cypress/runner/cypress_runner.js:138930:84)\n    at <unknown> (http://localhost:5173/__cypress/runner/cypress_runner.js:138955:28)\n    at tryCatcher (http://localhost:5173/__cypress/runner/cypress_runner.js:1777:23)\n    at Promise.attempt.Promise.try (http://localhost:5173/__cypress/runner/cypress_runner.js:4285:29)\n    at whenStable (http://localhost:5173/__cypress/runner/cypress_runner.js:152022:68)\n    at <unknown> (http://localhost:5173/__cypress/runner/cypress_runner.js:151963:14)\n    at tryCatcher (http://localhost:5173/__cypress/runner/cypress_runner.js:1777:23)\n    at Promise._settlePromiseFromHandler (http://localhost:5173/__cypress/runner/cypress_runner.js:1489:31)\n    at Promise._settlePromise (http://localhost:5173/__cypress/runner/cypress_runner.js:1546:18)\n    at Promise._settlePromise0 (http://localhost:5173/__cypress/runner/cypress_runner.js:1591:10)\n    at Promise._settlePromises (http://localhost:5173/__cypress/runner/cypress_runner.js:1671:18)\n    at Promise._fulfill (http://localhost:5173/__cypress/runner/cypress_runner.js:1615:18)\n    at <unknown> (http://localhost:5173/__cypress/runner/cypress_runner.js:5420:46)\nFrom Your Spec Code:\n    at Context.eval (webpack://vite_react_shadcn_ts/./cypress/e2e/optimization.cy.js:70:11)",
+                "diff": null
+              },
+              "uuid": "310775d4-bbe8-40c1-a0a2-8f8c48c73a99",
+              "parentUUID": "97a0e3ff-6d28-4f77-83aa-537ac176d458",
+              "isHook": false,
+              "skipped": false
+            }
+          ],
+          "suites": [],
+          "passes": [],
+          "failures": [
+            "82a66ecb-1c1f-400e-ab88-3913d422329e",
+            "1c99a467-d087-4959-94a0-25a7857d3d17",
+            "8e8f45e5-1b37-4335-9bdf-96fa5170f068",
+            "310775d4-bbe8-40c1-a0a2-8f8c48c73a99"
+          ],
+          "pending": [],
+          "skipped": [],
+          "duration": 43870,
+          "root": false,
+          "rootEmpty": false,
+          "_timeout": 2000
+        }
+      ],
+      "passes": [],
+      "failures": [],
+      "pending": [],
+      "skipped": [],
+      "duration": 0,
+      "root": true,
+      "rootEmpty": true,
+      "_timeout": 2000
+    }
+  ],
+  "meta": {
+    "mocha": {
+      "version": "7.2.0"
+    },
+    "mochawesome": {
+      "options": {
+        "quiet": false,
+        "reportFilename": "mochawesome",
+        "saveHtml": false,
+        "saveJson": true,
+        "consoleReporter": "spec",
+        "useInlineDiffs": false,
+        "code": true
+      },
+      "version": "7.1.4"
+    },
+    "marge": {
+      "options": {
+        "reportDir": "cypress/reports/.jsons",
+        "charts": true,
+        "reportPageTitle": "E2E Test Report",
+        "embeddedScreenshots": true,
+        "inlineAssets": true,
+        "overwrite": false,
+        "html": false,
+        "json": true
+      },
+      "version": "6.3.2"
+    }
+  }
+}

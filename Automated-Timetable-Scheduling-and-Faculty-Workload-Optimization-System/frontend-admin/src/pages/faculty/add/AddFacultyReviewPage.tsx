@@ -10,7 +10,11 @@ export default function AddFacultyReviewPage() {
   const location = useLocation();
 
   const finalData = location.state;
-  const [isActive, setIsActive] = useState(finalData?.isActive ?? true);
+  const [isActive, setIsActive] = useState(
+    finalData?.isActive !== undefined
+      ? finalData.isActive
+      : (finalData?.active !== undefined ? finalData.active : true)
+  );
 
   if (!finalData) {
     return (

@@ -123,10 +123,10 @@ export default function Login() {
                     <div className="mb-6 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                         <p className="text-xs font-semibold text-blue-900 dark:text-blue-300 mb-1">Demo Credentials:</p>
                         <p className="text-xs text-blue-700 dark:text-blue-400">
-                            Admin: admin@acadschedule.com / password123
+                            Admin: pattemhemanth.04@gmail.com / password123
                         </p>
                         <p className="text-xs text-blue-700 dark:text-blue-400">
-                            Faculty: (any faculty email) / faculty123
+                            Faculty: ravikarthikeya1825@gmail.com / faculty123
                         </p>
                     </div>
 

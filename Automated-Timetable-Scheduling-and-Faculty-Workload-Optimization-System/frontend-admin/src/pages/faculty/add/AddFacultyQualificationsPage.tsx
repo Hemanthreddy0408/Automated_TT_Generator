@@ -1,15 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { AdminLayout } from "@/components/layout/AdminLayout";
-
-// Mock Data for Subjects
-const AVAILABLE_SUBJECTS = [
-  { id: "CS201", name: "Data Structures" },
-  { id: "CS302", name: "Operating Systems" },
-  { id: "CS401", name: "Computer Networks" },
-  { id: "IT101", name: "Web Technology" },
-  { id: "CS505", name: "Cloud Computing" },
-];
+import { getSubjects } from "@/lib/api";
+import { Subject } from "@/types/timetable";
 
 const QUALIFICATIONS = ["PhD", "Master’s", "Bachelor’s"];
 
@@ -43,6 +36,24 @@ const AddFacultyQualificationsPage = () => {
     basicInfo?.eligibleSubjects || []
   );
 
+  // 4. Load Live Subjects
+  const [availableSubjects, setAvailableSubjects] = useState<Subject[]>([]);
+  const [loadingSubjects, setLoadingSubjects] = useState(true);
+
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      try {
+        const data = await getSubjects();
+        setAvailableSubjects(data);
+      } catch (err) {
+        console.error("Failed to load subjects", err);
+      } finally {
+        setLoadingSubjects(false);
+      }
+    };
+    fetchSubjects();
+  }, []);
+
   // Toggle Logic
   const toggleQualification = (q: string) => {
     setSelectedQualifications((prev) =>
@@ -50,30 +61,27 @@ const AddFacultyQualificationsPage = () => {
     );
   };
 
-  const addSubject = (id: string) => {
-    if (!assignedSubjects.includes(id)) {
-      setAssignedSubjects([...assignedSubjects, id]);
+  const addSubject = (code: string) => {
+    if (!assignedSubjects.includes(code)) {
+      setAssignedSubjects([...assignedSubjects, code]);
     }
   };
 
-  const removeSubject = (id: string) => {
-    setAssignedSubjects(assignedSubjects.filter((s) => s !== id));
+  const removeSubject = (code: string) => {
+    setAssignedSubjects(assignedSubjects.filter((s) => s !== code));
   };
 
-  // ✅ NEW: Save Draft Logic
+  // ✅ Save Draft Logic
   const handleSaveDraft = () => {
     const draftData = {
       ...basicInfo,
       qualifications: selectedQualifications,
       specialization: specialization,
       eligibleSubjects: assignedSubjects,
-      savedAt: new Date().toLocaleString() // Add timestamp
+      savedAt: new Date().toLocaleString()
     };
 
-    // Save to LocalStorage
     localStorage.setItem("faculty_draft", JSON.stringify(draftData));
-
-    // Show confirmation and go back to list
     alert("Draft saved successfully!");
     navigate("/admin/faculty");
   };
@@ -168,44 +176,55 @@ const AddFacultyQualificationsPage = () => {
           <div>
             <div className="flex justify-between items-center mb-3">
               <h3 className="font-semibold text-foreground">Subject Eligibility Mapping</h3>
-              <span className="text-xs px-2 py-1 bg-muted rounded text-muted-foreground">EPIC 1</span>
+              <span className="text-xs px-2 py-1 bg-muted rounded text-muted-foreground">DYNAMIC D.B</span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* AVAILABLE */}
               <div className="border rounded-lg p-4 bg-background">
                 <h4 className="text-sm font-semibold mb-3 text-muted-foreground">Available Subjects</h4>
-                <ul className="space-y-2">
-                  {AVAILABLE_SUBJECTS.map((sub) => (
-                    <li key={sub.id} className="flex justify-between items-center text-sm p-2 hover:bg-muted/50 rounded">
-                      <span>{sub.id}: {sub.name}</span>
-                      <button
-                        onClick={() => addSubject(sub.id)}
-                        className="text-primary font-semibold hover:underline text-xs"
-                      >
-                        Add
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+                {loadingSubjects ? (
+                  <p className="text-sm text-muted-foreground animate-pulse">Loading subjects from database...</p>
+                ) : (
+                  <ul className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
+                    {availableSubjects.map((sub) => (
+                      <li key={sub.code} className="flex justify-between items-center text-sm p-2 hover:bg-muted/50 rounded">
+                        <span className="truncate pr-2" title={sub.name}><span className="font-mono text-xs text-slate-500 mr-2">{sub.code}</span> {sub.name}</span>
+                        <button
+                          onClick={() => addSubject(sub.code)}
+                          disabled={assignedSubjects.includes(sub.code)}
+                          className={`font-semibold text-xs px-2 py-1 rounded ${assignedSubjects.includes(sub.code) ? 'text-slate-300 cursor-not-allowed' : 'text-primary hover:bg-primary/10'}`}
+                        >
+                          {assignedSubjects.includes(sub.code) ? 'Added' : 'Add'}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
 
               {/* ASSIGNED */}
               <div className="border border-primary/20 rounded-lg p-4 bg-primary/5">
                 <h4 className="text-sm font-semibold mb-3 text-primary">Assigned Subjects</h4>
                 <ul className="space-y-2">
-                  {assignedSubjects.length === 0 && <span className="text-xs text-muted-foreground italic">No subjects assigned yet.</span>}
-                  {assignedSubjects.map((id) => (
-                    <li key={id} className="flex justify-between items-center text-sm p-2 bg-background rounded border border-primary/10">
-                      <span>{id}</span>
-                      <button
-                        onClick={() => removeSubject(id)}
-                        className="text-destructive font-semibold hover:underline text-xs"
-                      >
-                        Remove
-                      </button>
-                    </li>
-                  ))}
+                  {assignedSubjects.length === 0 && <span className="text-xs text-muted-foreground italic">No subjects assigned yet. Select from available subjects.</span>}
+                  {assignedSubjects.map((code) => {
+                    const subjectData = availableSubjects.find(s => s.code === code);
+                    return (
+                      <li key={code} className="flex justify-between items-center text-sm p-2 bg-background rounded border border-primary/10">
+                        <span className="truncate pr-2">
+                          <span className="font-mono text-xs text-primary mr-2">{code}</span>
+                          {subjectData ? subjectData.name : "Loading..."}
+                        </span>
+                        <button
+                          onClick={() => removeSubject(code)}
+                          className="text-destructive font-semibold hover:bg-destructive/10 px-2 py-1 rounded text-xs"
+                        >
+                          Remove
+                        </button>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             </div>

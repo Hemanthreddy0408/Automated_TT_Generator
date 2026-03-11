@@ -19,9 +19,9 @@ public class AdminInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        if (adminRepository.findByEmail("admin@acadschedule.com").isEmpty()) {
+        if (adminRepository.findByEmail("pattemhemanth.04@gmail.com").isEmpty()) {
             Admin admin = new Admin();
-            admin.setEmail("admin@acadschedule.com");
+            admin.setEmail("pattemhemanth.04@gmail.com");
             // Seed with hashed initial password
             admin.setPassword(passwordEncoder.encode("password123"));
             adminRepository.save(admin);

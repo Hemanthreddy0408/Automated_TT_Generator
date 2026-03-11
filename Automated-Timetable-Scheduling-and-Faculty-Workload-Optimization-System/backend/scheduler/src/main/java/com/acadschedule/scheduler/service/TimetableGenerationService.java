@@ -30,6 +30,30 @@ public class TimetableGenerationService {
     private final NotificationService notificationService;
     private final ObjectMapper objectMapper;
 
+    @org.springframework.beans.factory.annotation.Value("${scheduler.grid.days}")
+    private List<String> DAYS;
+
+    @org.springframework.beans.factory.annotation.Value("${scheduler.grid.time-slots}")
+    private List<String> TIME_SLOTS;
+
+    @org.springframework.beans.factory.annotation.Value("${scheduler.grid.non-teachable-slots}")
+    private Set<Integer> NON_TEACHABLE_SLOTS;
+
+    @org.springframework.beans.factory.annotation.Value("${scheduler.grid.valid-lab-starts}")
+    private Set<Integer> VALID_LAB_START_SLOTS;
+
+    @org.springframework.beans.factory.annotation.Value("${scheduler.section.max-daily-hours:7}")
+    private int MAX_SECTION_DAILY_HOURS;
+
+    @org.springframework.beans.factory.annotation.Value("${scheduler.lab.min-capacity-ratio:0.5}")
+    private double LAB_MIN_CAPACITY_RATIO;
+
+    @org.springframework.beans.factory.annotation.Value("${scheduler.generation.max-attempts.section:50}")
+    private int MAX_ATTEMPTS_SECTION;
+
+    @org.springframework.beans.factory.annotation.Value("${scheduler.generation.max-attempts.all:250}")
+    private int MAX_ATTEMPTS_ALL;
+
     public TimetableGenerationService(TimetableRepository timetableRepo, FacultyRepository facultyRepo,
             SubjectRepository subjectRepo, SectionRepository sectionRepo, RoomRepository roomRepo,
             OptimizationChangeRepository optimizationChangeRepo,
@@ -45,65 +69,6 @@ public class TimetableGenerationService {
         this.objectMapper = objectMapper;
     }
 
-    /* ================== CONFIG ================== */
-
-    private static final Map<String, Set<String>> SYNONYMS = Map.ofEntries(
-            Map.entry("PROGRAMMING", Set.of("CODING", "SOFTWARE", "SE")),
-            Map.entry("NETWORKS", Set.of("CN", "NETWORK", "COMMUNICATION")),
-            Map.entry("DATABASE", Set.of("DBMS", "DATA", "SQL")),
-            Map.entry("AI", Set.of("ML", "INTELLIGENCE")),
-            Map.entry("ML", Set.of("AI", "LEARNING")),
-            Map.entry("MATHEMATICS", Set.of("MATH", "CALCULUS", "PROBABILITY", "DISCRETE")),
-            Map.entry("HARDWARE", Set.of("DIGITAL", "ELECTRICAL", "ELECTRONICS")),
-            Map.entry("SYSTEMS", Set.of("OS", "OPERATING")));
-
-    private static final List<String> DAYS = List.of("MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY");
-
-    private static final List<String> TIME_SLOTS = List.of(
-            "09:00-09:40", // index 0
-            "09:40-10:30", // index 1
-            "10:30-10:45", // index 2 → SHORT BREAK (skip for all sessions)
-            "10:45-11:35", // index 3
-            "11:35-12:25", // index 4
-            "12:25-01:15", // index 5
-            "LUNCH_BREAK", // index 6 → LUNCH (skip)
-            "02:05-02:55", // index 7
-            "02:55-03:45", // index 8
-            "03:45-04:35"); // index 9
-
-    /*
-     * Non-teachable slots (must not be used for any session start or span):
-     * index 2 → 10:30-10:45 (SHORT BREAK)
-     * index 6 → LUNCH_BREAK
-     *
-     * Valid lab starting indices (length=2, must not span a break/lunch):
-     * Morning : index 0 (09:00-09:40 + 09:40-10:30) – consecutive, no break
-     * index 3 (10:45-11:35 + 11:35-12:25) – consecutive, no break
-     * index 4 (11:35-12:25 + 12:25-01:15) – consecutive, no break
-     * Afternoon: index 7 (02:05-02:55 + 02:55-03:45) – consecutive, no break
-     * index 8 (02:55-03:45 + 03:45-04:35) – consecutive, no break
-     *
-     * index 1 (09:40-10:30) is INVALID for labs because index 2 is BREAK.
-     * index 5 (12:25-01:15) is INVALID for labs because index 6 is LUNCH_BREAK.
-     */
-
-    /**
-     * Slots that must never be used as a session start or appear inside a session
-     * span.
-     */
-    private static final Set<Integer> NON_TEACHABLE_SLOTS = Set.of(2, 6); // SHORT_BREAK, LUNCH_BREAK
-
-    /**
-     * Valid starting indices for 2-period LAB sessions (pre-validated for no break
-     * spanning).
-     */
-    private static final Set<Integer> VALID_LAB_START_SLOTS = Set.of(0, 3, 4, 7, 8);
-
-    private static final Set<Integer> AFTERNOON = Set.of(7, 8, 9);
-    private static final Set<Integer> MORNING_LAB_TIME_SLOTS = Set.of(0, 3, 4); // Valid morning lab starts
-    private static final int DEFAULT_DAILY = 8; // per-day cap (labs across 8 sections need headroom)
-    private static final int DEFAULT_WEEKLY = 20; // weekly teaching-hours hard cap
-
     /* ================== PUBLIC ================== */
 
     /**
@@ -112,8 +77,10 @@ public class TimetableGenerationService {
      * engine.
      */
     public List<TimetableEntry> generateForSection(String sectionId, boolean commit) {
+        List<Faculty> faculties = facultyRepo.findByActiveTrue();
+        List<Room> rooms = roomRepo.findAll().stream().filter(Room::isActive).toList();
+        List<Subject> allSubjects = subjectRepo.findAll();
 
-        int MAX_ATTEMPTS = 100;
         RuntimeException lastError = null;
 
         // ✅ PRIME GLOBAL STATE: Gather all existing entries from OTHER sections
@@ -124,7 +91,7 @@ public class TimetableGenerationService {
         Map<String, TimetableEntry> globalElectives = new HashMap<>();
 
         Map<String, Faculty> facultyMap = new HashMap<>();
-        facultyRepo.findAll().forEach(f -> facultyMap.put(f.getName(), f));
+        faculties.forEach(f -> facultyMap.put(f.getName(), f));
 
         timetableRepo.findAll().stream()
                 .filter(e -> !sectionId.equals(e.getSectionId()))
@@ -150,12 +117,16 @@ public class TimetableGenerationService {
             }
         }
 
-        for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+        Section section = sectionRepo.findById(Long.parseLong(sectionId)).orElseThrow();
+        List<TimetableEntry> existingEntriesForSection = timetableRepo.findBySectionId(sectionId);
+
+        for (int attempt = 1; attempt <= MAX_ATTEMPTS_SECTION; attempt++) {
             try {
                 System.out.println("Attempt " + attempt + " for section " + sectionId);
                 // Pass the pre-filled global state
-                List<TimetableEntry> result = generateForSection(sectionId, commit, globalFacultyLoad, globalOcc,
-                        new HashMap<>(), globalElectives, null, new HashMap<>());
+                List<TimetableEntry> result = generateForSectionInternal(section, existingEntriesForSection, commit,
+                        globalFacultyLoad, globalOcc,
+                        new HashMap<>(), globalElectives, null, new HashMap<>(), faculties, rooms, allSubjects);
 
                 if (commit) {
                     auditLogService.logAction("TIMETABLE", "GENERATE",
@@ -169,6 +140,9 @@ public class TimetableGenerationService {
 
                 return result;
             } catch (RuntimeException e) {
+                if (e.getMessage() != null && e.getMessage().startsWith("CRITICAL")) {
+                    throw e; // Fail-fast on data errors
+                }
                 lastError = e;
             }
         }
@@ -184,34 +158,37 @@ public class TimetableGenerationService {
      * KEY CHANGE: subjectToFacultyMap is now keyed by "sectionId|subjectCode"
      * so each section keeps its own consistent faculty-per-subject assignment.
      */
-    public List<TimetableEntry> generateForSection(
-            String sectionId,
+    private List<TimetableEntry> generateForSectionInternal(
+            Section section,
+            List<TimetableEntry> existingEntries,
             boolean commit,
             Map<Long, Integer> existingFacultyLoad,
             Occupancy globalOcc,
             Map<String, Long> subjectToFacultyMap,
             Map<String, TimetableEntry> globalElectives,
             List<String> globalElectiveSlots,
-            Map<String, Map<Long, Integer>> globalDailyWorkloads) {
+            Map<String, Map<Long, Integer>> globalDailyWorkloads,
+            List<Faculty> faculties,
+            List<Room> rooms,
+            List<Subject> allSubjects) {
 
-        Section section = sectionRepo.findById(Long.parseLong(sectionId))
-                .orElseThrow();
-
+        String sectionId = String.valueOf(section.getId());
         System.err.println("DEBUG OVERLOAD: Generating for section " + section.getName());
 
         if (commit)
             timetableRepo.deleteBySectionId(sectionId);
 
-        List<Subject> subjects = subjectRepo.findByDepartmentAndYear(section.getDepartment(), section.getYear());
-        List<Faculty> faculties = facultyRepo.findByActiveTrue();
-        List<Room> rooms = roomRepo.findAll().stream().filter(Room::isActive).toList();
+        List<Subject> subjects = allSubjects.stream()
+                .filter(s -> s.getDepartment().equalsIgnoreCase(section.getDepartment())
+                        && s.getYear() == section.getYear())
+                .toList();
 
         // ✅ Pre-populate faculty-subject map from EXISTING timetable entries
         // This ensures consistency when regenerating a single section
         Map<String, Faculty> facultyByName = new HashMap<>();
         faculties.forEach(f -> facultyByName.put(f.getName(), f));
 
-        timetableRepo.findBySectionId(sectionId).forEach(existing -> {
+        existingEntries.forEach(existing -> {
             String key = sectionId + "|" + existing.getSubjectCode();
             if (!subjectToFacultyMap.containsKey(key)) {
                 Faculty f = facultyByName.get(existing.getFacultyName());
@@ -284,8 +261,6 @@ public class TimetableGenerationService {
 
         // ✅ ELECTIVE PRE-PASS: Force all elective sessions into the dynamically
         // selected global slots, combining sections!
-        Iterator<String> electiveSlotIterator = globalElectiveSlots != null ? globalElectiveSlots.iterator()
-                : Collections.<String>emptyIterator();
         Map<String, Integer> electiveSubjectAllocations = new HashMap<>();
 
         for (Session es : electiveSessions) {
@@ -348,8 +323,8 @@ public class TimetableGenerationService {
                 int wLoad = weeklyLoad.getOrDefault(f.getId(), 0);
                 int dLoad = dailyWorkloads.get(elecDay) != null ? dailyWorkloads.get(elecDay).getOrDefault(f.getId(), 0)
                         : 0;
-                int wLimit = f.getMaxHoursPerWeek() > 0 ? f.getMaxHoursPerWeek() : DEFAULT_WEEKLY;
-                int dLimit = f.getMaxHoursPerDay() > 0 ? f.getMaxHoursPerDay() : DEFAULT_DAILY;
+                int wLimit = f.getMaxHoursPerWeek();
+                int dLimit = f.getMaxHoursPerDay();
                 if (wLoad >= wLimit || dLoad >= dLimit)
                     continue;
                 chosen = f;
@@ -364,8 +339,8 @@ public class TimetableGenerationService {
                     int dLoad = dailyWorkloads.get(elecDay) != null
                             ? dailyWorkloads.get(elecDay).getOrDefault(f.getId(), 0)
                             : 0;
-                    int wLimit = f.getMaxHoursPerWeek() > 0 ? f.getMaxHoursPerWeek() : DEFAULT_WEEKLY;
-                    int dLimit = f.getMaxHoursPerDay() > 0 ? f.getMaxHoursPerDay() : DEFAULT_DAILY;
+                    int wLimit = f.getMaxHoursPerWeek();
+                    int dLimit = f.getMaxHoursPerDay();
                     if (wLoad >= wLimit || dLoad >= dLimit)
                         continue;
                     chosen = f;
@@ -518,8 +493,8 @@ public class TimetableGenerationService {
 
             int dLoad = dailyLoad.getOrDefault(locked.getId(), 0);
             int wLoad = weeklyLoad.getOrDefault(locked.getId(), 0);
-            int dLimit = locked.getMaxHoursPerDay() > 0 ? locked.getMaxHoursPerDay() : DEFAULT_DAILY;
-            int wLimit = locked.getMaxHoursPerWeek() > 0 ? locked.getMaxHoursPerWeek() : DEFAULT_WEEKLY;
+            int dLimit = locked.getMaxHoursPerDay();
+            int wLimit = locked.getMaxHoursPerWeek();
             if (dLoad + s.length > dLimit || wLoad + s.length > wLimit)
                 return false;
             candidateFaculty = List.of(locked);
@@ -558,13 +533,12 @@ public class TimetableGenerationService {
                     .filter(x -> {
                         int dLoadX = dailyLoad.getOrDefault(x.getId(), 0);
                         int wLoadX = weeklyLoad.getOrDefault(x.getId(), 0);
-                        int dLimitX = x.getMaxHoursPerDay() > 0 ? x.getMaxHoursPerDay() : DEFAULT_DAILY;
-                        int wLimitX = x.getMaxHoursPerWeek() > 0 ? x.getMaxHoursPerWeek() : DEFAULT_WEEKLY;
+                        int dLimitX = x.getMaxHoursPerDay();
+                        int wLimitX = x.getMaxHoursPerWeek();
                         return (dLoadX + s.length <= dLimitX) && (wLoadX + s.length <= wLimitX);
                     })
                     .sorted(Comparator
                             .comparingInt((Faculty x) -> weeklyLoad.getOrDefault(x.getId(), 0))
-                            .thenComparingInt(x -> -specializationScore(x, s.subject))
                             .thenComparing(Faculty::getName))
                     .collect(java.util.stream.Collectors.toCollection(ArrayList::new));
         }
@@ -590,9 +564,9 @@ public class TimetableGenerationService {
 
             for (int si : slotOrder) {
 
-                // LIMIT: max 7 teaching TIME_SLOTS per day per section
+                // LIMIT: section daily load
                 int currentLoad = sectionDailyLoad.getOrDefault(day, 0);
-                if (currentLoad + s.length > 7)
+                if (currentLoad + s.length > MAX_SECTION_DAILY_HOURS)
                     continue;
 
                 // ── Skip non-teachable slots (BREAK and LUNCH_BREAK) ──────────────────────
@@ -601,8 +575,9 @@ public class TimetableGenerationService {
 
                 // ── For LAB sessions (length == 2): only allow pre-validated starting slots
                 // to guarantee no break/lunch is spanned ────────────────────────────────
-                if (s.length == 2 && !VALID_LAB_START_SLOTS.contains(si))
+                if (s.length == 2 && !VALID_LAB_START_SLOTS.contains(si)) {
                     continue;
+                }
 
                 // Check we have enough consecutive slots remaining
                 if (si + s.length > TIME_SLOTS.size())
@@ -637,7 +612,7 @@ public class TimetableGenerationService {
                     // LAB sessions: ONLY accept rooms whose type is LAB; no fallback.
                     // Lab sessions are typically run in batches (half the section at once),
                     // so we allow any LAB room with at least 50% of section capacity.
-                    int minLabCap = Math.max(1, section.getCapacity() / 2);
+                    int minLabCap = (int) Math.max(1, section.getCapacity() * LAB_MIN_CAPACITY_RATIO);
                     for (Room r : rooms) {
                         if (r.getCapacity() < minLabCap)
                             continue;
@@ -704,11 +679,6 @@ public class TimetableGenerationService {
                 // ✅ Record this faculty-subject assignment for THIS SECTION (section-level key)
                 subjectToFacultyMap.putIfAbsent(consistencyKey, f.getId());
 
-                // Track morning lab if placed in morning
-                if (s.length == 2 && MORNING_LAB_TIME_SLOTS.contains(si)) {
-                    morningLabCount.put(day, morningLabCount.getOrDefault(day, 0) + 1);
-                }
-
                 sectionDailyLoad.put(day, sectionDailyLoad.getOrDefault(day, 0) + s.length);
 
                 return true;
@@ -717,77 +687,6 @@ public class TimetableGenerationService {
         } // end faculty loop
 
         return false; // no faculty could place this session
-    }
-
-    /**
-     * Helper to divide text into uppercase keywords
-     */
-    private Set<String> tokenize(String text) {
-        if (text == null)
-            return Set.of();
-        text = text.toUpperCase()
-                .replaceAll("[^A-Z0-9 ]", " ") // remove symbols
-                .replaceAll("\\s+", " ") // remove extra spaces
-                .trim();
-        return new HashSet<>(Arrays.asList(text.split(" ")));
-    }
-
-    /**
-     * Scoring system to rank faculty suitability for a subject
-     */
-    private int specializationScore(Faculty f, Subject s) {
-        Set<String> subjectWords = tokenize(s.getName());
-        Set<String> facultyWords = tokenize(f.getSpecialization());
-
-        int score = 0;
-
-        for (String sw : subjectWords) {
-            // Direct word match
-            if (facultyWords.contains(sw)) {
-                score += 50;
-            }
-
-            // Synonym match
-            if (SYNONYMS.containsKey(sw)) {
-                for (String syn : SYNONYMS.get(sw)) {
-                    if (facultyWords.contains(syn)) {
-                        score += 40;
-                    }
-                }
-            }
-
-            // Reverse synonym match
-            for (Map.Entry<String, Set<String>> entry : SYNONYMS.entrySet()) {
-                if (facultyWords.contains(entry.getKey())) {
-                    for (String syn : entry.getValue()) {
-                        if (subjectWords.contains(syn)) {
-                            score += 40;
-                        }
-                    }
-                }
-            }
-        }
-
-        // ⭐ Better LAB faculty matching
-        if (isLabSubject(s) && f.getSpecialization() != null) {
-            String spec = f.getSpecialization().toUpperCase();
-
-            if (spec.contains("LAB") ||
-                    spec.contains("PROGRAMMING") ||
-                    spec.contains("HARDWARE") ||
-                    spec.contains("NETWORK")) {
-                score += 20;
-            }
-        }
-
-        // Fallback: Check manual eligibility if specified
-        if (f.getEligibleSubjects() != null &&
-                (f.getEligibleSubjects().contains(s.getCode()) ||
-                        f.getEligibleSubjects().contains(s.getName()))) {
-            score += 30;
-        }
-
-        return score;
     }
 
     /**
@@ -807,6 +706,12 @@ public class TimetableGenerationService {
             timetableRepo.deleteAll();
         }
 
+        // ✅ CACHE EVERYTHING ONCE TO AVOID THOUSANDS OF DB QUERIES
+        List<Faculty> activeFaculties = facultyRepo.findByActiveTrue();
+        List<Room> activeRooms = roomRepo.findAll().stream().filter(Room::isActive).toList();
+        List<Subject> allSubjects = subjectRepo.findAll();
+        List<Section> allSections = sectionRepo.findAll();
+
         List<TimetableEntry> all = new ArrayList<>();
         Map<Long, Integer> globalFacultyLoad = new HashMap<>();
         Map<String, Map<Long, Integer>> globalDailyWorkloads = new HashMap<>();
@@ -819,7 +724,7 @@ public class TimetableGenerationService {
 
         // Calculate Max Elective Hours needed across all subjects
         int maxElectiveHours = 0;
-        for (Subject sub : subjectRepo.findAll()) {
+        for (Subject sub : allSubjects) {
             if (sub.isElective()) {
                 int hours = lectureHours(sub);
                 if (hours > maxElectiveHours)
@@ -840,19 +745,24 @@ public class TimetableGenerationService {
         List<String> globalElectiveSlots = allPossibleSlots.subList(0,
                 Math.min(maxElectiveHours, allPossibleSlots.size()));
 
+        List<TimetableEntry> allExistingTimetables = timetableRepo.findAll();
+
         // --- PER-SECTION RETRY --- //
-        for (Section s : sectionRepo.findAll()) {
+        for (Section s : allSections) {
             String sectionId = String.valueOf(s.getId());
+            List<TimetableEntry> existingEntriesForSection = allExistingTimetables.stream()
+                    .filter(e -> sectionId.equals(e.getSectionId())).toList();
             RuntimeException lastSectionError = null;
             boolean sectionPlaced = false;
 
-            for (int attempt = 1; attempt <= 250; attempt++) {
+            for (int attempt = 1; attempt <= MAX_ATTEMPTS_ALL; attempt++) {
                 try {
-                    List<TimetableEntry> sectionTT = generateForSection(
-                            sectionId, false, // commit=false: we batch-commit at the end
+                    List<TimetableEntry> sectionTT = generateForSectionInternal(
+                            s, existingEntriesForSection, false,
                             globalFacultyLoad, globalOcc,
                             subjectToFacultyMap, globalElectives,
-                            globalElectiveSlots, globalDailyWorkloads);
+                            globalElectiveSlots, globalDailyWorkloads,
+                            activeFaculties, activeRooms, allSubjects);
 
                     // Commit section entries to DB if requested
                     if (commit) {
@@ -865,6 +775,9 @@ public class TimetableGenerationService {
                     System.out.println("Section " + sectionId + " placed on attempt " + attempt);
                     break;
                 } catch (RuntimeException e) {
+                    if (e.getMessage() != null && e.getMessage().startsWith("CRITICAL")) {
+                        throw e; // Fail-fast on data errors, abort entire generation
+                    }
                     lastSectionError = e;
                     // Allow a small context reset between retries of the same section
                 }
@@ -888,7 +801,6 @@ public class TimetableGenerationService {
                     "The master timetable for all sections was successfully generated or optimized.",
                     "TIMETABLE_MASTER_GENERATED");
 
-            List<Faculty> activeFaculties = facultyRepo.findByActiveTrue();
             for (Faculty f : activeFaculties) {
                 notificationService.createFacultyNotification(
                         f.getId(),
@@ -978,7 +890,7 @@ public class TimetableGenerationService {
                     })
                     .filter(f -> {
                         int wLoad = weeklyLoad.getOrDefault(f.getId(), 0);
-                        int wLimit = f.getMaxHoursPerWeek() > 0 ? f.getMaxHoursPerWeek() : DEFAULT_WEEKLY;
+                        int wLimit = f.getMaxHoursPerWeek();
                         return (wLoad + requiredHours) <= wLimit; // Must have capacity for ALL hours
                     })
                     .filter(f -> {

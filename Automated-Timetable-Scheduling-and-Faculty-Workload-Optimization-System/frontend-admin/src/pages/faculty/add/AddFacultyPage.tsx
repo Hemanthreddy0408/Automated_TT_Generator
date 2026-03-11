@@ -47,6 +47,9 @@ export default function AddFacultyPage() {
   const [maxHoursPerWeek, setMaxHoursPerWeek] = useState<number>(
     editData?.maxHoursPerWeek ? Number(editData.maxHoursPerWeek) : 30
   );
+
+  const [specialization, setSpecialization] = useState(editData?.specialization || "");
+  const [eligibleSubjects, setEligibleSubjects] = useState<string[]>(editData?.eligibleSubjects || []);
   const handleNextStep = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -63,8 +66,8 @@ export default function AddFacultyPage() {
 
       // Preserve other data if editing
       qualifications: editData?.qualifications || [],
-      specialization: editData?.specialization || "",
-      eligibleSubjects: editData?.eligibleSubjects || [],
+      specialization: specialization,
+      eligibleSubjects: eligibleSubjects,
       avatarUrl: editData?.avatarUrl || ""
     };
 
@@ -159,7 +162,34 @@ export default function AddFacultyPage() {
               </div>
             </div>
 
-            {/* ✅ SECTION 2: WORKLOAD LIMITS (NEW) */}
+            {/* SECTION 2: QUALIFICATIONS & SPECIALIZATION */}
+            <div className="pt-6 border-t">
+              <h4 className="text-sm font-bold text-primary mb-4 uppercase">Expertise & Experience</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                <div>
+                  <label className="text-sm font-medium">Specialization</label>
+                  <input
+                    className="mt-1 w-full rounded-lg border px-4 py-2.5 text-sm"
+                    value={specialization}
+                    onChange={(e) => setSpecialization(e.target.value)}
+                    placeholder="e.g. Artificial Intelligence"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">Eligible Subjects (Comma separated)</label>
+                  <input
+                    className="mt-1 w-full rounded-lg border px-4 py-2.5 text-sm"
+                    value={eligibleSubjects.join(", ")}
+                    onChange={(e) => setEligibleSubjects(e.target.value.split(",").map(s => s.trim()).filter(s => s !== ""))}
+                    placeholder="e.g. CS101, CS201"
+                  />
+                  <p className="text-[10px] text-muted-foreground mt-1">Provide subject codes the faculty is qualified to teach.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* SECTION 3: WORKLOAD LIMITS */}
             <div className="pt-6 border-t">
               <h4 className="text-sm font-bold text-primary mb-4 uppercase">Workload Constraints</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">

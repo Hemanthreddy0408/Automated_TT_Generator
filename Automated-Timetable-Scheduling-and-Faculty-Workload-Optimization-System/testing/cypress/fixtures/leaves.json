@@ -1,0 +1,13 @@
+[
+    {
+        "id": 1,
+        "facultyId": 1,
+        "facultyName": "Dr. Smith",
+        "leaveType": "CASUAL",
+        "startDate": "2026-04-10",
+        "endDate": "2026-04-11",
+        "reason": "Conference",
+        "status": "Pending",
+        "appliedDate": "2026-03-09"
+    }
+]
