@@ -1,0 +1,48 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: acad-db
+    environment:
+      POSTGRES_DB: unitt_db
+      POSTGRES_USER: acadschedule_user
+      POSTGRES_PASSWORD: password123
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U acadschedule_user -d unitt_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: 
+      context: Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler
+    container_name: acad-backend
+    ports:
+      - "8083:8083"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/unitt_db
+      - SPRING_DATASOURCE_USERNAME=acadschedule_user
+      - SPRING_DATASOURCE_PASSWORD=password123
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    depends_on:
+      db:
+        condition: service_healthy
+
+  admin-frontend:
+    build:
+      context: Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/frontend-admin
+    container_name: acad-admin
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+  faculty-frontend:
+    build:
+      context: Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/frontend-faculty
+    container_name: acad-faculty
+    ports:
+      - "5174:80"
+    depends_on:
+      - backend
