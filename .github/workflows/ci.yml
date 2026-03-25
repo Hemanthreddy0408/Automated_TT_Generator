@@ -1,16 +1,14 @@
-name: Automated TT Generator CI
+name: Automated TT Generator CI/CD
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, final ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, final ]
 
 jobs:
-
-  backend:
+  backend-build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -18,18 +16,23 @@ jobs:
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          distribution: temurin
-          java-version: 17
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'maven'
 
       - name: Build Backend
         run: |
           cd Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler
           mvn clean install -DskipTests
 
+      - name: Upload Backend Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-jar
+          path: Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/target/*.jar
 
-  frontend-admin:
+  frontend-admin-build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -37,7 +40,9 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/frontend-admin/package-lock.json
 
       - name: Install dependencies
         run: |
@@ -49,10 +54,8 @@ jobs:
           cd Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/frontend-admin
           npm run build
 
-
-  frontend-faculty:
+  frontend-faculty-build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -60,7 +63,9 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/frontend-faculty/package-lock.json
 
       - name: Install dependencies
         run: |
@@ -72,22 +77,65 @@ jobs:
           cd Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/frontend-faculty
           npm run build
 
-
-  deploy:
-    needs: [backend, frontend-admin, frontend-faculty]
+  docker-build:
+    needs: [backend-build, frontend-admin-build, frontend-faculty-build]
     runs-on: ubuntu-latest
-
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/final')
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - name: Download Backend Artifact
+        uses: actions/download-artifact@v4
         with:
-          node-version: 18
+          name: backend-jar
+          path: Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/target/
 
-      - name: Deploy backend
-        run: echo "Deploy backend to server"
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Deploy frontend
-        run: echo "Deploy frontend to hosting"
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Backend Image
+        uses: docker/build-push-action@v5
+        with:
+          context: Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/backend:latest
+            ghcr.io/${{ github.repository }}/backend:${{ github.sha }}
+
+      - name: Build and push Admin Frontend Image
+        uses: docker/build-push-action@v5
+        with:
+          context: Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/frontend-admin
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/frontend-admin:latest
+            ghcr.io/${{ github.repository }}/frontend-admin:${{ github.sha }}
+
+      - name: Build and push Faculty Frontend Image
+        uses: docker/build-push-action@v5
+        with:
+          context: Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/frontend-faculty
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/frontend-faculty:latest
+            ghcr.io/${{ github.repository }}/frontend-faculty:${{ github.sha }}
+
+  deploy:
+    needs: [docker-build]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/final')
+    steps:
+      - name: Deploy to Cloud
+        run: |
+          echo "Deploying to production environment..."
+          # Placeholder for deployment command (e.g., Railway, Render, or SSH)
+          # Example for Railway: railway up --detach
+          # Example for SSH: ssh user@server 'docker pull ghcr.io/... && docker restart ...'

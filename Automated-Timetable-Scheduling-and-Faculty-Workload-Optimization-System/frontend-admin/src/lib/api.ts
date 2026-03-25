@@ -5,7 +5,7 @@ import { Subject, Section } from "@/types/timetable";
    BASE CONFIG
    AXIOS INSTANCE
    =========================== */
-const API_BASE_URL = "https://automated-tt-generator.onrender.com";
+const API_BASE_URL = "http://localhost:8083";
 const API = axios.create({
   baseURL: `${API_BASE_URL}/api`,
   headers: {
