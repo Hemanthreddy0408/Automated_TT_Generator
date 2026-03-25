@@ -101,14 +101,17 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Lowercase repo name
+        run: echo "REPO_NAME=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
       - name: Build and push Backend Image
         uses: docker/build-push-action@v5
         with:
           context: Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}/backend:latest
-            ghcr.io/${{ github.repository }}/backend:${{ github.sha }}
+            ghcr.io/${{ env.REPO_NAME }}/backend:latest
+            ghcr.io/${{ env.REPO_NAME }}/backend:${{ github.sha }}
 
       - name: Build and push Admin Frontend Image
         uses: docker/build-push-action@v5
@@ -116,8 +119,8 @@ jobs:
           context: Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/frontend-admin
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}/frontend-admin:latest
-            ghcr.io/${{ github.repository }}/frontend-admin:${{ github.sha }}
+            ghcr.io/${{ env.REPO_NAME }}/frontend-admin:latest
+            ghcr.io/${{ env.REPO_NAME }}/frontend-admin:${{ github.sha }}
 
       - name: Build and push Faculty Frontend Image
         uses: docker/build-push-action@v5
@@ -125,8 +128,8 @@ jobs:
           context: Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/frontend-faculty
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}/frontend-faculty:latest
-            ghcr.io/${{ github.repository }}/frontend-faculty:${{ github.sha }}
+            ghcr.io/${{ env.REPO_NAME }}/frontend-faculty:latest
+            ghcr.io/${{ env.REPO_NAME }}/frontend-faculty:${{ github.sha }}
 
   deploy:
     needs: [docker-build]
