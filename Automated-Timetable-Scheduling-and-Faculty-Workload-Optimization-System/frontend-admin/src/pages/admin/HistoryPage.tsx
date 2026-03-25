@@ -223,15 +223,7 @@ export default function HistoryPage() {
           rollback: log.actionType !== "ROLLBACK" && log.actionType !== "UNDO_ROLLBACK",
           isRollbackLog: log.actionType === "ROLLBACK",
           avatar: undefined,
-          dbTimestamp: isNaN(dateObj.getTime()) ? "" : dateObj.toLocaleString('en-US', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: false
-          }).replace(/(\d+)\/(\d+)\/(\d+),\s(\d+):(\d+):(\d+)/, '$3-$1-$2 $4:$5:$6'),
+          dbTimestamp: isNaN(dateObj.getTime()) ? "" : format(dateObj, "yyyy-MM-dd HH:mm:ss"),
         };
       });
       setLogs(mapped);

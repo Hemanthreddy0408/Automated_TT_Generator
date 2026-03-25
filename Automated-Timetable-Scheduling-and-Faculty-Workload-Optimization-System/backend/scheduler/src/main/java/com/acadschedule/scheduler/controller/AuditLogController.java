@@ -4,6 +4,10 @@ import com.acadschedule.scheduler.entity.AuditLog;
 import com.acadschedule.scheduler.service.AuditLogService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import java.util.HashMap;
 import java.util.List;
@@ -20,9 +24,12 @@ public class AuditLogController {
     }
 
     @GetMapping
-    public ResponseEntity<?> getLogs() {
+    public ResponseEntity<?> getLogs(
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "100") int size) {
         try {
-            return ResponseEntity.ok(service.getAllLogs());
+            Pageable pageable = PageRequest.of(page, size, Sort.by("timestamp").descending());
+            return ResponseEntity.ok(service.getAllLogsPaginated(pageable));
         } catch (Exception e) {
             e.printStackTrace();
             Map<String, String> error = new HashMap<>();

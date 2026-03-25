@@ -266,10 +266,13 @@ export interface AuditLog {
   status?: string;
 }
 
-export const getAuditLogs = async (): Promise<AuditLog[]> => {
+export const getAuditLogs = async (page = 0, size = 100): Promise<AuditLog[]> => {
   try {
-    const res = await API.get('/audit-logs');
-    return Array.isArray(res.data) ? res.data : [];
+    const res = await API.get(`/audit-logs?page=${page}&size=${size}`);
+    // Support both old array format and new Page object format
+    if (Array.isArray(res.data)) return res.data;
+    if (res.data && Array.isArray(res.data.content)) return res.data.content;
+    return [];
   } catch (e) {
     console.error("Failed to fetch audit logs", e);
     return [];

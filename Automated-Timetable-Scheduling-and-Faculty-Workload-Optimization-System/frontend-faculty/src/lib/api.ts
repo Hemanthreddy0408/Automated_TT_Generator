@@ -3,9 +3,11 @@ import { Subject } from "@/types/timetable";
 
 const API_BASE_URL = "http://localhost:8083";
 
-export const getAuditLogs = async () => {
-  const res = await axios.get(`${API_BASE_URL}/api/audit-logs`);
-  return res.data;
+export const getAuditLogs = async (page = 0, size = 100) => {
+  const res = await axios.get(`${API_BASE_URL}/api/audit-logs?page=${page}&size=${size}`);
+  if (Array.isArray(res.data)) return res.data;
+  if (res.data && Array.isArray(res.data.content)) return res.data.content;
+  return [];
 };
 
 /* ===========================

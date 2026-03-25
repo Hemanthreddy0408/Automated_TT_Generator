@@ -18,13 +18,14 @@ jobs:
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          distribution: temurin
+          java-version: 17
 
       - name: Build Backend
         run: |
           cd Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler
           mvn clean install -DskipTests
+
 
   frontend-admin:
     runs-on: ubuntu-latest
@@ -36,7 +37,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: 18
 
       - name: Install dependencies
         run: |
@@ -48,6 +49,7 @@ jobs:
           cd Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/frontend-admin
           npm run build
 
+
   frontend-faculty:
     runs-on: ubuntu-latest
 
@@ -58,7 +60,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: 18
 
       - name: Install dependencies
         run: |
@@ -69,13 +71,21 @@ jobs:
         run: |
           cd Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/frontend-faculty
           npm run build
-  
+
 
   deploy:
     needs: [backend, frontend-admin, frontend-faculty]
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
       - name: Deploy backend
         run: echo "Deploy backend to server"
 

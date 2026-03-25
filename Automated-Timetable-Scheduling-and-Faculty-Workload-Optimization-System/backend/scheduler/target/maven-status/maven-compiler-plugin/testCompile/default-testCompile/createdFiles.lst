@@ -1,9 +1,0 @@
-com/acadschedule/scheduler/service/TimetableGenerationServiceTest.class
-com/acadschedule/scheduler/service/SubjectServiceTest.class
-com/acadschedule/scheduler/controller/FacultyControllerTest.class
-com/acadschedule/scheduler/service/FacultyServiceTest.class
-com/acadschedule/scheduler/service/TimetableConflictServiceTest.class
-com/acadschedule/scheduler/controller/LeaveControllerTest.class
-com/acadschedule/scheduler/service/LeaveServiceTest.class
-com/acadschedule/scheduler/controller/TimetableControllerTest.class
-com/acadschedule/scheduler/service/NotificationServiceTest.class
