@@ -1,9 +1,11 @@
 import { defineConfig } from "cypress";
+// @ts-expect-error - The reporter doesn't have types but this is the correct way to import in ESM
+import mochawesomeReporter from 'cypress-mochawesome-reporter/plugin';
 
 export default defineConfig({
     e2e: {
         setupNodeEvents(on, config) {
-            require('cypress-mochawesome-reporter/plugin')(on);
+            mochawesomeReporter(on);
         },
         baseUrl: "http://localhost:5173", // Assuming default Vite port for React
         supportFile: "cypress/support/e2e.ts",

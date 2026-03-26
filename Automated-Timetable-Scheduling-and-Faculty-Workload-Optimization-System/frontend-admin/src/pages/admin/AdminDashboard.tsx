@@ -54,7 +54,8 @@ import {
   clearOptimizationChanges,
   getFacultyWorkloadSummary,
   FacultyPayload,
-  OptimizationChange
+  OptimizationChange,
+  FacultyWorkload
 } from "@/lib/api";
 import { Section, Subject } from "@/types/timetable";
 
@@ -70,7 +71,7 @@ export default function AdminDashboard() {
   const [facultyList, setFacultyList] = useState<FacultyPayload[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
   const [allEntries, setAllEntries] = useState<TimetableEntry[]>([]);
-  const [workloads, setWorkloads] = useState<any[]>([]);
+  const [workloads, setWorkloads] = useState<FacultyWorkload[]>([]);
   const [optimizationChanges, setOptimizationChanges] = useState<OptimizationChange[]>([]);
   const [selectedSectionId, setSelectedSectionId] = useState<string>("");
   const [loading, setLoading] = useState(true);

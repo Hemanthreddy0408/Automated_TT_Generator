@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import {
-  TrendingUp,
   CheckCircle,
   BarChart3,
   Users,
@@ -10,22 +9,10 @@ import {
   AlertCircle,
   X
 } from "lucide-react";
-import { getFacultyWorkloadSummary, getAllTimetableEntries, getFacultyAnalyticsDetails } from "@/lib/api";
-
-interface WorkloadSummary {
-  facultyId: number;
-  facultyName: string;
-  department: string;
-  designation: string;
-  maxHoursPerWeek: number;
-  weeklyHours: number;
-  lectureHours: number;
-  labHours: number;
-  dailyBreakdown: Record<string, number>;
-}
+import { getFacultyWorkloadSummary, getAllTimetableEntries, getFacultyAnalyticsDetails, FacultyWorkload } from "@/lib/api";
 
 export default function AnalyticsPage() {
-  const [workloads, setWorkloads] = useState<WorkloadSummary[]>([]);
+  const [workloads, setWorkloads] = useState<FacultyWorkload[]>([]);
   const [allEntries, setAllEntries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 

@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: acadschedule-backend
+    runtime: docker
+    dockerfilePath: ./Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler/Dockerfile
+    dockerContext: ./Automated-Timetable-Scheduling-and-Faculty-Workload-Optimization-System/backend/scheduler
+    plan: free
+    envVars:
+      - key: SPRING_DATASOURCE_URL
+        value: jdbc:postgresql://aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?sslmode=require
+      - key: SPRING_DATASOURCE_USERNAME
+        value: postgres.qjhyglosltbcfkhwxahg
+      - key: SPRING_DATASOURCE_PASSWORD
+        value: password123
+      - key: SERVER_PORT
+        value: 10000

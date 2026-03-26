@@ -1,6 +1,18 @@
 import axios from "axios";
 import { Subject, Section, Room, NotificationDTO } from "@/types/timetable";
 
+export interface FacultyWorkload {
+  facultyId: number;
+  facultyName: string;
+  department: string;
+  designation: string;
+  maxHoursPerWeek: number;
+  weeklyHours: number;
+  lectureHours: number;
+  labHours: number;
+  dailyBreakdown: Record<string, number>;
+}
+
 /* ===========================
    BASE CONFIG
    AXIOS INSTANCE
@@ -389,8 +401,7 @@ export const logout = async (): Promise<void> => {
 /* ===========================
    FACULTY WORKLOAD API
    =========================== */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const getFacultyWorkloadSummary = async (): Promise<any[]> => {
+export const getFacultyWorkloadSummary = async (): Promise<FacultyWorkload[]> => {
   try {
     const res = await API.get("/faculty/workload-summary");
     return Array.isArray(res.data) ? res.data : [];
